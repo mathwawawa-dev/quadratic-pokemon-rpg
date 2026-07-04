@@ -139,6 +139,12 @@ function setupMathInput() {
             mf.executeCommand(['insert', 'x']);
             return;
         }
+        // 물리적인 'Y' 키를 눌렀을 때 (한글 상태에서 ㅛ 누름)
+        if (e.type === 'keydown' && e.code === 'KeyY' && (e.keyCode === 229 || e.key === 'ㅛ')) {
+            e.preventDefault(); e.stopPropagation();
+            mf.executeCommand(['insert', 'y']);
+            return;
+        }
         if (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key) || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
             e.preventDefault(); e.stopPropagation();
         }

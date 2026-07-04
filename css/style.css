@@ -163,15 +163,18 @@ body {
 
 @keyframes blinkThreeTimes {
     0%   { opacity: 1; }
-    16%  { opacity: 0; }
+    16%  { opacity: 0.2; }
     33%  { opacity: 1; }
-    50%  { opacity: 0; }
+    50%  { opacity: 0.2; }
     66%  { opacity: 1; }
-    83%  { opacity: 0; }
+    85%  { opacity: 0; }
     100% { opacity: 0; visibility: hidden; }
 }
 #guide-msg {
-    animation: blinkThreeTimes 3.5s 1s forwards;
+    color: #fbbf24;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+    /* 2초 대기 후, 6초에 걸쳐 3회 깜빡임 (마지막은 0으로 자연스럽게 페이드아웃) */
+    animation: blinkThreeTimes 6s 2s forwards;
 }
 .input-row { display: flex; gap: 15px; align-items: center; }
 
@@ -219,9 +222,9 @@ math-field::part(menu-toggle) { display: none !important; }
 #btn-facing {
     background: rgba(239,68,68,0.4);
     border: 1px solid rgba(239,68,68,0.8);
-    color: white; padding: 6px 15px;
+    color: white; padding: 6px 10px;
     border-radius: 8px; font-weight: bold;
-    cursor: pointer; min-width: 120px;
+    cursor: pointer;
     font-family: 'Outfit', sans-serif;
 }
 
