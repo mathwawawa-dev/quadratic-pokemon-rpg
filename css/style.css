@@ -160,6 +160,19 @@ body {
     animation: slideUp 0.5s ease-out; z-index: 50;
 }
 .guide-text { font-size: 1.1rem; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center; min-height: 30px; }
+
+@keyframes blinkThreeTimes {
+    0%   { opacity: 1; }
+    16%  { opacity: 0; }
+    33%  { opacity: 1; }
+    50%  { opacity: 0; }
+    66%  { opacity: 1; }
+    83%  { opacity: 0; }
+    100% { opacity: 0; visibility: hidden; }
+}
+#guide-msg {
+    animation: blinkThreeTimes 3.5s 1s forwards;
+}
 .input-row { display: flex; gap: 15px; align-items: center; }
 
 math-field {

@@ -33,12 +33,18 @@ let missile = { active: false, x: 0, y: 0, trail: [], maxY: 0, func: null, dx: 0
 let effects = [];
 let screenShake = 0;
 let terrainHeights = {};
-const explosionRadius = 0.5;
+let explosionRadius = 0.5; // let으로 변경 — 파워업 풍선으로 일시 증가 가능
 let playerGold = 0;
+let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
+let balloons = [];          // 공중 풍선 목록
 let cloudParams = [
     { bx: 5,  by: 18, speed: 3000, radius: 2.2, alpha: 0.6 },
     { bx: -4, by: 12, speed: 5000, radius: 1.6, alpha: 0.4 }
 ];
+
+// ---------- 포켓볼 이미지 프리로드 ----------
+const pokeballImg = new Image();
+pokeballImg.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
 
 // ---------- Sprite Cache ----------
 const spriteCache = {};
@@ -301,30 +307,49 @@ function initStage() {
     let flyingYPool = [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
     let flyingYIdx = 0;
 
-    enemies = stageEnemies.map(e => {
+    // 적들이 플레이어 양쪽에 고르게 분산되도록 사이드 배정
+    // 총 적 수의 절반은 왼쪽, 절반은 오른쪽 (홀수이면 한쪽이 1개 더)
+    const totalCount = stageEnemies.length;
+    const leftCount  = Math.floor(totalCount / 2);
+    const rightCount = totalCount - leftCount;
+    // 'L' 또는 'R' 사이드를 섞어 각 적에게 배정
+    const sideAssignments = [...Array(leftCount).fill('L'), ...Array(rightCount).fill('R')]
+        .sort(() => Math.random() - 0.5);
+
+    enemies = stageEnemies.map((e, idx) => {
+        const side = sideAssignments[idx]; // 'L': 플레이어보다 왼쪽, 'R': 오른쪽
         let rx, ry, valid, attempts = 0;
+
         if (e.isFlying) {
-            // 비행 포켓몬: x는 간격만 체크, y는 pool에서 분산
             do {
-                rx = -8 + Math.random() * 26;
+                // 배정된 사이드에서만 x 샘플링
+                rx = side === 'L'
+                    ? player.x - MIN_X_GAP - Math.random() * 12   // 왼쪽 영역
+                    : player.x + MIN_X_GAP + Math.random() * 12;  // 오른쪽 영역
+                rx = Math.max(-8, Math.min(18, rx));
                 valid = Math.abs(rx - player.x) >= MIN_X_GAP &&
                         placedX.every(px => Math.abs(rx - px) >= MIN_X_GAP);
                 attempts++;
             } while (!valid && attempts < 300);
-            if (!valid) rx = (player.x < 0 ? 1 : -1) * (5 + placedX.length * 5);
+            if (!valid) rx = side === 'L' ? player.x - 6 : player.x + 6;
             ry = flyingYPool[flyingYIdx % flyingYPool.length];
             flyingYIdx++;
         } else {
-            // 지상 포켓몬: x 간격 + y 간격 동시 체크
             do {
-                rx = -8 + Math.random() * 26;
+                rx = side === 'L'
+                    ? player.x - MIN_X_GAP - Math.random() * 12
+                    : player.x + MIN_X_GAP + Math.random() * 12;
+                rx = Math.max(-8, Math.min(18, rx));
                 ry = getTerrainY(rx) + 0.75;
                 valid = Math.abs(rx - player.x) >= MIN_X_GAP &&
                         placedX.every(px => Math.abs(rx - px) >= MIN_X_GAP) &&
                         placedY.filter(py => !py.isFlying).every(py => Math.abs(ry - py.y) >= MIN_Y_GAP);
                 attempts++;
             } while (!valid && attempts < 400);
-            if (!valid) { rx = (player.x < 0 ? 1 : -1) * (5 + placedX.length * 5); ry = getTerrainY(rx) + 0.75; }
+            if (!valid) {
+                rx = side === 'L' ? player.x - 6 : player.x + 6;
+                ry = getTerrainY(rx) + 0.75;
+            }
         }
         placedX.push(rx);
         placedY.push({ y: ry, isFlying: e.isFlying });
@@ -353,21 +378,58 @@ function initStage() {
 
     updateHPUI();
     missile.active = false; missile.trail = []; effects = [];
+    baseDamageBoost = 1.0;  // 스테이지마다 파워 부스트 초기화
+    explosionRadius = 0.5;  // 폭발 반경 초기화
+
+    // 포켓볼 생성 (필드당 1개, y≥13 공중, 플레이어와 적 사이의 x좌표 보장)
+    balloons = [];
+    const balloonTypes = ['gold', 'gold', 'power']; // 금화 2배 확률, 파워 1배 확률
+    
+    // 적 중 하나를 무작위로 선택하여 그 적과 플레이어 사이의 x좌표에 생성
+    let targetX = player.x + 8; // 폴백용 기본 거리
+    if (enemies.length > 0) {
+        const randomEnemy = enemies[Math.floor(Math.random() * enemies.length)];
+        targetX = randomEnemy.x;
+    }
+    
+    // 플레이어와 대상 적 사이의 보간값 (35% ~ 65% 무작위 지점)
+    const ratio = 0.35 + Math.random() * 0.3;
+    const bx = player.x + (targetX - player.x) * ratio;
+    const by = 13 + Math.random() * 5; // y: 13 ~ 18 공중
+    const type = balloonTypes[Math.floor(Math.random() * balloonTypes.length)];
+    balloons.push({ x: bx, y: by, type, active: true, radius: 0.65, phase: Math.random() * Math.PI * 2 });
+
     resetView();
 
-    // 이미지가 로딩될 충분한 시간을 주고 오버레이 부드럽게 해제
-    setTimeout(() => {
+    // 모든 스프라이트 이미지가 실제로 로드 완료된 시점에 오버레이를 닫음
+    // (고정 타이머 대신) - 단, 최대 1500ms 캡으로 너무 길어지지 않게 제한
+    const allImages = [player.img, ...enemies.map(e => e.img)].filter(Boolean);
+
+    const waitForImages = Promise.all(allImages.map(img =>
+        new Promise(resolve => {
+            if (img.complete && img.naturalWidth > 0) {
+                resolve(); // 이미 로드 완료 (캐시)
+            } else {
+                img.addEventListener('load',  resolve, { once: true });
+                img.addEventListener('error', resolve, { once: true }); // 오류도 기다림 종료
+            }
+        })
+    ));
+
+    const maxWait = new Promise(resolve => setTimeout(resolve, 1500)); // 최대 1500ms 캡
+
+    Promise.race([waitForImages, maxWait]).then(() => {
         if (overlay) {
-            overlay.classList.add('hiding');          // 0.4s fade-out 시작
+            overlay.classList.add('hiding');         // 0.4s fade-out 시작
             setTimeout(() => {
                 overlay.classList.remove('hiding');
-                overlay.classList.add('hidden');      // 완전히 숨김
+                overlay.classList.add('hidden');     // 완전히 숨김
                 GAME_STATE = 'IDLE';
             }, 400);
         } else {
             GAME_STATE = 'IDLE';
         }
-    }, 800);
+    });
 }
 
 // ---------- Player Movement ----------
@@ -523,7 +585,7 @@ function applyDamageAndEffects(target, mx, my) {
     let mult = 1.0;
     if (stage.terrain === 'lava' && (selectedStarter||{}).type === 'fire') mult = 1.2;
     if (stage.terrain === 'sky'  && (selectedStarter||{}).type === 'flying') mult = 1.2;
-    const totalDamage = Math.floor((30 + fallHeight * 4) * mult);
+    const totalDamage = Math.floor((30 + fallHeight * 4) * mult * baseDamageBoost);
 
     target.hp -= totalDamage;
     target.shake = 20; screenShake = 15;
@@ -573,15 +635,26 @@ function updateGame() {
     for (let i = effects.length - 1; i >= 0; i--) {
         const e = effects[i];
         e.life--;
-        if (e.type === 'text') e.y += 0.03;
+        if (e.type === 'text')     { e.y += 0.03; }
         if (e.type === 'particle') { e.x += e.vx; e.y += e.vy; e.vy -= 0.02; }
+        if (e.type === 'ring')     { /* 위치 고정, life만 감소 */ }
         if (e.life <= 0) effects.splice(i, 1);
     }
 
     [player, ...enemies].forEach(ent => {
         if (ent.hp <= 0) return;
         if (ent.isKnockedBack) {
-            ent.x += ent.vx; ent.y += ent.vy;
+            // 다음 x 위치의 지형 높이를 미리 확인 — 급경사(언덕/스파이크 벽)에 올라타는 순간 점프 방지
+            const nextX   = ent.x + ent.vx;
+            const nextGY  = getTerrainY(nextX) + 0.75;
+            const currGY  = getTerrainY(ent.x)  + 0.75;
+            // 다음 위치의 지형이 현재 y보다 0.3 이상 높으면 "벽"으로 간주 → vx 반사, x는 유지
+            if (nextGY > ent.y + 0.3) {
+                ent.vx *= -0.55;
+            } else {
+                ent.x = nextX;
+            }
+            ent.y += ent.vy;
             ent.rotation += ent.angularVelocity;
             ent.vy -= 0.02;
             if (ent.x - ent.w/2 < -20) { ent.x = -20 + ent.w/2; ent.vx *= -0.8; }
@@ -616,6 +689,32 @@ function updateGame() {
             missile.distanceTraveled = Math.abs(missile.x - missile.startX);
             if (missile.y > missile.maxY) missile.maxY = missile.y;
             missile.trail.push({ x: missile.x, y: missile.y });
+
+            // ---- 풍선 충돌 체크 (미사일은 관통하여 계속 진행) ----
+            for (const b of balloons) {
+                if (!b.active) continue;
+                const bdx = missile.x - b.x, bdy = missile.y - b.y;
+                if (Math.sqrt(bdx * bdx + bdy * bdy) <= b.radius) {
+                    b.active = false;
+                    // 팡! 파티클 + 링 이펙트
+                    const bColor = b.type === 'gold' ? '#fbbf24' : '#ef4444';
+                    for (let pi = 0; pi < 20; pi++)
+                        effects.push({ type: 'particle', x: b.x, y: b.y,
+                            vx: (Math.random()-0.5)*0.7, vy: (Math.random()-0.5)*0.7 + 0.1,
+                            life: 40, color: bColor });
+                    effects.push({ type: 'ring', x: b.x, y: b.y, life: 28, maxLife: 28, color: bColor });
+                    // 보상 지급
+                    if (b.type === 'gold') {
+                        const gold = 40 + Math.floor(Math.random() * 41); // 40~80G
+                        playerGold += gold;
+                        document.getElementById('ui-player-gold').innerText = playerGold;
+                        effects.push({ type: 'text', x: b.x, y: b.y + 1, text: `🪙 +${gold}G`, color: '#fbbf24', life: 150 });
+                    } else {
+                        baseDamageBoost = Math.min(2.5, baseDamageBoost * 1.35);
+                        effects.push({ type: 'text', x: b.x, y: b.y + 1, text: '⚡ POWER UP!', color: '#f87171', life: 150 });
+                    }
+                }
+            }
 
             if (missile.y > 30) {
                 missile.active = false; GAME_STATE = 'OVER';
@@ -689,17 +788,40 @@ function drawEntity(ent) {
     }
     if (ent.rotation) ctx.rotate(ent.rotation);
     
-    // 체력이 0 이하인 사망 개체는 유령 효과 적용 (0.05 ~ 0.35 알파 맥박 및 공중 부유 모션)
+    // 체력이 0 이하인 사망 개체: 개성 있는 유령 효과
     if (ent.hp <= 0) {
-        // 시간 축 기준 맥박 치는 투명도 (0.05 ~ 0.35)
-        const pulse = 0.2 + Math.sin(Date.now() / 250) * 0.15;
-        ctx.globalAlpha = Math.max(0.02, Math.min(0.4, pulse));
-        ctx.filter = 'brightness(90%) saturate(180%) hue-rotate(130deg) blur(0.5px)';
-        
-        // 공중에 둥둥 떠다니는 유령 모션 (위아래 둥실둥실 + 살짝 흔들림 - 중간 속도로 조절)
-        const floatY = Math.sin(Date.now() / 700) * scaleLength(0.2);
-        ctx.translate(0, floatY);
-        ctx.rotate(Math.sin(Date.now() / 900) * 0.08);
+        // 최초 사망 시 엔티티별 랜덤 위상(phase)과 사망 시각 기록 → 유령끼리 동기화 방지
+        if (ent._ghostPhase === undefined) {
+            ent._ghostPhase  = Math.random() * Math.PI * 2;
+            ent._deathTime   = Date.now();
+        }
+        const t     = Date.now() / 1000;
+        const ph    = ent._ghostPhase;
+        const lived = (Date.now() - ent._deathTime) / 1000; // 사망 후 경과 시간(초)
+
+        // 이중 주파수 알파 맥박 (0.04 ~ 0.52 범위, 불규칙한 호흡 느낌)
+        const pulse = 0.28
+            + Math.sin(t * 2.1 + ph)          * 0.16
+            + Math.sin(t * 0.7 + ph * 1.3)    * 0.08;
+        ctx.globalAlpha = Math.max(0.04, Math.min(0.52, pulse));
+
+        // 서서히 변하는 채도/색조 (유령빛 청록→보라 사이를 천천히 순환)
+        const hue = 140 + Math.sin(t * 0.4 + ph) * 35;
+        ctx.filter = `brightness(85%) saturate(220%) hue-rotate(${hue.toFixed(0)}deg) blur(0.7px)`;
+
+        // 위아래 둥실 (이중 주파수) + 좌우 미세 흔들림 + 사망 후 서서히 위로 떠오름
+        const floatY = Math.sin(t * 2.0 + ph) * scaleLength(0.22)
+                     + Math.sin(t * 0.85 + ph) * scaleLength(0.10);
+        const floatX = Math.sin(t * 1.4 + ph * 0.8) * scaleLength(0.06);
+        const driftUp = Math.min(lived * scaleLength(0.12), scaleLength(2.5)); // 최대 2.5 unit 위로
+        ctx.translate(floatX, floatY - driftUp);
+
+        // 회전 흔들림 (이중 주파수)
+        ctx.rotate(Math.sin(t * 1.8 + ph) * 0.10 + Math.sin(t * 0.6 + ph) * 0.04);
+
+        // 숨쉬는 듯한 크기 맥박
+        const breathe = 1.0 + Math.sin(t * 1.2 + ph) * 0.07;
+        ctx.scale(breathe, breathe);
     } else if (ent.shake > 0) {
         ctx.filter = 'brightness(200%) sepia(100%) hue-rotate(-50deg) saturate(500%)';
     }
@@ -834,6 +956,44 @@ function render() {
     ctx.font = "italic bold 16px 'Cambria Math','Times New Roman',serif";
     ctx.fillText('DANGER / OUT LINE (y = 30)', canvas.width/2, outSc.y - 15);
 
+    // ---- 포켓볼 렌더링 ----
+    const tNow = Date.now() / 1000;
+    balloons.forEach(b => {
+        if (!b.active) return;
+        const floatOff = Math.sin(tNow * 1.1 + b.phase) * scaleLength(0.22)
+                       + Math.sin(tNow * 0.6 + b.phase) * scaleLength(0.08);
+        const sc     = gridToScreen(b.x, b.y);
+        const sz     = scaleLength(1.3); // 포켓볼 크기 (화면 픽셀)
+        const cx     = sc.x;
+        const cy     = sc.y + floatOff;
+
+        ctx.save();
+        // 글로우 (종류에 따라 색상)
+        ctx.shadowColor = b.type === 'gold' ? '#fbbf24' : '#ef4444';
+        ctx.shadowBlur  = 18 + Math.sin(tNow * 2.0 + b.phase) * 6;
+        // 포켓볼 이미지 그리기
+        if (pokeballImg && pokeballImg.complete && pokeballImg.naturalWidth > 0) {
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(pokeballImg, cx - sz / 2, cy - sz / 2, sz, sz);
+        } else {
+            // 이미지 로드 전 대체 원
+            ctx.fillStyle = b.type === 'gold' ? '#fbbf24' : '#ef4444';
+            ctx.beginPath(); ctx.arc(cx, cy, sz / 2, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+
+        // 아이템 타입 라벨 (포켓볼 하단)
+        ctx.fillStyle    = b.type === 'gold' ? '#fde68a' : '#fca5a5';
+        ctx.font         = `bold ${Math.round(scaleLength(0.45))}px Outfit`;
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'top';
+        ctx.shadowColor  = 'rgba(0,0,0,0.9)';
+        ctx.shadowBlur   = 6;
+        ctx.fillText(b.type === 'gold' ? '🪙 GOLD' : '⚡ POWER', cx, cy + sz / 2 + 4);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    });
+
     // Entities
     if (player.hp > 0) drawEntity(player);
     enemies.forEach(e => { drawEntity(e); }); // 사망한 유령 적포켓몬도 계속 렌더링되게 변경
@@ -868,15 +1028,25 @@ function render() {
     effects.forEach(e => {
         if (e.type === 'text') {
             const sc = gridToScreen(e.x, e.y);
-            ctx.globalAlpha = Math.max(0, e.life/180);
+            ctx.globalAlpha = Math.max(0, e.life / 150);
             ctx.fillStyle = e.color; ctx.font = '900 28px Outfit'; ctx.textAlign = 'center';
             ctx.fillText(e.text, sc.x, sc.y);
             ctx.globalAlpha = 1;
         } else if (e.type === 'particle') {
             const sc = gridToScreen(e.x, e.y);
-            ctx.globalAlpha = Math.max(0, e.life/30);
+            ctx.globalAlpha = Math.max(0, e.life / 40);
             ctx.fillStyle = e.color; ctx.beginPath(); ctx.arc(sc.x, sc.y, 4, 0, Math.PI*2); ctx.fill();
             ctx.globalAlpha = 1;
+        } else if (e.type === 'ring') {
+            // 풍선 터지는 확산 링 이펙트
+            const sc   = gridToScreen(e.x, e.y);
+            const prog = 1 - e.life / e.maxLife;          // 0→1
+            const rad  = scaleLength(0.3 + 2.5 * prog);   // 커지는 반경
+            ctx.globalAlpha = Math.max(0, e.life / e.maxLife) * 0.85;
+            ctx.strokeStyle  = e.color;
+            ctx.lineWidth    = 5 * (e.life / e.maxLife);
+            ctx.beginPath(); ctx.arc(sc.x, sc.y, rad, 0, Math.PI * 2); ctx.stroke();
+            ctx.globalAlpha  = 1;
         }
     });
 
