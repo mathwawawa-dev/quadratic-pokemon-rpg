@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Error Catcher</title>
+</head>
+<body>
+    <div id="error-log"></div>
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            document.getElementById('error-log').innerHTML += message + ' at ' + lineno + ':' + colno + '<br>';
+        };
+    </script>
+    <script src="js/data.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        try {
+            startGame('pikachu');
+            document.getElementById('error-log').innerHTML += "NO ERROR!";
+        } catch(e) {
+            document.getElementById('error-log').innerHTML += e.message + '<br>';
+        }
+    </script>
+</body>
+</html>
