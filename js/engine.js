@@ -224,16 +224,11 @@ function initStage() {
     // 선택된 스타팅 포켓몬으로 플레이어 설정
     const starterData = selectedStarter || STARTERS.pikachu;
     player.img        = loadSprite(starterData.img);
-    const pxRoll = Math.random();
-    if (pxRoll < 0.45)       player.x =  (2 + Math.random() * 4);  // 45% x>0
-    else if (pxRoll < 0.93)  player.x = -(2 + Math.random() * 4);  // 48% x<0
-    else                     player.x = 0;                          //  7% x=0
     player.isFlying      = false;
     player.hp            = player.maxHp = 100;
     player.movePoints    = player.maxMovePoints = 2.0;
     player.isKnockedBack = false;
     player.rotation      = 0;
-    player.facing        = player.x >= 0 ? -1 : 1;
     player.name          = starterData.name;
 
     // 지형 높이맵 + 랜덤 스파이크 언덕 생성
@@ -263,6 +258,28 @@ function initStage() {
         terrainHeights[key] = y;
     }
 
+    // 플레이어의 x 위치 설정 (스파이크 언덕 정상이거나 지나치게 높은 곳은 피하도록 검증 루프 적용)
+    let px = 0;
+    let attempts = 0;
+    do {
+        const pxRoll = Math.random();
+        if (pxRoll < 0.45)       px =  (2 + Math.random() * 4);  // 45% x>0
+        else if (pxRoll < 0.93)  px = -(2 + Math.random() * 4);  // 48% x<0
+        else                     px = 0;                          //  7% x=0
+
+        // 해당 위치의 지형 높이가 3 이상 솟아오른 스파이크 영향권인지 체크
+        const key = (Math.round(px * 10) / 10).toFixed(1);
+        const yVal = terrainHeights[key] !== undefined ? terrainHeights[key] : tFunc(px);
+        const isSpikePeak = terrainSpikes.some(sp => Math.abs(px - sp.cx) < sp.width * 1.5 && sp.height >= 5);
+
+        if (yVal < 3 && !isSpikePeak) {
+            break; // 평탄하거나 낮은 곳에 위치 시 확정
+        }
+        attempts++;
+    } while (attempts < 50);
+
+    player.x = px;
+    player.facing        = player.x >= 0 ? -1 : 1;
     player.y = getTerrainY(player.x) + 0.75;
 
     // 적 배치 (랜덤) — x 간격 + y 간격 모두 보장
@@ -608,7 +625,24 @@ function updateGame() {
             }
             let directHit = null;
             for (const e of enemies) { if (e.hp > 0 && checkCollision(missile.x, missile.y, e)) { directHit = e; break; } }
-            if (directHit) { missile.active = false; applyDamageAndEffects(directHit, missile.x, missile.y); return; }
+            if (directHit) {
+                missile.active = false;
+                // 직격한 대상을 포함하여 폭발 반경(explosionRadius + 0.5) 내의 모든 적에게 광역 데미지 적용
+                const targetX = directHit.x;
+                const targetY = directHit.y;
+                createExplosion(targetX, targetY, getMissileColor());
+                createCrater(targetX, targetY - 0.75, explosionRadius + 0.5);
+
+                enemies.forEach(ent => {
+                    if (ent.hp <= 0) return;
+                    const edx = ent.x - targetX, edy = ent.y - targetY;
+                    // 직격 대상이거나 폭발 범위 안에 있는 경우 데미지 적용
+                    if (ent === directHit || Math.sqrt(edx*edx + edy*edy) <= explosionRadius + 0.5) {
+                        applyDamageAndEffects(ent, targetX, targetY);
+                    }
+                });
+                return;
+            }
 
             if (missile.y < getTerrainY(missile.x) && !missile.isCheat) {
                 missile.active = false; GAME_STATE = 'IDLE';
@@ -654,7 +688,21 @@ function drawEntity(ent) {
         if (ent.x < player.x) ctx.scale(-1, 1);
     }
     if (ent.rotation) ctx.rotate(ent.rotation);
-    if (ent.shake > 0) ctx.filter = 'brightness(200%) sepia(100%) hue-rotate(-50deg) saturate(500%)';
+    
+    // 체력이 0 이하인 사망 개체는 유령 효과 적용 (0.05 ~ 0.35 알파 맥박 및 공중 부유 모션)
+    if (ent.hp <= 0) {
+        // 시간 축 기준 맥박 치는 투명도 (0.05 ~ 0.35)
+        const pulse = 0.2 + Math.sin(Date.now() / 250) * 0.15;
+        ctx.globalAlpha = Math.max(0.02, Math.min(0.4, pulse));
+        ctx.filter = 'brightness(90%) saturate(180%) hue-rotate(130deg) blur(0.5px)';
+        
+        // 공중에 둥둥 떠다니는 유령 모션 (위아래 둥실둥실 + 살짝 흔들림 - 중간 속도로 조절)
+        const floatY = Math.sin(Date.now() / 700) * scaleLength(0.2);
+        ctx.translate(0, floatY);
+        ctx.rotate(Math.sin(Date.now() / 900) * 0.08);
+    } else if (ent.shake > 0) {
+        ctx.filter = 'brightness(200%) sepia(100%) hue-rotate(-50deg) saturate(500%)';
+    }
     // HP bar for enemies
     if (enemies.includes(ent) && ent.hp > 0) {
         const hpPct = Math.max(0, ent.hp / ent.maxHp);
@@ -788,7 +836,7 @@ function render() {
 
     // Entities
     if (player.hp > 0) drawEntity(player);
-    enemies.forEach(e => { if (e.hp > 0 || e.shake > 0) drawEntity(e); });
+    enemies.forEach(e => { drawEntity(e); }); // 사망한 유령 적포켓몬도 계속 렌더링되게 변경
 
     // Player radius (발사 가능 반경 표시 - 맥박 뛰듯 은은하게)
     const pCenter = gridToScreen(player.x, player.y - 0.525), pRad = scaleLength(0.7);
