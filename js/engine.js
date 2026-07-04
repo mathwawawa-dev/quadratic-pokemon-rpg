@@ -801,18 +801,16 @@ function updateGame() {
                     
                     if (missile.type === 'satellite') {
                         GAME_STATE = 'IDLE';
-                        document.getElementById('fire-btn').disabled = true; // 유지
+                        document.getElementById('fire-btn').disabled = true;
                         for (let i = 0; i < 4; i++) {
                             setTimeout(() => {
                                 if (GAME_STATE === 'OVER') return;
                                 effects.push({ type: 'laser', x: targetX, y: targetY, life: 15 });
                                 screenShake = 15;
                                 createCrater(targetX, targetY - 0.75, explosionRadius);
-                                let hitSomeone = false;
                                 enemies.forEach(ent => {
                                     if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius + 0.5) {
                                         applyDamageAndEffects(ent, targetX, targetY);
-                                        hitSomeone = true;
                                     }
                                 });
                                 if (i === 3) {
@@ -824,6 +822,38 @@ function updateGame() {
                                 }
                             }, i * 250);
                         }
+                    } else if (missile.type === 'net') {
+                        // ---- 그물 미사일: 반경 3 이내 적을 폭탄 위치로 끌어당김 ----
+                        missile.active = false; GAME_STATE = 'IDLE';
+                        document.getElementById('fire-btn').disabled = true;
+                        const netRadius = 3;
+                        // 그물 이펙트 (링 + 파티클)
+                        effects.push({ type: 'netPull', x: targetX, y: targetY, life: 40, maxLife: 40 });
+                        screenShake = 8;
+                        // 범위 내 적 끌어당기기
+                        let pulled = [];
+                        enemies.forEach(ent => {
+                            if (ent.hp <= 0) return;
+                            const dist = Math.hypot(ent.x - targetX, ent.y - targetY);
+                            if (dist <= netRadius) pulled.push(ent);
+                        });
+                        // 0.3초 후 위치 이동 + 데미지
+                        setTimeout(() => {
+                            pulled.forEach(ent => {
+                                if (ent.hp <= 0) return;
+                                ent.x = targetX;
+                                ent.y = Math.max(getTerrainY(targetX) + 0.75, targetY);
+                                ent.isKnockedBack = false; ent.vx = 0; ent.vy = 0;
+                                applyDamageAndEffects(ent, targetX, targetY);
+                            });
+                            createExplosion(targetX, targetY, '#2dd4bf');
+                            createCrater(targetX, targetY - 0.5, explosionRadius);
+                            if (enemies.filter(e => e.hp <= 0).length >= 2) {
+                                GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                            } else {
+                                setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
+                            }
+                        }, 400);
                     } else {
                         createExplosion(targetX, targetY, getMissileColor());
                         createCrater(targetX, targetY - 0.75, explosionRadius + 0.5);
@@ -854,10 +884,9 @@ function updateGame() {
                             effects.push({ type: 'laser', x: targetX, y: targetY, life: 15 });
                             screenShake = 15;
                             createCrater(targetX, targetY, explosionRadius);
-                            let hitSomeone = false;
                             enemies.forEach(ent => {
                                 if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius + 0.5) {
-                                    applyDamageAndEffects(ent, targetX, targetY); hitSomeone = true;
+                                    applyDamageAndEffects(ent, targetX, targetY);
                                 }
                             });
                             if (i === 3) {
@@ -869,6 +898,36 @@ function updateGame() {
                             }
                         }, i * 250);
                     }
+                    return;
+                } else if (missile.type === 'net') {
+                    // ---- 그물 미사일: 지형 충돌 시에도 동일한 끌어당기기 ----
+                    missile.active = false; GAME_STATE = 'IDLE';
+                    document.getElementById('fire-btn').disabled = true;
+                    const netRadius = 3;
+                    const targetX = missile.x, targetY = missile.y;
+                    effects.push({ type: 'netPull', x: targetX, y: targetY, life: 40, maxLife: 40 });
+                    screenShake = 8;
+                    let pulled = [];
+                    enemies.forEach(ent => {
+                        if (ent.hp <= 0) return;
+                        if (Math.hypot(ent.x - targetX, ent.y - targetY) <= netRadius) pulled.push(ent);
+                    });
+                    setTimeout(() => {
+                        pulled.forEach(ent => {
+                            if (ent.hp <= 0) return;
+                            ent.x = targetX;
+                            ent.y = Math.max(getTerrainY(targetX) + 0.75, targetY);
+                            ent.isKnockedBack = false; ent.vx = 0; ent.vy = 0;
+                            applyDamageAndEffects(ent, targetX, targetY);
+                        });
+                        createExplosion(targetX, targetY, '#2dd4bf');
+                        createCrater(targetX, targetY - 0.5, explosionRadius);
+                        if (enemies.filter(e => e.hp <= 0).length >= 2) {
+                            GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                        } else {
+                            setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
+                        }
+                    }, 400);
                     return;
                 } else {
                     missile.active = false; GAME_STATE = 'IDLE';
@@ -1229,6 +1288,26 @@ function render() {
                 ctx.shadowColor = '#10b981'; // 에메랄드 후광
                 ctx.fill();
                 ctx.restore();
+            } else if (missile.type === 'net') {
+                // ---- 그물 미사일 머리 (별 / 거미줄 형태 - 복구 용이하게 분리) ----
+                ctx.save();
+                ctx.translate(head.x, head.y);
+                ctx.rotate(Date.now() / 300); // 천천히 회전
+                
+                // 6각 별 (거미줄 느낌)
+                ctx.beginPath();
+                for (let si = 0; si < 6; si++) {
+                    const angle = (si / 6) * Math.PI * 2;
+                    const or = 11, ir = 5;
+                    ctx.lineTo(Math.cos(angle) * or, Math.sin(angle) * or);
+                    ctx.lineTo(Math.cos(angle + Math.PI / 6) * ir, Math.sin(angle + Math.PI / 6) * ir);
+                }
+                ctx.closePath();
+                ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = '#2dd4bf'; // 옥색 후광
+                ctx.fill();
+                ctx.restore();
             } else {
                 // 일반 미사일 둥근 머리
                 ctx.beginPath(); ctx.arc(head.x, head.y, 8, 0, Math.PI*2);
@@ -1273,6 +1352,29 @@ function render() {
             ctx.fillStyle = '#fff';
             ctx.beginPath(); ctx.arc(scBottom.x, scBottom.y, 25 + Math.random()*10, 0, Math.PI*2); ctx.fill();
             
+            ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+        } else if (e.type === 'netPull') {
+            // ---- 그물 당기기 이펙트: 수축하는 원 + 방사형 선 ----
+            const sc = gridToScreen(e.x, e.y);
+            const netRadius3 = 3;
+            const prog = 1 - e.life / e.maxLife; // 0→1
+            const rad = scaleLength(netRadius3 * (1 - prog)); // 줄어드는 반경
+            ctx.globalAlpha = Math.max(0, e.life / e.maxLife) * 0.85;
+            ctx.strokeStyle = '#2dd4bf';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 10; ctx.shadowColor = '#2dd4bf';
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath(); ctx.arc(sc.x, sc.y, rad, 0, Math.PI * 2); ctx.stroke();
+            // 방사형 선 (8개)
+            ctx.lineWidth = 1.5;
+            for (let ri = 0; ri < 8; ri++) {
+                const ang = (ri / 8) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(sc.x + Math.cos(ang) * rad, sc.y + Math.sin(ang) * rad);
+                ctx.lineTo(sc.x + Math.cos(ang) * rad * 0.3, sc.y + Math.sin(ang) * rad * 0.3);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
             ctx.globalAlpha = 1; ctx.shadowBlur = 0;
         }
     });
