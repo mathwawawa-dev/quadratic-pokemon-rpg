@@ -701,8 +701,51 @@ function updateGame() {
     if (GAME_STATE === 'FIRING' && missile.active) {
         for (let i = 0; i < 3; i++) {
             if (!missile.hasLeftPlayer && !checkCollision(missile.x, missile.y, player)) missile.hasLeftPlayer = true;
-            missile.x += missile.dx / 3;
-            missile.y = missile.func(missile.x);
+            
+            if (missile.type === 'homing') {
+                if (missile.isHoming) {
+                    if (missile.homingTarget && missile.homingTarget.hp > 0) {
+                        const targetX = missile.homingTarget.x;
+                        const targetY = missile.homingTarget.y;
+                        const angle = Math.atan2(targetY - missile.y, targetX - missile.x);
+                        const speed = Math.abs(missile.dx / 3) * 1.5; // 약간 빠른 유도 속도
+                        missile.x += Math.cos(angle) * speed;
+                        missile.y += Math.sin(angle) * speed;
+                    } else {
+                        // 타겟이 이미 죽었으면 관성으로 낙하
+                        missile.y -= 0.15;
+                        missile.x += missile.dx / 3;
+                    }
+                } else {
+                    const prevY = missile.y;
+                    missile.x += missile.dx / 3;
+                    missile.y = missile.func(missile.x);
+                    
+                    // 최고점 도달 후 하강 시작 시점 (꼭짓점)
+                    if (missile.y < prevY) {
+                        let nearest = null;
+                        let minDist = Infinity;
+                        enemies.forEach(e => {
+                            if (e.hp > 0) {
+                                const dist = Math.hypot(e.x - missile.x, e.y - missile.y);
+                                if (dist < minDist) { minDist = dist; nearest = e; }
+                            }
+                        });
+                        if (nearest) {
+                            missile.isHoming = true;
+                            missile.homingTarget = nearest;
+                            // 꼭짓점에서 꺾이는 순간 파티클 방출
+                            for(let pi=0; pi<10; pi++) {
+                                effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6, life: 35, color: '#a855f7' });
+                            }
+                        }
+                    }
+                }
+            } else {
+                missile.x += missile.dx / 3;
+                missile.y = missile.func(missile.x);
+            }
+            
             missile.distanceTraveled = Math.abs(missile.x - missile.startX);
             if (missile.y > missile.maxY) missile.maxY = missile.y;
             missile.trail.push({ x: missile.x, y: missile.y });
@@ -1090,6 +1133,29 @@ function render() {
                 ctx.fillStyle = '#fff'; 
                 ctx.shadowBlur = 10; 
                 ctx.shadowColor = mColor; 
+                ctx.fill();
+                ctx.restore();
+            } else if (missile.type === 'homing') {
+                // 유도탄 머리 (다이아몬드 형태 - 복구 용이하게 분리)
+                ctx.save();
+                ctx.translate(head.x, head.y);
+                
+                if (missile.trail.length >= 2) {
+                    const p1 = gridToScreen(missile.trail[missile.trail.length - 2].x, missile.trail[missile.trail.length - 2].y);
+                    const p2 = gridToScreen(missile.trail[missile.trail.length - 1].x, missile.trail[missile.trail.length - 1].y);
+                    ctx.rotate(Math.atan2(p2.y - p1.y, p2.x - p1.x));
+                }
+                
+                ctx.beginPath();
+                ctx.moveTo(10, 0);
+                ctx.lineTo(0, 6);
+                ctx.lineTo(-10, 0);
+                ctx.lineTo(0, -6);
+                ctx.closePath();
+                
+                ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#a855f7'; // 보라색 후광
                 ctx.fill();
                 ctx.restore();
             } else {
