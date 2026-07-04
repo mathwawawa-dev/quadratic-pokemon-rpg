@@ -798,16 +798,44 @@ function updateGame() {
                     missile.active = false;
                     const targetX = directHit.x;
                     const targetY = directHit.y;
-                    createExplosion(targetX, targetY, getMissileColor());
-                    createCrater(targetX, targetY - 0.75, explosionRadius + 0.5);
-
-                    enemies.forEach(ent => {
-                        if (ent.hp <= 0) return;
-                        const edx = ent.x - targetX, edy = ent.y - targetY;
-                        if (ent === directHit || Math.sqrt(edx*edx + edy*edy) <= explosionRadius + 0.5) {
-                            applyDamageAndEffects(ent, targetX, targetY);
+                    
+                    if (missile.type === 'satellite') {
+                        GAME_STATE = 'IDLE';
+                        document.getElementById('fire-btn').disabled = true; // 유지
+                        for (let i = 0; i < 4; i++) {
+                            setTimeout(() => {
+                                if (GAME_STATE === 'OVER') return;
+                                effects.push({ type: 'laser', x: targetX, y: targetY, life: 15 });
+                                screenShake = 15;
+                                createCrater(targetX, targetY - 0.75, explosionRadius);
+                                let hitSomeone = false;
+                                enemies.forEach(ent => {
+                                    if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius + 0.5) {
+                                        applyDamageAndEffects(ent, targetX, targetY);
+                                        hitSomeone = true;
+                                    }
+                                });
+                                if (i === 3) {
+                                    if (enemies.filter(e => e.hp <= 0).length >= 2) {
+                                        GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                                    } else {
+                                        setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
+                                    }
+                                }
+                            }, i * 250);
                         }
-                    });
+                    } else {
+                        createExplosion(targetX, targetY, getMissileColor());
+                        createCrater(targetX, targetY - 0.75, explosionRadius + 0.5);
+
+                        enemies.forEach(ent => {
+                            if (ent.hp <= 0) return;
+                            const edx = ent.x - targetX, edy = ent.y - targetY;
+                            if (ent === directHit || Math.sqrt(edx*edx + edy*edy) <= explosionRadius + 0.5) {
+                                applyDamageAndEffects(ent, targetX, targetY);
+                            }
+                        });
+                    }
                     return;
                 }
             }
@@ -815,6 +843,33 @@ function updateGame() {
             if (missile.y < getTerrainY(missile.x) && !missile.isCheat) {
                 if (missile.type === 'pierce') {
                     // 관통 미사일은 지형을 무시하고 지나감
+                } else if (missile.type === 'satellite') {
+                    missile.active = false; GAME_STATE = 'IDLE';
+                    document.getElementById('fire-btn').disabled = true;
+                    const targetX = missile.x;
+                    const targetY = missile.y;
+                    for (let i = 0; i < 4; i++) {
+                        setTimeout(() => {
+                            if (GAME_STATE === 'OVER') return;
+                            effects.push({ type: 'laser', x: targetX, y: targetY, life: 15 });
+                            screenShake = 15;
+                            createCrater(targetX, targetY, explosionRadius);
+                            let hitSomeone = false;
+                            enemies.forEach(ent => {
+                                if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius + 0.5) {
+                                    applyDamageAndEffects(ent, targetX, targetY); hitSomeone = true;
+                                }
+                            });
+                            if (i === 3) {
+                                if (enemies.filter(e => e.hp <= 0).length >= 2) {
+                                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                                } else {
+                                    setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
+                                }
+                            }
+                        }, i * 250);
+                    }
+                    return;
                 } else {
                     missile.active = false; GAME_STATE = 'IDLE';
                     createExplosion(missile.x, missile.y, getMissileColor());
@@ -1158,6 +1213,22 @@ function render() {
                 ctx.shadowColor = '#a855f7'; // 보라색 후광
                 ctx.fill();
                 ctx.restore();
+            } else if (missile.type === 'satellite') {
+                // 위성 미사일 머리 (사각형/십자 형태 - 복구 용이하게 분리)
+                ctx.save();
+                ctx.translate(head.x, head.y);
+                if (missile.trail.length >= 2) {
+                    const p1 = gridToScreen(missile.trail[missile.trail.length - 2].x, missile.trail[missile.trail.length - 2].y);
+                    const p2 = gridToScreen(missile.trail[missile.trail.length - 1].x, missile.trail[missile.trail.length - 1].y);
+                    ctx.rotate(Math.atan2(p2.y - p1.y, p2.x - p1.x));
+                }
+                ctx.beginPath();
+                ctx.rect(-6, -6, 12, 12); // 사각형 큐브 형태
+                ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#10b981'; // 에메랄드 후광
+                ctx.fill();
+                ctx.restore();
             } else {
                 // 일반 미사일 둥근 머리
                 ctx.beginPath(); ctx.arc(head.x, head.y, 8, 0, Math.PI*2);
@@ -1189,6 +1260,20 @@ function render() {
             ctx.lineWidth    = 5 * (e.life / e.maxLife);
             ctx.beginPath(); ctx.arc(sc.x, sc.y, rad, 0, Math.PI * 2); ctx.stroke();
             ctx.globalAlpha  = 1;
+        } else if (e.type === 'laser') {
+            const scBottom = gridToScreen(e.x, e.y);
+            const scTop = gridToScreen(e.x, 40); // y=40 (하늘 높이)
+            ctx.globalAlpha = Math.max(0, e.life / 15);
+            ctx.lineWidth = 15 + Math.random() * 10;
+            ctx.strokeStyle = '#10b981'; // 에메랄드 그린 레이저
+            ctx.shadowBlur = 30; ctx.shadowColor = '#34d399';
+            ctx.beginPath(); ctx.moveTo(scTop.x, scTop.y); ctx.lineTo(scBottom.x, scBottom.y); ctx.stroke();
+            
+            // 바닥 충돌 광원
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(scBottom.x, scBottom.y, 25 + Math.random()*10, 0, Math.PI*2); ctx.fill();
+            
+            ctx.globalAlpha = 1; ctx.shadowBlur = 0;
         }
     });
 
