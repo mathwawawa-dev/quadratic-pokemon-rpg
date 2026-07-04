@@ -183,3 +183,33 @@ window.addEventListener('load', () => {
     setupMathInput();
     showIntro();
 });
+
+window.currentMissileType = 'normal';
+window.missileInventory = { pierce: 1, homing: 1, satellite: 1, net: 1 };
+
+window.selectMissile = function(type) {
+    if (type !== 'normal' && window.missileInventory[type] <= 0) {
+        showMessage('수량 부족', '해당 미사일을 모두 소진했습니다.');
+        return;
+    }
+    window.currentMissileType = type;
+    const btns = document.querySelectorAll('.missile-btn');
+    btns.forEach(btn => btn.classList.remove('active'));
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
+};
+
+window.updateInventoryUI = function() {
+    const map = { pierce: '☄️ 관통', homing: '🎯 유도', satellite: '🛰️ 위성', net: '🕸️ 그물' };
+    const btns = document.querySelectorAll('.missile-btn');
+    btns.forEach(btn => {
+        const text = btn.innerText;
+        for (const [key, name] of Object.entries(map)) {
+            if (text.includes(name)) {
+                btn.innerText = `${name} x${window.missileInventory[key]}`;
+                if (window.missileInventory[key] <= 0) btn.style.opacity = 0.5;
+            }
+        }
+    });
+};

@@ -76,18 +76,14 @@
 
         <!-- Bottom Panel -->
         <div id="bottom-panel" class="glass-panel">
-            <div class="guide-text">
+            <div class="top-row-container">
                 <span id="guide-msg">이차함수 식을 입력하여 미사일을 발사하세요!</span>
-                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                    <button class="btn-move" id="btn-left"  onclick="movePlayer(-1)">◀ 이동</button>
-                    <button class="btn-move" id="btn-right" onclick="movePlayer(1)">이동 ▶</button>
-                    <button id="btn-facing" onclick="toggleFacing()">방향 전환</button>
-                    <label style="font-size:0.9rem;color:#cbd5e1;display:flex;align-items:center;gap:6px;">
-                        패널 투명도:
-                        <input type="range" id="opacity-slider" min="0.1" max="1" step="0.05" value="1"
-                               oninput="document.getElementById('bottom-panel').style.opacity=this.value">
-                    </label>
-                    <button class="btn-util" onclick="resetView()">화면 비율 복구</button>
+                <div class="missile-inventory" id="missile-inventory">
+                    <button class="missile-btn active" onclick="selectMissile('normal')">💣 보통 ∞</button>
+                    <button class="missile-btn" onclick="selectMissile('pierce')">☄️ 관통 x1</button>
+                    <button class="missile-btn" onclick="selectMissile('homing')">🎯 유도 x1</button>
+                    <button class="missile-btn" onclick="selectMissile('satellite')">🛰️ 위성 x1</button>
+                    <button class="missile-btn" onclick="selectMissile('net')">🕸️ 그물 x1</button>
                 </div>
             </div>
             <div class="input-row">
@@ -96,6 +92,12 @@
                     style="ime-mode:disabled;" inputmode="email">
                     -0.2x^2 + 8
                 </math-field>
+                <div class="util-btn-group">
+                    <button class="btn-util icon-btn" onclick="movePlayer(-1)" title="왼쪽 이동">◀</button>
+                    <button class="btn-util icon-btn" onclick="movePlayer(1)" title="오른쪽 이동">▶</button>
+                    <button class="btn-util icon-btn" onclick="toggleFacing()" title="방향 전환">🔄</button>
+                    <button class="btn-util icon-btn" onclick="resetView()" title="화면 비율 복구">🔍</button>
+                </div>
                 <button id="fire-btn" onclick="fireMissile()">
                     🚀 발사!<br><span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>
                 </button>
