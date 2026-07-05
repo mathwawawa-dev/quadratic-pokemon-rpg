@@ -49,7 +49,7 @@
 <!-- ========== GAME SCREEN ========== -->
 <div id="game-screen" class="hidden">
     <!-- Canvas -->
-    <canvas id="game-canvas"></canvas>
+    <canvas id="game-canvas" tabindex="0" style="outline:none;"></canvas>
 
     <!-- UI Layer -->
     <div id="ui-layer">
@@ -79,11 +79,11 @@
             <div class="top-row-container">
                 <span id="guide-msg">이차함수 식을 입력하여 미사일을 발사하세요!</span>
                 <div class="missile-inventory" id="missile-inventory">
-                    <button class="missile-btn active" onclick="selectMissile('normal')">💣 보통 ∞</button>
-                    <button class="missile-btn" onclick="selectMissile('pierce')">☄️ 관통 x1</button>
-                    <button class="missile-btn" onclick="selectMissile('homing')">🎯 유도 x1</button>
-                    <button class="missile-btn" onclick="selectMissile('satellite')">🛰️ 위성 x1</button>
-                    <button class="missile-btn" onclick="selectMissile('net')">🕸️ 그물 x1</button>
+                    <button id="btn-msl-normal" class="missile-btn active" onclick="selectMissile('normal')"><kbd>Q</kbd> 💣 보통: ∞</button>
+                    <button id="btn-msl-pierce" class="missile-btn" onclick="selectMissile('pierce')"><kbd>W</kbd> ☄️ 관통: 1</button>
+                    <button id="btn-msl-homing" class="missile-btn" onclick="selectMissile('homing')"><kbd>E</kbd> 🎯 유도: 1</button>
+                    <button id="btn-msl-satellite" class="missile-btn" onclick="selectMissile('satellite')"><kbd>R</kbd> 🛰️ 위성: 1</button>
+                    <button id="btn-msl-net" class="missile-btn" onclick="selectMissile('net')"><kbd>T</kbd> 🕸️ 그물: 1</button>
                 </div>
             </div>
             <div class="input-row">
@@ -93,13 +93,27 @@
                     -0.2x^2 + 8
                 </math-field>
                 <div class="util-btn-group">
-                    <button class="btn-util icon-btn" onclick="movePlayer(-1)" title="왼쪽 이동">◀</button>
-                    <button class="btn-util icon-btn" onclick="movePlayer(1)" title="오른쪽 이동">▶</button>
-                    <button class="btn-util icon-btn" onclick="toggleFacing()" title="방향 전환">🔄</button>
-                    <button class="btn-util icon-btn" onclick="resetView()" title="화면 비율 복구">🔍</button>
+                    <!-- 조준방향 그룹 -->
+                    <div class="util-group-box">
+                        <span class="util-group-label">조준방향<span class="label-kbd-group"><kbd>[</kbd><kbd>]</kbd></span></span>
+                        <div class="radio-switch-container">
+                            <button id="dir-left-btn" class="radio-btn" onclick="setPlayerFacing(-1)">왼쪽</button>
+                            <button id="dir-right-btn" class="radio-btn" onclick="setPlayerFacing(1)">오른쪽</button>
+                        </div>
+                    </div>
+                    <!-- 이동 그룹 -->
+                    <div class="util-group-box">
+                        <span class="util-group-label">이동<span class="label-kbd-group"><kbd>A</kbd><kbd>D</kbd></span></span>
+                        <div class="move-btn-container">
+                            <button class="btn-util icon-btn move-btn" onclick="movePlayer(-1)" title="왼쪽 이동">◀</button>
+                            <button class="btn-util icon-btn move-btn" onclick="movePlayer(1)" title="오른쪽 이동">▶</button>
+                        </div>
+                    </div>
+                    <!-- 화면 복구 텍스트 단독 버튼 -->
+                    <button class="btn-util text-reset-btn" onclick="resetView()">화면 배율 복구<br><kbd>Ctrl</kbd></button>
                 </div>
                 <button id="fire-btn" onclick="fireMissile()">
-                    🚀 발사!<br><span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>
+                    🚀 발사!<br><kbd>Enter</kbd>
                 </button>
             </div>
         </div>

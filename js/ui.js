@@ -120,11 +120,26 @@ function setupMathInput() {
     }, { capture: true });
     mf.oncontextmenu = () => false;
 
-    // 백틱(`) 누르면 포커스
+    // 마우스 클릭 시 수식입력창 강제 포커스
+    mf.addEventListener('pointerdown', () => {
+        mf.focus();
+    });
+
+    // 백틱(`) 토글: 수식창 <-> 좌표평면(캔버스)
     window.addEventListener('keydown', (e) => {
         if (e.key === '`') {
             e.preventDefault();
-            if (document.activeElement !== mf) mf.focus();
+            const mfEl = document.getElementById('math-input');
+            const canvas = document.getElementById('game-canvas');
+            const isInMathField = (document.activeElement === mfEl || (mfEl && mfEl.contains(document.activeElement)));
+            if (isInMathField) {
+                // 수식창 → 캔버스로 포커스 이동
+                mfEl.blur();
+                if (canvas) canvas.focus();
+            } else {
+                // 캔버스(또는 그 외) → 수식창으로 포커스 이동
+                mfEl.focus();
+            }
         }
     });
 
@@ -158,23 +173,53 @@ function setupMathInput() {
         if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(val)) mf.setValue(val.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, ''));
     }, true);
 
-    // Enter 키 → 발사 (document 레벨 capture로 MathLive 이전에 잡음)
+    // 미사일 단축키 (Q,W,E,R,T) 및 발사(Enter)
     document.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter') return;
         const overlay = document.getElementById('message-overlay');
         if (overlay && overlay.classList.contains('show')) {
-            e.preventDefault();
-            closeMessage();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                closeMessage();
+            }
             return;
         }
-        // math-field 또는 fire-btn에 포커스가 있을 때만 발사
-        const active = document.activeElement;
+
         const mfEl = document.getElementById('math-input');
-        const fireEl = document.getElementById('fire-btn');
-        if (active === mfEl || active === fireEl || (mfEl && mfEl.contains(active))) {
+        const active = document.activeElement;
+        const isInputFocused = (active === mfEl || (mfEl && mfEl.contains(active)));
+
+        // 발사 단축키 (Enter)
+        // - 수식창 포커스: 항상 발사 가능
+        // - 그 외 위치(캔버스 포커스 등): 발사 가능
+        if (e.key === 'Enter') {
+            const fireEl = document.getElementById('fire-btn');
             e.preventDefault();
-            if (!fireEl.disabled && GAME_STATE === 'IDLE') fireMissile();
+            if (fireEl && !fireEl.disabled && GAME_STATE === 'IDLE') fireMissile();
+            return;
         }
+
+        // 미사일 단축키 (Q,W,E,R,T)
+        // - 수식창에 커서가 있을 때는 작동하지 않음
+        if (isInputFocused) return;
+
+        const keyMap = { 'q': 'normal', 'w': 'pierce', 'e': 'homing', 'r': 'satellite', 't': 'net' };
+        const k = e.key.toLowerCase();
+        if (keyMap[k]) {
+            e.preventDefault();
+            selectMissile(keyMap[k]);
+            return;
+        }
+
+        // 조준방향 단축키 ([: 왼쪽, ]: 오른쪽)
+        if (e.key === '[') { e.preventDefault(); setPlayerFacing(-1); return; }
+        if (e.key === ']') { e.preventDefault(); setPlayerFacing(1);  return; }
+
+        // 이동 단축키 (A: 왼쪽, D: 오른쪽)
+        if (k === 'a') { e.preventDefault(); movePlayer(-1); return; }
+        if (k === 'd') { e.preventDefault(); movePlayer(1);  return; }
+
+        // 화면 복구 단축키 (Ctrl)
+        if (e.key === 'Control') { e.preventDefault(); resetView(); return; }
     }, { capture: true });
 }
 
@@ -187,29 +232,115 @@ window.addEventListener('load', () => {
 window.currentMissileType = 'normal';
 window.missileInventory = { pierce: 1, homing: 1, satellite: 1, net: 1 };
 
+// 미사일 타입 → 버튼 ID 매핑
+const MISSILE_BTN_ID = { normal: 'btn-msl-normal', pierce: 'btn-msl-pierce', homing: 'btn-msl-homing', satellite: 'btn-msl-satellite', net: 'btn-msl-net' };
+
 window.selectMissile = function(type) {
     if (type !== 'normal' && window.missileInventory[type] <= 0) {
         showMessage('수량 부족', '해당 미사일을 모두 소진했습니다.');
         return;
     }
     window.currentMissileType = type;
-    const btns = document.querySelectorAll('.missile-btn');
-    btns.forEach(btn => btn.classList.remove('active'));
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-    }
+    // 모든 버튼 active 해제 후, 해당 타입 버튼에 active 부여
+    document.querySelectorAll('.missile-btn').forEach(btn => btn.classList.remove('active'));
+    const targetBtn = document.getElementById(MISSILE_BTN_ID[type]);
+    if (targetBtn) targetBtn.classList.add('active');
 };
 
 window.updateInventoryUI = function() {
-    const map = { pierce: '☄️ 관통', homing: '🎯 유도', satellite: '🛰️ 위성', net: '🕸️ 그물' };
+    const map = { pierce: ['W', '☄️ 관통'], homing: ['E', '🎯 유도'], satellite: ['R', '🛰️ 위성'], net: ['T', '🕸️ 그물'] };
     const btns = document.querySelectorAll('.missile-btn');
     btns.forEach(btn => {
         const text = btn.innerText;
-        for (const [key, name] of Object.entries(map)) {
+        for (const [key, [shortcut, name]] of Object.entries(map)) {
             if (text.includes(name)) {
-                btn.innerText = `${name} x${window.missileInventory[key]}`;
+                btn.innerHTML = `<kbd>${shortcut}</kbd> ${name}: ${window.missileInventory[key]}`;
                 if (window.missileInventory[key] <= 0) btn.style.opacity = 0.5;
             }
         }
     });
+};
+
+let guideInterval = null;
+
+// 스테이지 1에서만 한 번 등장하는 문구
+const GUIDE_MESSAGES_STAGE1_ONLY = [
+    { msg: "이차함수 식을 입력하여 미사일을 발사하세요!", blink: true },
+    { msg: "<kbd>[</kbd> 키를 눌러 조준 방향을 왼쪽으로 전환합니다." },
+    { msg: "<kbd>A</kbd> 키를 눌러 왼쪽으로 이동합니다." },
+    { msg: "<kbd>]</kbd> 키를 눌러 조준 방향을 오른쪽으로 전환합니다." },
+    { msg: "<kbd>D</kbd> 키를 눌러 오른쪽으로 이동합니다." },
+];
+
+// 모든 스테이지 공통 문구 (무한 순환)
+const GUIDE_MESSAGES_COMMON = [
+    "<kbd>`</kbd> 키를 눌러 수식 입력창과 계기판을 전환할 수 있습니다.",
+    "<kbd>Ctrl</kbd> 로 화면 배율 복구, <kbd>Enter</kbd> 로 발사합니다.",
+    "💣 보통탄은 그래프가 적에게 닿으면 피해를 줍니다.",
+    "☄️ 관통탄은 지형을 통과할 수 있습니다.",
+    "🎯 유도탄은 가장 가까운 적에게 자동으로 유도됩니다.",
+    "🛰️ 위성탄은 강력한 레이저를 4회 연속 발사합니다.",
+    "🕸️ 그물탄은 반경 3 이내의 적들을 끌어당깁니다."
+];
+
+window.startGuideMessageRotation = function() {
+    const el = document.getElementById('guide-msg');
+    if (!el) return;
+    if (guideInterval) clearInterval(guideInterval);
+
+    // 스테이지 1이면 초기 시퀀스: [S1-1, C1, S1-2, S1-3, S1-4, S1-5, C2~C7]
+    // 이후: 공통 문구만 무한 순환
+    const isStage1 = currentStage === 0;
+
+    // 초기 시퀀스 구성
+    const initialSequence = isStage1 ? [
+        GUIDE_MESSAGES_STAGE1_ONLY[0],                              // S1-1 (blink)
+        { msg: GUIDE_MESSAGES_COMMON[0] },                          // C1
+        GUIDE_MESSAGES_STAGE1_ONLY[1],                              // S1-2
+        GUIDE_MESSAGES_STAGE1_ONLY[2],                              // S1-3
+        GUIDE_MESSAGES_STAGE1_ONLY[3],                              // S1-4
+        GUIDE_MESSAGES_STAGE1_ONLY[4],                              // S1-5
+        ...GUIDE_MESSAGES_COMMON.slice(1).map(m => ({ msg: m }))    // C2~C7
+    ] : [];
+
+    let initIndex = 0;         // 초기 시퀀스 커서 (stage1만)
+    let cycleIndex = 0;        // 공통 순환 커서
+    let phase = isStage1 ? 'initial' : 'cycle';
+
+    const applyMessage = (text, blink) => {
+        el.innerHTML = text;
+        el.classList.remove('hidden-opacity');
+        if (blink) el.classList.add('guide-blink');
+        else el.classList.remove('guide-blink');
+    };
+
+    const fadeToNext = (text, blink = false) => {
+        el.classList.add('hidden-opacity');
+        setTimeout(() => applyMessage(text, blink), 500);
+    };
+
+    // 첫 번째 메시지 즉시 표시
+    if (phase === 'initial') {
+        applyMessage(initialSequence[0].msg, initialSequence[0].blink || false);
+    } else {
+        applyMessage(GUIDE_MESSAGES_COMMON[0], false);
+    }
+
+    guideInterval = setInterval(() => {
+        if (phase === 'initial') {
+            initIndex++;
+            if (initIndex < initialSequence.length) {
+                const item = initialSequence[initIndex];
+                fadeToNext(item.msg, item.blink || false);
+            } else {
+                // 초기 시퀀스 완료 → 공통 순환으로 전환 (C1부터)
+                phase = 'cycle';
+                cycleIndex = 0;
+                fadeToNext(GUIDE_MESSAGES_COMMON[0], false);
+            }
+        } else {
+            cycleIndex = (cycleIndex + 1) % GUIDE_MESSAGES_COMMON.length;
+            fadeToNext(GUIDE_MESSAGES_COMMON[cycleIndex], false);
+        }
+    }, 9000);
 };

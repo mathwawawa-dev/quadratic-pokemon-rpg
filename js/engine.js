@@ -106,6 +106,7 @@ function resetView() {
 window.resetView = resetView;
 
 // ---------- Zoom / Drag ----------
+
 window.addEventListener('wheel', (e) => {
     if (e.target !== canvas && e.target !== document.body) return;
     const factor = e.deltaY > 0 ? 1.1 : 0.9;
@@ -287,6 +288,7 @@ function initStage() {
     player.x = px;
     player.facing        = player.x >= 0 ? -1 : 1;
     player.y = getTerrainY(player.x) + 0.75;
+    if (window.updateDirectionUI) window.updateDirectionUI();
 
     // 적 배치 (랜덤) — x 간격 + y 간격 모두 보장
     let stageEnemies = [];
@@ -335,12 +337,14 @@ function initStage() {
             ry = flyingYPool[flyingYIdx % flyingYPool.length];
             flyingYIdx++;
         } else {
+            const isGroundType = e.type === 'ground';
+            const yOffset = isGroundType ? -0.5 : 0.75; // 땅포켓몬은 언덕선보다 아래에 생성
             do {
                 rx = side === 'L'
                     ? player.x - MIN_X_GAP - Math.random() * 12
                     : player.x + MIN_X_GAP + Math.random() * 12;
                 rx = Math.max(-8, Math.min(18, rx));
-                ry = getTerrainY(rx) + 0.75;
+                ry = getTerrainY(rx) + yOffset;
                 valid = Math.abs(rx - player.x) >= MIN_X_GAP &&
                         placedX.every(px => Math.abs(rx - px) >= MIN_X_GAP) &&
                         placedY.filter(py => !py.isFlying).every(py => Math.abs(ry - py.y) >= MIN_Y_GAP);
@@ -348,14 +352,14 @@ function initStage() {
             } while (!valid && attempts < 400);
             if (!valid) {
                 rx = side === 'L' ? player.x - 6 : player.x + 6;
-                ry = getTerrainY(rx) + 0.75;
+                ry = getTerrainY(rx) + yOffset;
             }
         }
         placedX.push(rx);
         placedY.push({ y: ry, isFlying: e.isFlying });
         return {
             x: rx, y: ry,
-            w: 1.5, h: 1.5, hp: 100, maxHp: 100,
+            w: 1.5, h: 1.5, hp: 100 + currentStage * 25, maxHp: 100 + currentStage * 25,
             img: loadSprite(e.img),
             isFlying: e.isFlying,
             shake: 0, vx: 0, vy: 0,
@@ -367,7 +371,8 @@ function initStage() {
     // 구름 파라미터 리셋
     cloudParams = [
         { bx: 5,  by: 18, speed: 3000, radius: 2.2, alpha: 0.6 },
-        { bx: -4, by: 12, speed: 5000, radius: 1.6, alpha: 0.4 }
+        { bx: -4, by: 12, speed: 5000, radius: 1.6, alpha: 0.4 },
+        { bx: 0,  by: 20, speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
     ];
 
     // UI 업데이트
@@ -425,9 +430,11 @@ function initStage() {
                 overlay.classList.remove('hiding');
                 overlay.classList.add('hidden');     // 완전히 숨김
                 GAME_STATE = 'IDLE';
+                if (window.startGuideMessageRotation) window.startGuideMessageRotation();
             }, 400);
         } else {
             GAME_STATE = 'IDLE';
+            if (window.startGuideMessageRotation) window.startGuideMessageRotation();
         }
     });
 }
@@ -442,9 +449,23 @@ window.movePlayer = function (dir) {
     updateHPUI();
 };
 
-window.toggleFacing = function () {
+window.setPlayerFacing = function (dir) {
     if (GAME_STATE === 'FIRING') return;
-    player.facing *= -1;
+    player.facing = dir;
+    updateDirectionUI();
+};
+
+window.updateDirectionUI = function() {
+    const leftBtn = document.getElementById('dir-left-btn');
+    const rightBtn = document.getElementById('dir-right-btn');
+    if (!leftBtn || !rightBtn) return;
+    if (player.facing === -1) {
+        leftBtn.classList.add('active');
+        rightBtn.classList.remove('active');
+    } else {
+        leftBtn.classList.remove('active');
+        rightBtn.classList.add('active');
+    }
 };
 
 // ---------- Cheat Keys & UI Shortcuts ----------
@@ -568,7 +589,8 @@ window.fireMissile = function (isCheat = false) {
         maxY: projStartY, startX: projStartX, distanceTraveled: 0, 
         hasLeftPlayer: false, isCheat, dx: dir * 0.15,
         type: window.currentMissileType,
-        hitTargets: new Set()
+        hitTargets: new Set(),
+        powerBoosted: false
     });
     document.getElementById('fire-btn').disabled = true;
 };
@@ -602,7 +624,8 @@ function applyDamageAndEffects(target, mx, my) {
     let mult = 1.0;
     if (stage.terrain === 'lava' && (selectedStarter||{}).type === 'fire') mult = 1.2;
     if (stage.terrain === 'sky'  && (selectedStarter||{}).type === 'flying') mult = 1.2;
-    const totalDamage = Math.floor((30 + fallHeight * 4) * mult * baseDamageBoost);
+    const boostMult = missile.powerBoosted ? 1.5 : 1.0;
+    const totalDamage = Math.floor((30 + fallHeight * 1.7) * mult * baseDamageBoost * boostMult);
 
     target.hp -= totalDamage;
     target.shake = 20; screenShake = 15;
@@ -615,8 +638,8 @@ function applyDamageAndEffects(target, mx, my) {
         effects.push({ type: 'text', x: target.x, y: target.y+2, text: `${hitQuality}! +${hitGold}G`, color: '#fbbf24', life: 180 });
     else
         effects.push({ type: 'text', x: target.x, y: target.y+2, text: 'OUCH!', color: '#ef4444', life: 180 });
-    if (fallHeight * 4 > 20)
-        effects.push({ type: 'text', x: target.x, y: target.y+3, text: 'FALL DMG!', color: '#fbbf24', life: 180 });
+    if (fallHeight * 1.7 > 20)
+        effects.push({ type: 'text', x: target.x, y: target.y+3, text: 'FALL DMG!', color: '#fbbf24', life: 240 });
     updateHPUI();
 
     const deadEnemies = enemies.filter(e => e.hp <= 0).length;
@@ -684,7 +707,8 @@ function updateGame() {
                 }
             }
         } else if (!ent.isFlying) {
-            const groundY = getTerrainY(ent.x) + 0.75;
+            const isGroundType = ent.type === 'ground';
+            const groundY = getTerrainY(ent.x) + (isGroundType ? -0.5 : 0.75);
             if (ent.y > groundY + 0.1) { ent.vy -= 0.02; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
@@ -748,6 +772,23 @@ function updateGame() {
             
             missile.distanceTraveled = Math.abs(missile.x - missile.startX);
             if (missile.y > missile.maxY) missile.maxY = missile.y;
+
+            // 파워 구름 통과 여부 체크
+            cloudParams.forEach(cp => {
+                if (cp.isPowerCloud && !missile.powerBoosted) {
+                    const cx = cp.bx + Math.sin(Date.now() / cp.speed) * 1.5;
+                    const cy = cp.by + Math.cos(Date.now() / (cp.speed * 1.3)) * 0.5;
+                    const dx = missile.x - cx;
+                    const dy = missile.y - cy;
+                    // 구름의 논리적 반경 이내로 들어오면 파워업
+                    if (Math.sqrt(dx*dx + dy*dy) < cp.radius * 1.5) {
+                        missile.powerBoosted = true;
+                        for (let pi=0; pi<5; pi++) {
+                            effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 40, color: '#fbbf24' });
+                        }
+                    }
+                }
+            });
             missile.trail.push({ x: missile.x, y: missile.y });
 
             // ---- 풍선 충돌 체크 (미사일은 관통하여 계속 진행) ----
@@ -779,7 +820,7 @@ function updateGame() {
             if (missile.y > 30) {
                 missile.active = false; GAME_STATE = 'OVER';
                 createExplosion(missile.x, 30, '#ffffff');
-                setTimeout(() => showMessage('OUT!', '그래프가 천장 (<math-field read-only style="font-size:1.1rem; min-height:0; padding:2px 6px; border:none; background:rgba(0,0,0,0.5); display:inline-block; vertical-align:middle;">y=30</math-field>) 을 벗어났습니다.'), 500);
+                setTimeout(() => showMessage('OUT!', '그래프가 천장 (<math-field read-only style="font-size:1.1rem; min-height:0; padding:2px 2px; border:none; background:rgba(0,0,0,0.5); display:inline-block; vertical-align:-1px;">y=30</math-field>)을 벗어났습니다.'), 500);
                 return;
             }
             if (missile.type === 'pierce') {
@@ -1068,8 +1109,20 @@ function render() {
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Clouds (floating naturally without holes or overlapping alpha artifacts)
-    const drawCloud = (cx, cy, baseRadius, alpha) => {
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+    const drawCloud = (cx, cy, baseRadius, alpha, isPower, colorType, pulse) => {
+        ctx.save();
+        if (isPower) {
+            const colors = { fire: '239, 68, 68', water: '59, 130, 246', grass: '34, 197, 94', electric: '250, 204, 21', poison: '168, 85, 247', ground: '217, 119, 6', normal: '200, 200, 200', psychic: '168, 85, 247' };
+            const rgb = colors[colorType] || '200, 200, 200';
+            ctx.fillStyle = `rgba(${rgb}, ${alpha})`;
+            
+            // 네온 빛 번짐(Glow) 효과 - 맥동(pulse)에 따라 번짐 강도 변화
+            ctx.shadowColor = `rgba(${rgb}, 0.8)`;
+            ctx.shadowBlur = 15 + (pulse || 0) * 5;
+        } else {
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        }
+        
         ctx.beginPath();
         // 중앙 큰 원
         ctx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
@@ -1086,11 +1139,21 @@ function render() {
         // 하단 평탄화
         ctx.rect(cx - baseRadius * 1.4, cy + baseRadius * 0.3, baseRadius * 2.8, baseRadius * 0.7);
         ctx.fill();
+        ctx.restore();
     };
 
     cloudParams.forEach(cp => {
         const c = gridToScreen(cp.bx + Math.sin(Date.now() / cp.speed) * 1.5, cp.by + Math.cos(Date.now() / (cp.speed * 1.3)) * 0.5);
-        drawCloud(c.x, c.y, scaleLength(cp.radius), cp.alpha);
+        let currentRadius = cp.radius;
+        let pulse = 0;
+        
+        if (cp.isPowerCloud) {
+            // 부드러운 맥동 애니메이션 (-1 ~ 1)
+            pulse = Math.sin(Date.now() / 400);
+            currentRadius = cp.radius * (1 + pulse * 0.05); // 크기 5% 변동
+        }
+        
+        drawCloud(c.x, c.y, scaleLength(currentRadius), cp.alpha, cp.isPowerCloud, cp.colorType, pulse);
     });
 
     // Terrain polygon
@@ -1148,8 +1211,29 @@ function render() {
         ctx.beginPath(); ctx.moveTo(0, dTop.y); ctx.lineTo(canvas.width, dTop.y); ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = 'rgba(239,68,68,0.8)';
-        ctx.font = "italic bold 16px 'Cambria Math','Times New Roman',serif";
-        ctx.fillText('DEATH ZONE (y = -8)', canvas.width/2, dTop.y + 15);
+        // 기존 소스 유지
+        // ctx.font = "italic bold 16px 'Cambria Math','Times New Roman',serif";
+        // ctx.fillText('DEATH ZONE (y = -8)', canvas.width/2, dTop.y + 15);
+        
+        ctx.textAlign = "left";
+        const dTxt1 = "DEATH ZONE ( ";
+        const dTxt2 = "y = −8"; // U+2212 Minus Sign
+        const dTxt3 = " )";
+        
+        ctx.font = "bold 16px 'Outfit', sans-serif";
+        const dw1 = ctx.measureText(dTxt1).width;
+        ctx.font = "italic bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
+        const dw2 = ctx.measureText(dTxt2).width;
+        ctx.font = "bold 16px 'Outfit', sans-serif";
+        const dw3 = ctx.measureText(dTxt3).width;
+        
+        const dStartX = canvas.width/2 - (dw1 + dw2 + dw3)/2;
+        ctx.fillText(dTxt1, dStartX, dTop.y + 15);
+        ctx.font = "italic bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
+        ctx.fillText(dTxt2, dStartX + dw1, dTop.y + 15);
+        ctx.font = "bold 16px 'Outfit', sans-serif";
+        ctx.fillText(dTxt3, dStartX + dw1 + dw2, dTop.y + 15);
+        ctx.textAlign = "center";
     }
 
     // OUT Line
@@ -1158,8 +1242,29 @@ function render() {
     ctx.beginPath(); ctx.moveTo(0, outSc.y); ctx.lineTo(canvas.width, outSc.y); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(239,68,68,0.8)';
-    ctx.font = "italic bold 16px 'Cambria Math','Times New Roman',serif";
-    ctx.fillText('DANGER / OUT LINE (y = 30)', canvas.width/2, outSc.y - 15);
+    // 기존 소스 유지
+    // ctx.font = "italic bold 16px 'Cambria Math','Times New Roman',serif";
+    // ctx.fillText('DANGER / OUT LINE (y = 30)', canvas.width/2, outSc.y - 15);
+    
+    ctx.textAlign = "left";
+    const oTxt1 = "DANGER / OUT LINE ( ";
+    const oTxt2 = "y = 30";
+    const oTxt3 = " )";
+    
+    ctx.font = "bold 16px 'Outfit', sans-serif";
+    const ow1 = ctx.measureText(oTxt1).width;
+    ctx.font = "italic bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
+    const ow2 = ctx.measureText(oTxt2).width;
+    ctx.font = "bold 16px 'Outfit', sans-serif";
+    const ow3 = ctx.measureText(oTxt3).width;
+    
+    const oStartX = canvas.width/2 - (ow1 + ow2 + ow3)/2;
+    ctx.fillText(oTxt1, oStartX, outSc.y - 15);
+    ctx.font = "italic bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
+    ctx.fillText(oTxt2, oStartX + ow1, outSc.y - 15);
+    ctx.font = "bold 16px 'Outfit', sans-serif";
+    ctx.fillText(oTxt3, oStartX + ow1 + ow2, outSc.y - 15);
+    ctx.textAlign = "center";
 
     // ---- 포켓볼 렌더링 ----
     const tNow = Date.now() / 1000;
