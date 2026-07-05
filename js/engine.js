@@ -42,6 +42,9 @@ let cloudParams = [
     { bx: -4, by: 12, speed: 5000, radius: 1.6, alpha: 0.4 }
 ];
 
+// 구름 구멍 데이터 (미사일 관통 시 생성)
+let cloudHoles = []; // { x, y, radius, maxRadius, life, maxLife }
+
 // ---------- 포켓볼 이미지 프리로드 ----------
 const pokeballImg = new Image();
 pokeballImg.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
@@ -672,6 +675,15 @@ function updateGame() {
         }
     }
 
+    // 구멍 서서히 복구 (반경 축소)
+    for (let i = cloudHoles.length - 1; i >= 0; i--) {
+        const h = cloudHoles[i];
+        h.life--;
+        // 남은 수명 비율에 따라 반경을 0으로 줄임 (복구 효과)
+        h.radius = h.maxRadius * (h.life / h.maxLife);
+        if (h.life <= 0) cloudHoles.splice(i, 1);
+    }
+
     for (let i = effects.length - 1; i >= 0; i--) {
         const e = effects[i];
         e.life--;
@@ -773,20 +785,34 @@ function updateGame() {
             missile.distanceTraveled = Math.abs(missile.x - missile.startX);
             if (missile.y > missile.maxY) missile.maxY = missile.y;
 
-            // 파워 구름 통과 여부 체크
+            // 파워 구름 통과 여부 체크 + 구멍 생성
             cloudParams.forEach(cp => {
-                if (cp.isPowerCloud && !missile.powerBoosted) {
-                    const cx = cp.bx + Math.sin(Date.now() / cp.speed) * 1.5;
-                    const cy = cp.by + Math.cos(Date.now() / (cp.speed * 1.3)) * 0.5;
-                    const dx = missile.x - cx;
-                    const dy = missile.y - cy;
-                    // 구름의 논리적 반경 이내로 들어오면 파워업
-                    if (Math.sqrt(dx*dx + dy*dy) < cp.radius * 1.5) {
-                        missile.powerBoosted = true;
-                        for (let pi=0; pi<5; pi++) {
-                            effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 40, color: '#fbbf24' });
-                        }
+                const cx = cp.bx + Math.sin(Date.now() / cp.speed) * 1.5;
+                const cy = cp.by + Math.cos(Date.now() / (cp.speed * 1.3)) * 0.5;
+                const dx = missile.x - cx;
+                const dy = missile.y - cy;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const cloudLogicRadius = cp.radius * 1.5;
+
+                // 파워업 구름 통과 시 파워부스트
+                if (cp.isPowerCloud && !missile.powerBoosted && dist < cloudLogicRadius) {
+                    missile.powerBoosted = true;
+                    for (let pi=0; pi<5; pi++) {
+                        effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 40, color: '#fbbf24' });
                     }
+                }
+
+                // 구멍 생성: 구름 반경 내에 있을 때 매 서브프레임마다 추가
+                if (dist < cloudLogicRadius) {
+                    const holeR = cp.radius * 0.4;
+                    cloudHoles.push({
+                        x: missile.x + (Math.random()-0.5) * 0.2,
+                        y: missile.y + (Math.random()-0.5) * 0.2,
+                        radius: holeR,
+                        maxRadius: holeR,
+                        life: 480,
+                        maxLife: 480
+                    });
                 }
             });
             missile.trail.push({ x: missile.x, y: missile.y });
@@ -1108,53 +1134,71 @@ function render() {
     tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Clouds (floating naturally without holes or overlapping alpha artifacts)
-    const drawCloud = (cx, cy, baseRadius, alpha, isPower, colorType, pulse) => {
-        ctx.save();
+    // Clouds with hole effect via offscreen canvas
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = canvas.width;
+    offCanvas.height = canvas.height;
+    const offCtx = offCanvas.getContext('2d');
+
+    const drawCloudOff = (octx, cx, cy, baseRadius, alpha, isPower, colorType, pulse) => {
+        octx.save();
         if (isPower) {
-            const colors = { fire: '239, 68, 68', water: '59, 130, 246', grass: '34, 197, 94', electric: '250, 204, 21', poison: '168, 85, 247', ground: '217, 119, 6', normal: '200, 200, 200', psychic: '168, 85, 247' };
+            const colors = { fire: '239, 68, 68', water: '59, 130, 246', grass: '45, 106, 79', electric: '250, 204, 21', poison: '168, 85, 247', ground: '217, 119, 6', normal: '200, 200, 200', psychic: '168, 85, 247' };
             const rgb = colors[colorType] || '200, 200, 200';
-            ctx.fillStyle = `rgba(${rgb}, ${alpha})`;
-            
-            // 네온 빛 번짐(Glow) 효과 - 맥동(pulse)에 따라 번짐 강도 변화
-            ctx.shadowColor = `rgba(${rgb}, 0.8)`;
-            ctx.shadowBlur = 15 + (pulse || 0) * 5;
+            octx.fillStyle = `rgba(${rgb}, ${alpha})`;
+            octx.shadowColor = `rgba(${rgb}, 0.8)`;
+            octx.shadowBlur = 15 + (pulse || 0) * 5;
         } else {
-            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            octx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         }
-        
-        ctx.beginPath();
-        // 중앙 큰 원
-        ctx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
-        // 좌우 중간 원
-        ctx.moveTo(cx - baseRadius * 0.8 + baseRadius * 0.7, cy + baseRadius * 0.3);
-        ctx.arc(cx - baseRadius * 0.8, cy + baseRadius * 0.3, baseRadius * 0.7, 0, Math.PI * 2);
-        ctx.moveTo(cx + baseRadius * 0.8 + baseRadius * 0.7, cy + baseRadius * 0.3);
-        ctx.arc(cx + baseRadius * 0.8, cy + baseRadius * 0.3, baseRadius * 0.7, 0, Math.PI * 2);
-        // 양끝 작은 원
-        ctx.moveTo(cx - baseRadius * 1.4 + baseRadius * 0.5, cy + baseRadius * 0.5);
-        ctx.arc(cx - baseRadius * 1.4, cy + baseRadius * 0.5, baseRadius * 0.5, 0, Math.PI * 2);
-        ctx.moveTo(cx + baseRadius * 1.4 + baseRadius * 0.5, cy + baseRadius * 0.5);
-        ctx.arc(cx + baseRadius * 1.4, cy + baseRadius * 0.5, baseRadius * 0.5, 0, Math.PI * 2);
-        // 하단 평탄화
-        ctx.rect(cx - baseRadius * 1.4, cy + baseRadius * 0.3, baseRadius * 2.8, baseRadius * 0.7);
-        ctx.fill();
-        ctx.restore();
+        octx.beginPath();
+        octx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
+        octx.moveTo(cx - baseRadius * 0.8 + baseRadius * 0.7, cy + baseRadius * 0.3);
+        octx.arc(cx - baseRadius * 0.8, cy + baseRadius * 0.3, baseRadius * 0.7, 0, Math.PI * 2);
+        octx.moveTo(cx + baseRadius * 0.8 + baseRadius * 0.7, cy + baseRadius * 0.3);
+        octx.arc(cx + baseRadius * 0.8, cy + baseRadius * 0.3, baseRadius * 0.7, 0, Math.PI * 2);
+        octx.moveTo(cx - baseRadius * 1.4 + baseRadius * 0.5, cy + baseRadius * 0.5);
+        octx.arc(cx - baseRadius * 1.4, cy + baseRadius * 0.5, baseRadius * 0.5, 0, Math.PI * 2);
+        octx.moveTo(cx + baseRadius * 1.4 + baseRadius * 0.5, cy + baseRadius * 0.5);
+        octx.arc(cx + baseRadius * 1.4, cy + baseRadius * 0.5, baseRadius * 0.5, 0, Math.PI * 2);
+        octx.rect(cx - baseRadius * 1.4, cy + baseRadius * 0.3, baseRadius * 2.8, baseRadius * 0.7);
+        octx.fill();
+        octx.restore();
     };
 
     cloudParams.forEach(cp => {
         const c = gridToScreen(cp.bx + Math.sin(Date.now() / cp.speed) * 1.5, cp.by + Math.cos(Date.now() / (cp.speed * 1.3)) * 0.5);
         let currentRadius = cp.radius;
         let pulse = 0;
-        
         if (cp.isPowerCloud) {
-            // 부드러운 맥동 애니메이션 (-1 ~ 1)
             pulse = Math.sin(Date.now() / 400);
-            currentRadius = cp.radius * (1 + pulse * 0.05); // 크기 5% 변동
+            currentRadius = cp.radius * (1 + pulse * 0.055);
         }
-        
-        drawCloud(c.x, c.y, scaleLength(currentRadius), cp.alpha, cp.isPowerCloud, cp.colorType, pulse);
+        drawCloudOff(offCtx, c.x, c.y, scaleLength(currentRadius), cp.alpha, cp.isPowerCloud, cp.colorType, pulse);
     });
+
+    // destination-out으로 구멍 뚫기
+    if (cloudHoles.length > 0) {
+        offCtx.save();
+        offCtx.globalCompositeOperation = 'destination-out';
+        cloudHoles.forEach(h => {
+            const sc = gridToScreen(h.x, h.y);
+            const sr = scaleLength(h.radius);
+            if (sr <= 0) return;
+            // 부드러운 페더링을 위한 방사형 그라데이션
+            const hGrad = offCtx.createRadialGradient(sc.x, sc.y, 0, sc.x, sc.y, sr);
+            hGrad.addColorStop(0, 'rgba(0,0,0,1)');
+            hGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            offCtx.fillStyle = hGrad;
+            offCtx.beginPath();
+            offCtx.arc(sc.x, sc.y, sr, 0, Math.PI * 2);
+            offCtx.fill();
+        });
+        offCtx.restore();
+    }
+
+    // 완성된 오프스크린 이미지를 메인 캔버스에 합성
+    ctx.drawImage(offCanvas, 0, 0);
 
     // Terrain polygon
     ctx.beginPath();
