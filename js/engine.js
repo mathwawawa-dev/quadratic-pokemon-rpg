@@ -282,8 +282,8 @@ function initStage() {
         const yVal = terrainHeights[key] !== undefined ? terrainHeights[key] : tFunc(px);
         const isSpikePeak = terrainSpikes.some(sp => Math.abs(px - sp.cx) < sp.width * 1.5 && sp.height >= 5);
 
-        if (yVal < 3 && !isSpikePeak) {
-            break; // 평탄하거나 낮은 곳에 위치 시 확정
+        if (yVal < 1.5 && !isSpikePeak) {
+            break; // 낮고 평탄한 곳에만 배치 (높은 언덕 파묻힘 방지)
         }
         attempts++;
     } while (attempts < 50);
