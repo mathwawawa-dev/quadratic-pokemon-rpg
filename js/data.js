@@ -269,13 +269,13 @@ const TERRAINS = {
         func: (x) => Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2
     },
     electric: {
-        name: "발전소 발전기 (전기)",
+        name: "발전소",
         bg: ["#1e1b4b", "#312e81", "#fbbf24"],
         color: "#1e1b4b", outColor: "#100e2b", // 언덕 아래를 배경 가장 어두운 남색 톤으로 통일
         func: (x) => Math.sin((x + terrainSeed) / 1.5) * 1.8 + Math.cos((x - terrainSeed) * 1.2) * 0.8 - 1
     },
     psychic: {
-        name: "에스퍼 차원의 왜곡 (에스퍼)",
+        name: "왜곡된 차원",
         bg: ["#3b0764", "#581c87", "#f472b6"],
         color: "#3e1b5d", outColor: "#1d0333", // 약간만 더 연하고 부드러운 딥 바이올렛 톤으로 조정
         func: (x) => Math.sin((x + terrainSeed) / 3) * 3 + Math.cos((x - terrainSeed) / 3) * 1.5 - 2

@@ -95,18 +95,38 @@ function resetView() {
         if (e.x < minX) minX = e.x; if (e.x > maxX) maxX = e.x;
         if (e.y < minY) minY = e.y; if (e.y > maxY) maxY = e.y;
     });
-    let reqXSpan = (maxX - minX) + 6;
+
+    // y축(x=0)을 중앙에 두기 위해 원점 기준 가장 먼 포켓몬과의 거리로 범위 설정
+    let maxAbsX = Math.max(Math.abs(minX), Math.abs(maxX));
+    let reqXSpan = 2 * (maxAbsX + 4); 
     let reqYSpan = reqXSpan / aspect;
     const neededYSpan = (maxY - minY + 4) / 0.5;
     if (reqYSpan < neededYSpan) { reqYSpan = neededYSpan; reqXSpan = reqYSpan * aspect; }
     if (reqYSpan < 25) { reqYSpan = 25; reqXSpan = reqYSpan * aspect; }
+
+    // 한 단계 안으로 확대된 배율 적용 (스팬을 0.8배로 축소하여 더 크게 보이게 설정)
+    reqXSpan *= 0.8;
+    reqYSpan *= 0.8;
+
     Y_MIN = minY - reqYSpan * 0.35;
     Y_MAX = Y_MIN + reqYSpan;
-    X_MIN = (minX + maxX) / 2 - reqXSpan / 2;
-    X_MAX = (minX + maxX) / 2 + reqXSpan / 2;
+    X_MIN = -reqXSpan / 2;
+    X_MAX = reqXSpan / 2;
     resize();
 }
 window.resetView = resetView;
+
+function changeZoom(factor) {
+    const yRange = Y_MAX - Y_MIN;
+    let newRange = yRange * factor;
+    if (newRange < 5) newRange = 5;
+    if (newRange > 150) newRange = 150;
+    const yCenter = (Y_MIN + Y_MAX) / 2;
+    Y_MIN = yCenter - newRange / 2;
+    Y_MAX = yCenter + newRange / 2;
+    resize();
+}
+window.changeZoom = changeZoom;
 
 // ---------- Zoom / Drag ----------
 
@@ -165,7 +185,7 @@ window.addEventListener('touchend', () => { pointerTooltip.active = false; isDra
 let terrainSpikes = []; // 스테이지마다 랜덤으로 생성되는 뾰족한 언덕 목록
 
 function getTerrainY(x) {
-    const stage = LEVELS[currentStage];
+    const stage = LEVELS[currentStage % LEVELS.length];
     let y = TERRAINS[stage.terrain].func(x);
     if (x < -20) { const dx = -20 - x; y += dx * dx * 5; return y; }
     if (x >  20) { const dx =  x - 20; y += dx * dx * 5; return y; }
@@ -200,7 +220,6 @@ window.closeMessage = function () {
         playerGold += 200;
         document.getElementById('ui-player-gold').innerText = playerGold;
         currentStage++;
-        if (currentStage >= LEVELS.length) currentStage = 0;
         initStage();
     } else {
         resetTurn();
@@ -227,7 +246,7 @@ function initStage() {
     GAME_STATE = 'LOADING';
 
     terrainSeed = Math.random() * 100;
-    const stage = LEVELS[currentStage];
+    const stage = LEVELS[currentStage % LEVELS.length];
     const mathField = document.getElementById('math-input');
     if (mathField) mathField.value = '';
 
@@ -309,7 +328,10 @@ function initStage() {
     const placedX = [];
     const placedY = [];
     // 비행 포켓몬 배치 높이도 분산 (모두 y=8이 되지 않도록)
-    let flyingYPool = [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
+    const isSkyMap = (stage.terrain === 'sky');
+    let flyingYPool = isSkyMap 
+        ? [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5)
+        : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
     let flyingYIdx = 0;
 
     // 적들이 플레이어 양쪽에 고르게 분산되도록 사이드 배정
@@ -325,7 +347,8 @@ function initStage() {
         const side = sideAssignments[idx]; // 'L': 플레이어보다 왼쪽, 'R': 오른쪽
         let rx, ry, valid, attempts = 0;
 
-        if (e.isFlying) {
+        const isSkyMap = (stage.terrain === 'sky');
+        if (e.isFlying || isSkyMap) {
             do {
                 // 배정된 사이드에서만 x 샘플링
                 rx = side === 'L'
@@ -359,12 +382,13 @@ function initStage() {
             }
         }
         placedX.push(rx);
-        placedY.push({ y: ry, isFlying: e.isFlying });
+        placedY.push({ y: ry, isFlying: e.isFlying || isSkyMap });
         return {
             x: rx, y: ry,
             w: 1.5, h: 1.5, hp: 100 + currentStage * 25, maxHp: 100 + currentStage * 25,
             img: loadSprite(e.img),
-            isFlying: e.isFlying,
+            isFlying: e.isFlying || isSkyMap,
+            hasCloud: isSkyMap,
             shake: 0, vx: 0, vy: 0,
             rotation: 0, angularVelocity: 0, isKnockedBack: false,
             name: e.name, type: e.type
@@ -379,10 +403,20 @@ function initStage() {
     ];
 
     // UI 업데이트
-    document.getElementById('stage-title').innerText = stage.title;
+    document.getElementById('stage-title').innerText = `Stage ${currentStage + 1}`;
     document.getElementById('terrain-info').innerText = TERRAINS[stage.terrain].name;
     document.getElementById('ui-player-name').innerText = starterData.name;
     document.getElementById('ui-player-img').src = player.img.src;
+
+    // '구름 위 하늘(sky)' 및 '얼음 설산(ice)' 맵에서는 줌 버튼 글자를 어두운 톤으로 변경
+    const zoomControls = document.querySelector('.zoom-controls');
+    if (zoomControls) {
+        if (stage.terrain === 'sky' || stage.terrain === 'ice') {
+            zoomControls.classList.add('dark-theme');
+        } else {
+            zoomControls.classList.remove('dark-theme');
+        }
+    }
 
     updateHPUI();
     missile.active = false; missile.trail = []; effects = [];
@@ -589,7 +623,7 @@ window.fireMissile = function (isCheat = false) {
     Object.assign(missile, { 
         active: true, func, x: projStartX, y: projStartY, 
         trail: [{ x: projStartX, y: projStartY }], 
-        maxY: projStartY, startX: projStartX, distanceTraveled: 0, 
+        maxY: projStartY, startX: projStartX, startY: projStartY, distanceTraveled: 0, 
         hasLeftPlayer: false, isCheat, dx: dir * 0.15,
         type: window.currentMissileType,
         hitTargets: new Set(),
@@ -603,27 +637,56 @@ function checkCollision(mx, my, t) {
     // drawEntity에서 화면에 그려지는 Y 오프셋(시각적 보정값)을 논리적 피격 박스(Hitbox)에도 똑같이 반영합니다.
     const offsetY = t.isFlying ? t.h * 0.1 : -t.h * 0.35;
     const ty = t.y + offsetY;
-    return mx >= t.x - t.w/2 && mx <= t.x + t.w/2 && my >= ty - t.h/2 && my <= ty + t.h/2;
+    const hitEntity = mx >= t.x - t.w/2 && mx <= t.x + t.w/2 && my >= ty - t.h/2 && my <= ty + t.h/2;
+    
+    if (t.hasCloud) {
+        const cy = t.y - 0.75;
+        const hitCloud = mx >= t.x - 0.75 && mx <= t.x + 0.75 && my >= cy - 0.3 && my <= cy + 0.3;
+        if (hitCloud) return true;
+    }
+    return hitEntity;
 }
 function createExplosion(x, y, color) {
     for (let i = 0; i < 15; i++)
         effects.push({ type: 'particle', x, y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 30, color });
 }
+function createCloudPop(x, y) {
+    for (let i = 0; i < 25; i++) {
+        effects.push({
+            type: 'particle',
+            x: x + (Math.random() - 0.5) * 1.0,
+            y: y + (Math.random() - 0.5) * 0.5,
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.3 + 0.05,
+            life: 30 + Math.random() * 20,
+            color: 'rgba(255, 255, 255, 0.9)'
+        });
+    }
+    effects.push({ type: 'ring', x: x, y: y, life: 20, maxLife: 20, color: 'rgba(255, 255, 255, 0.8)' });
+}
 
 function applyDamageAndEffects(target, mx, my) {
+    if (target.hasCloud) {
+        target.hasCloud = false;
+        target.isFlying = false;
+        createCloudPop(target.x, target.y - 0.75);
+    }
     const dx = target.x - mx, dy = target.y - my;
     const dist = Math.sqrt(dx*dx + dy*dy);
     let hitQuality = 'GOOD', hitGold = 20;
     if (dist <= 0.5) { hitQuality = 'PERFECT'; hitGold = 50; }
     else if (dist <= explosionRadius) { hitQuality = 'GREAT'; hitGold = 30; }
 
+    if (enemies.includes(target) || target === player) {
+        updateHPUI();
+    }
     if (enemies.includes(target)) {
         playerGold += hitGold;
         document.getElementById('ui-player-gold').innerText = playerGold;
     }
 
     const fallHeight = Math.max(0, missile.maxY - target.y);
-    const stage = LEVELS[currentStage];
+    const stage = LEVELS[currentStage % LEVELS.length];
     let mult = 1.0;
     if (stage.terrain === 'lava' && (selectedStarter||{}).type === 'fire') mult = 1.2;
     if (stage.terrain === 'sky'  && (selectedStarter||{}).type === 'flying') mult = 1.2;
@@ -736,7 +799,10 @@ function updateGame() {
 
     if (GAME_STATE === 'FIRING' && missile.active) {
         for (let i = 0; i < 3; i++) {
-            if (!missile.hasLeftPlayer && !checkCollision(missile.x, missile.y, player)) missile.hasLeftPlayer = true;
+            const distFromLaunch = Math.hypot(missile.x - missile.startX, missile.y - missile.startY);
+            if (!missile.hasLeftPlayer && (!checkCollision(missile.x, missile.y, player) || distFromLaunch > 0.4)) {
+                missile.hasLeftPlayer = true;
+            }
             
             if (missile.type === 'homing') {
                 if (missile.isHoming) {
@@ -850,7 +916,8 @@ function updateGame() {
                 return;
             }
             if (missile.type === 'pierce') {
-                for (const e of enemies) {
+                const targets = missile.hasLeftPlayer ? [player, ...enemies] : enemies;
+                for (const e of targets) {
                     if (e.hp > 0 && checkCollision(missile.x, missile.y, e)) {
                         if (!missile.hitTargets.has(e)) {
                             missile.hitTargets.add(e);
@@ -875,7 +942,8 @@ function updateGame() {
                                 effects.push({ type: 'laser', x: targetX, y: targetY, life: 15 });
                                 screenShake = 15;
                                 createCrater(targetX, targetY - 0.75, explosionRadius);
-                                enemies.forEach(ent => {
+                                const targets = [player, ...enemies];
+                                targets.forEach(ent => {
                                     if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius + 0.5) {
                                         applyDamageAndEffects(ent, targetX, targetY);
                                     }
@@ -913,6 +981,9 @@ function updateGame() {
                                 ent.isKnockedBack = false; ent.vx = 0; ent.vy = 0;
                                 applyDamageAndEffects(ent, targetX, targetY);
                             });
+                            if (player.hp > 0 && Math.hypot(player.x - targetX, player.y - targetY) <= netRadius) {
+                                applyDamageAndEffects(player, targetX, targetY);
+                            }
                             createExplosion(targetX, targetY, '#2dd4bf');
                             createCrater(targetX, targetY - 0.5, explosionRadius);
                             if (enemies.filter(e => e.hp <= 0).length >= 2) {
@@ -925,7 +996,8 @@ function updateGame() {
                         createExplosion(targetX, targetY, getMissileColor());
                         createCrater(targetX, targetY - 0.75, explosionRadius + 0.5);
 
-                        enemies.forEach(ent => {
+                        const targets = [player, ...enemies];
+                        targets.forEach(ent => {
                             if (ent.hp <= 0) return;
                             const edx = ent.x - targetX, edy = ent.y - targetY;
                             if (ent === directHit || Math.sqrt(edx*edx + edy*edy) <= explosionRadius + 0.5) {
@@ -944,14 +1016,15 @@ function updateGame() {
                     missile.active = false; GAME_STATE = 'IDLE';
                     document.getElementById('fire-btn').disabled = true;
                     const targetX = missile.x;
-                    const targetY = missile.y;
+                    const targetY = getTerrainY(missile.x);
                     for (let i = 0; i < 4; i++) {
                         setTimeout(() => {
                             if (GAME_STATE === 'OVER') return;
                             effects.push({ type: 'laser', x: targetX, y: targetY, life: 15 });
                             screenShake = 15;
                             createCrater(targetX, targetY, explosionRadius);
-                            enemies.forEach(ent => {
+                            const targets = [player, ...enemies];
+                            targets.forEach(ent => {
                                 if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius + 0.5) {
                                     applyDamageAndEffects(ent, targetX, targetY);
                                 }
@@ -971,7 +1044,7 @@ function updateGame() {
                     missile.active = false; GAME_STATE = 'IDLE';
                     document.getElementById('fire-btn').disabled = true;
                     const netRadius = 3;
-                    const targetX = missile.x, targetY = missile.y;
+                    const targetX = missile.x, targetY = getTerrainY(missile.x);
                     effects.push({ type: 'netPull', x: targetX, y: targetY, life: 40, maxLife: 40 });
                     screenShake = 8;
                     let pulled = [];
@@ -987,6 +1060,9 @@ function updateGame() {
                             ent.isKnockedBack = false; ent.vx = 0; ent.vy = 0;
                             applyDamageAndEffects(ent, targetX, targetY);
                         });
+                        if (player.hp > 0 && Math.hypot(player.x - targetX, player.y - targetY) <= netRadius) {
+                            applyDamageAndEffects(player, targetX, targetY);
+                        }
                         createExplosion(targetX, targetY, '#2dd4bf');
                         createCrater(targetX, targetY - 0.5, explosionRadius);
                         if (enemies.filter(e => e.hp <= 0).length >= 2) {
@@ -998,14 +1074,17 @@ function updateGame() {
                     return;
                 } else {
                     missile.active = false; GAME_STATE = 'IDLE';
-                    createExplosion(missile.x, missile.y, getMissileColor());
-                    createCrater(missile.x, missile.y, explosionRadius);
+                    const targetX = missile.x;
+                    const targetY = getTerrainY(missile.x);
+                    createExplosion(targetX, targetY, getMissileColor());
+                    createCrater(targetX, targetY, explosionRadius);
                     let hitSomeone = false;
-                    enemies.forEach(ent => {
+                    const targets = [player, ...enemies];
+                    targets.forEach(ent => {
                         if (ent.hp <= 0) return;
-                        const edx = ent.x - missile.x, edy = ent.y - missile.y;
+                        const edx = ent.x - targetX, edy = ent.y - targetY;
                         if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius + 0.5) {
-                            applyDamageAndEffects(ent, missile.x, missile.y); hitSomeone = true;
+                            applyDamageAndEffects(ent, targetX, targetY); hitSomeone = true;
                         }
                     });
                     if (!hitSomeone) {
@@ -1051,9 +1130,16 @@ function drawEntity(ent) {
     ctx.save();
     if (ent.shake > 0) { sc.x += (Math.random()-0.5)*10; sc.y += (Math.random()-0.5)*10; }
     // 비행하지 않는 포켓몬은 바닥에 딱 붙게 (0.35), 비행하는 포켓몬은 공중에 띄우기 (-0.1)
+    const isSkyTerrain = (LEVELS[currentStage % LEVELS.length].terrain === 'sky');
+    let bobY = 0;
+    if (ent.hasCloud && ent.hp > 0) {
+        const ph = ent.x * 1.7; // 고유 위상
+        bobY = Math.sin(Date.now() / 400 + ph) * scaleLength(0.12);
+    }
+
     const yOff = ent.isFlying ? -sh * 0.1 : sh * 0.35;
     const animY = ent.yOffAnim ? -ent.yOffAnim : 0; // 발사 모션 (위로 뜀)
-    ctx.translate(sc.x, sc.y + yOff + animY);
+    ctx.translate(sc.x, sc.y + yOff + animY + bobY);
     // 적들은 플레이어를 바라보게 (자동), 플레이어는 수동 방향
     if (ent !== player) {
         if (ent.x < player.x) ctx.scale(-1, 1);
@@ -1109,6 +1195,32 @@ function drawEntity(ent) {
     if (ent === player && player.facing === 1) ctx.scale(-1, 1);
     // Draw image (이미지가 아직 로드되지 않은 상태라면 임시 빨간 박스 대신 그리기를 대기하고, 로드 완료 후에만 그립니다)
     const domImg = ent === player ? document.getElementById('ui-player-img') : null;
+    // '구름 위 하늘' 맵에서 몬스터 아래에 둥실둥실 구름 받침 그리기
+    if (ent.hasCloud && ent.hp > 0) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+        ctx.shadowBlur = 10;
+        
+        const cloudW = drawW * 0.85;
+        const cloudH = drawH * 0.32;
+        const cyBase = drawH / 2 - scaleLength(0.1);
+        
+        const drawCircle = (cx, cy, r) => {
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fill();
+        };
+        drawCircle(0, cyBase, cloudH * 0.8);
+        drawCircle(-cloudW * 0.35, cyBase + cloudH * 0.15, cloudH * 0.6);
+        drawCircle(cloudW * 0.35, cyBase + cloudH * 0.15, cloudH * 0.6);
+        
+        ctx.beginPath();
+        ctx.rect(-cloudW * 0.3, cyBase - cloudH * 0.2, cloudW * 0.6, cloudH * 0.8);
+        ctx.fill();
+        ctx.restore();
+    }
+
     const srcImg = (domImg && domImg.complete && domImg.naturalWidth > 0) ? domImg : ent.img;
     if (srcImg && srcImg.complete && srcImg.naturalWidth > 0) {
         ctx.imageSmoothingEnabled = false;
@@ -1129,7 +1241,7 @@ function render() {
     if (screenShake > 0) ctx.translate((Math.random()-0.5)*10, (Math.random()-0.5)*10);
 
     // Background
-    const tData = TERRAINS[LEVELS[currentStage].terrain];
+    const tData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
     const grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
     tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1211,12 +1323,12 @@ function render() {
     ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.stroke();
 
     // Grid & Axes
-    const isBright = ['sky', 'ice'].includes(LEVELS[currentStage].terrain);
+    const isBright = ['sky', 'ice'].includes(LEVELS[currentStage % LEVELS.length].terrain);
     const gridColor = isBright ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)';
     const thickLine = isBright ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.4)';
     const thinLine  = isBright ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)';
     const axisLine  = isBright ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.9)';
-    ctx.font = "italic 16px 'Cambria Math','Times New Roman',serif";
+    ctx.font = "16px 'Cambria Math','Times New Roman',serif";
     ctx.fillStyle = gridColor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.shadowColor = isBright ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4;
 
@@ -1243,7 +1355,7 @@ function render() {
     const origin = gridToScreen(0, 0);
     ctx.beginPath(); ctx.moveTo(0, origin.y); ctx.lineTo(canvas.width, origin.y); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, canvas.height); ctx.stroke();
-    ctx.font = "italic 18px 'Cambria Math','Times New Roman',serif";
+    ctx.font = "18px 'Cambria Math','Times New Roman',serif";
     ctx.fillStyle = gridColor; ctx.fillText('O', origin.x - 15, origin.y + 15);
 
     // Death Zone
@@ -1266,14 +1378,14 @@ function render() {
         
         ctx.font = "bold 16px 'Outfit', sans-serif";
         const dw1 = ctx.measureText(dTxt1).width;
-        ctx.font = "italic bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
+        ctx.font = "bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
         const dw2 = ctx.measureText(dTxt2).width;
         ctx.font = "bold 16px 'Outfit', sans-serif";
         const dw3 = ctx.measureText(dTxt3).width;
         
         const dStartX = canvas.width/2 - (dw1 + dw2 + dw3)/2;
         ctx.fillText(dTxt1, dStartX, dTop.y + 15);
-        ctx.font = "italic bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
+        ctx.font = "bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
         ctx.fillText(dTxt2, dStartX + dw1, dTop.y + 15);
         ctx.font = "bold 16px 'Outfit', sans-serif";
         ctx.fillText(dTxt3, dStartX + dw1 + dw2, dTop.y + 15);
@@ -1297,14 +1409,14 @@ function render() {
     
     ctx.font = "bold 16px 'Outfit', sans-serif";
     const ow1 = ctx.measureText(oTxt1).width;
-    ctx.font = "italic bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
+    ctx.font = "bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
     const ow2 = ctx.measureText(oTxt2).width;
     ctx.font = "bold 16px 'Outfit', sans-serif";
     const ow3 = ctx.measureText(oTxt3).width;
     
     const oStartX = canvas.width/2 - (ow1 + ow2 + ow3)/2;
     ctx.fillText(oTxt1, oStartX, outSc.y - 15);
-    ctx.font = "italic bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
+    ctx.font = "bold 17px 'KaTeX_Math', 'Cambria Math','Times New Roman',serif";
     ctx.fillText(oTxt2, oStartX + ow1, outSc.y - 15);
     ctx.font = "bold 16px 'Outfit', sans-serif";
     ctx.fillText(oTxt3, oStartX + ow1 + ow2, outSc.y - 15);
@@ -1534,8 +1646,9 @@ function render() {
     if (pointerTooltip.alpha > 0) {
         ctx.save(); ctx.globalAlpha = pointerTooltip.alpha;
         ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        const text = `(${pointerTooltip.gridX.toFixed(1)}, ${pointerTooltip.gridY.toFixed(1)})`;
-        ctx.font = "italic 18px 'Cambria Math','Times New Roman',serif";
+        const formatNum = (n) => n.toFixed(1).replace('-', '−');
+        const text = `(${formatNum(pointerTooltip.gridX)}, ${formatNum(pointerTooltip.gridY)})`;
+        ctx.font = "18px 'Cambria Math','Times New Roman',serif";
         const tw = ctx.measureText(text).width;
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(pointerTooltip.x + 15, pointerTooltip.y - 30, tw + 20, 30, 8);

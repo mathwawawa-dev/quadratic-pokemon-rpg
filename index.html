@@ -6,6 +6,45 @@
     <title>이차함수 포트리스 배틀 RPG</title>
     <meta name="description" content="이차함수를 입력하여 포켓몬을 처치하는 수학 배틀 RPG">
     <link rel="stylesheet" href="css/style.css">
+    <!-- 보안 스크립트: 개발자 도구 및 F12 단축키/우클릭 차단 (v1.0.26 일반 스크립트 적용) -->
+    <script type="text/javascript">
+        (function() {
+            // 1. 우클릭(컨텍스트 메뉴) 방지
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            }, true);
+
+            // 2. 개발자 도구 단축키 차단 (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U)
+            window.addEventListener('keydown', function(e) {
+                if (
+                    e.keyCode === 123 || // F12
+                    (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || // Ctrl+Shift+I, J, C
+                    (e.ctrlKey && e.keyCode === 85) // Ctrl+U (소스 보기)
+                ) {
+                    if (e.keyCode !== 81) { 
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            }, true);
+
+            // 3. 무한 디버거 및 시간차 감지
+            setInterval(function() {
+                let startTime = new Date();
+                debugger; 
+                if (new Date() - startTime > 100) {
+                    document.body.innerHTML = `
+                        <div style="background:#111;color:#ef4444;width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:sans-serif;text-align:center;position:fixed;top:0;left:0;z-index:9999999;">
+                            <h1 style="font-size:3rem;margin-bottom:20px;">🚨 보안 위반 감지 🚨</h1>
+                            <p style="font-size:1.5rem;color:#fff;">소스 분석 시도가 감지되어 실행을 차단합니다.</p>
+                        </div>
+                    `;
+                    document.body.style.overflow = 'hidden';
+                }
+            }, 50);
+        })();
+    </script>
     <!-- MathLive 수식 입력 라이브러리 -->
     <script defer src="https://unpkg.com/mathlive"></script>
 </head>
@@ -44,6 +83,7 @@
     </div>
 
     <p class="intro-tip">포켓몬을 클릭하여 모험을 시작하세요 ✨</p>
+    <p class="version-info" style="font-size: 0.85rem; color: rgba(255,255,255,0.4); margin-top: 15px; text-align: center;">v1.2.1_260719_2335_배리어 생성 전_개발자모드 진입 차단</p>
 </div>
 
 <!-- ========== GAME SCREEN ========== -->
@@ -56,7 +96,7 @@
         <!-- Top Bar -->
         <div id="top-bar">
             <!-- Player Status -->
-            <div class="glass-panel character-status" style="border-color: rgba(59,130,246,0.4);">
+            <div class="glass-panel character-status">
                 <div class="avatar-box"><img id="ui-player-img" src="" alt="Player"></div>
                 <div class="status-info">
                     <div class="char-name" id="ui-player-name">Player</div>
@@ -70,8 +110,15 @@
             <div class="glass-panel" id="stage-info">
                 <div id="stage-title">Stage 1</div>
                 <div id="terrain-info">푸른 들판</div>
-                <div style="margin-top:10px;font-weight:bold;color:#fbbf24;font-size:1.2rem;">🪙 <span id="ui-player-gold">0</span> G</div>
+                <div style="margin-top:4px;font-weight:bold;color:#fbbf24;font-size:1.0rem;"><span id="ui-player-gold">0</span> G</div>
             </div>
+        </div>
+
+        <!-- Zoom Controls ( Chromebook & Touchpad support ) -->
+        <div class="zoom-controls">
+            <button class="zoom-btn" onclick="changeZoom(0.9)" title="확대">확대</button>
+            <button class="zoom-btn" onclick="changeZoom(1.1)" title="축소">축소</button>
+            <button class="zoom-btn" onclick="resetView()" title="초기 배율">초기 배율</button>
         </div>
 
         <!-- Bottom Panel -->
@@ -109,8 +156,6 @@
                             <button class="btn-util icon-btn move-btn" onclick="movePlayer(1)" title="오른쪽 이동">▶</button>
                         </div>
                     </div>
-                    <!-- 화면 복구 텍스트 단독 버튼 -->
-                    <button class="btn-util text-reset-btn" onclick="resetView()">화면 배율 복구<br><kbd>Ctrl</kbd></button>
                 </div>
                 <button id="fire-btn" onclick="fireMissile()">
                     🚀 발사!<br><kbd>Enter</kbd>

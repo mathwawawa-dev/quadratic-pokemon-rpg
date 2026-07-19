@@ -165,6 +165,15 @@ function setupMathInput() {
         }
     };
     mf.addEventListener('keydown',     blockKorean, { capture: true });
+    // 수식입력창 포커스 상태에서도 [, ] 단축키 작동 및 입력 방지
+    mf.addEventListener('keydown', (e) => {
+        if (e.key === '[' || e.key === ']') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.key === '[') setPlayerFacing(-1);
+            if (e.key === ']') setPlayerFacing(1);
+        }
+    }, { capture: true });
     mf.addEventListener('beforeinput', blockKorean, { capture: true });
     mf.addEventListener('compositionstart',  e => { e.preventDefault(); e.stopPropagation(); }, { capture: true });
     mf.addEventListener('compositionupdate', e => { e.preventDefault(); e.stopPropagation(); }, { capture: true });
@@ -198,28 +207,53 @@ function setupMathInput() {
             return;
         }
 
-        // 미사일 단축키 (Q,W,E,R,T)
-        // - 수식창에 커서가 있을 때는 작동하지 않음
         if (isInputFocused) return;
 
         const keyMap = { 'q': 'normal', 'w': 'pierce', 'e': 'homing', 'r': 'satellite', 't': 'net' };
         const k = e.key.toLowerCase();
+
         if (keyMap[k]) {
             e.preventDefault();
+            e.stopPropagation();
             selectMissile(keyMap[k]);
             return;
         }
 
         // 조준방향 단축키 ([: 왼쪽, ]: 오른쪽)
-        if (e.key === '[') { e.preventDefault(); setPlayerFacing(-1); return; }
-        if (e.key === ']') { e.preventDefault(); setPlayerFacing(1);  return; }
+        if (e.key === '[') {
+            e.preventDefault();
+            e.stopPropagation();
+            setPlayerFacing(-1);
+            return;
+        }
+        if (e.key === ']') {
+            e.preventDefault();
+            e.stopPropagation();
+            setPlayerFacing(1);
+            return;
+        }
 
         // 이동 단축키 (A: 왼쪽, D: 오른쪽)
-        if (k === 'a') { e.preventDefault(); movePlayer(-1); return; }
-        if (k === 'd') { e.preventDefault(); movePlayer(1);  return; }
+        if (k === 'a') {
+            e.preventDefault();
+            e.stopPropagation();
+            movePlayer(-1);
+            return;
+        }
+        if (k === 'd') {
+            e.preventDefault();
+            e.stopPropagation();
+            movePlayer(1);
+            return;
+        }
 
         // 화면 복구 단축키 (Ctrl)
-        if (e.key === 'Control') { e.preventDefault(); resetView(); return; }
+        if (e.key === 'Control') {
+            e.preventDefault();
+            e.stopPropagation();
+            resetView();
+            return;
+        }
     }, { capture: true });
 }
 
