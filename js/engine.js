@@ -110,6 +110,18 @@ window.resetView = resetView;
 
 // ---------- Zoom / Drag ----------
 
+function changeZoom(factor) {
+    const yRange = Y_MAX - Y_MIN;
+    let newRange = yRange * factor;
+    if (newRange < 5) newRange = 5;
+    if (newRange > 150) newRange = 150;
+    const yCenter = (Y_MIN + Y_MAX) / 2;
+    Y_MIN = yCenter - newRange / 2;
+    Y_MAX = yCenter + newRange / 2;
+    resize();
+}
+window.changeZoom = changeZoom;
+
 window.addEventListener('wheel', (e) => {
     if (e.target !== canvas && e.target !== document.body) return;
     const factor = e.deltaY > 0 ? 1.1 : 0.9;
@@ -1071,11 +1083,11 @@ function drawEntity(ent) {
         const ph    = ent._ghostPhase;
         const lived = (Date.now() - ent._deathTime) / 1000; // 사망 후 경과 시간(초)
 
-        // 이중 주파수 알파 맥박 (0.04 ~ 0.52 범위, 불규칙한 호흡 느낌)
-        const pulse = 0.28
+        // 이중 주파수 알파 맥박 (0.10 ~ 0.58 범위, 불규칙한 호흡 느낌)
+        const pulse = 0.34
             + Math.sin(t * 2.1 + ph)          * 0.16
             + Math.sin(t * 0.7 + ph * 1.3)    * 0.08;
-        ctx.globalAlpha = Math.max(0.04, Math.min(0.52, pulse));
+        ctx.globalAlpha = Math.max(0.10, Math.min(0.58, pulse));
 
         // 서서히 변하는 채도/색조 (유령빛 청록→보라 사이를 천천히 순환)
         const hue = 140 + Math.sin(t * 0.4 + ph) * 35;
@@ -1534,7 +1546,9 @@ function render() {
     if (pointerTooltip.alpha > 0) {
         ctx.save(); ctx.globalAlpha = pointerTooltip.alpha;
         ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        const text = `(${pointerTooltip.gridX.toFixed(1)}, ${pointerTooltip.gridY.toFixed(1)})`;
+        const textX = pointerTooltip.gridX.toFixed(1).replace(/-/g, '−');
+        const textY = pointerTooltip.gridY.toFixed(1).replace(/-/g, '−');
+        const text = `(${textX}, ${textY})`;
         ctx.font = "italic 18px 'Cambria Math','Times New Roman',serif";
         const tw = ctx.measureText(text).width;
         ctx.beginPath();

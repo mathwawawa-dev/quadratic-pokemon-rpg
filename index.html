@@ -74,6 +74,13 @@
             </div>
         </div>
 
+        <!-- Zoom Controls ( Chromebook & Touchpad support ) -->
+        <div class="zoom-controls">
+            <button class="zoom-btn" onclick="changeZoom(0.9)" title="확대">확대</button>
+            <button class="zoom-btn" onclick="changeZoom(1.1)" title="축소">축소</button>
+            <button class="zoom-btn" onclick="resetView()" title="초기 배율">초기 배율</button>
+        </div>
+
         <!-- Bottom Panel -->
         <div id="bottom-panel" class="glass-panel">
             <div class="top-row-container">
@@ -109,8 +116,6 @@
                             <button class="btn-util icon-btn move-btn" onclick="movePlayer(1)" title="오른쪽 이동">▶</button>
                         </div>
                     </div>
-                    <!-- 화면 복구 텍스트 단독 버튼 -->
-                    <button class="btn-util text-reset-btn" onclick="resetView()">화면 배율 복구<br><kbd>Ctrl</kbd></button>
                 </div>
                 <button id="fire-btn" onclick="fireMissile()">
                     🚀 발사!<br><kbd>Enter</kbd>
