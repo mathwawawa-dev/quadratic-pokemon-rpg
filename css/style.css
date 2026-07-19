@@ -639,4 +639,3 @@ math-field::part(menu-toggle) { display: none !important; pointer-events: none; 
 .zoom-controls.dark-theme .zoom-btn:active {
     background: rgba(0, 0, 0, 0.35);
 }
-
