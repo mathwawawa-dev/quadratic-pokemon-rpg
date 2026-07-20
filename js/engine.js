@@ -355,6 +355,7 @@ function initStage() {
     const sideAssignments = [...Array(leftCount).fill('L'), ...Array(rightCount).fill('R')]
         .sort(() => Math.random() - 0.5);
 
+    const barrierTypes = ['reflect', 'absorb', 'absolute', 'warp'].sort(() => Math.random() - 0.5);
     enemies = stageEnemies.map((e, idx) => {
         const side = sideAssignments[idx]; // 'L': 플레이어보다 왼쪽, 'R': 오른쪽
         let rx, ry, valid, attempts = 0;
@@ -395,6 +396,10 @@ function initStage() {
         }
         placedX.push(rx);
         placedY.push({ y: ry, isFlying: e.isFlying || isSkyMap });
+
+        const isPsychic = (stage.terrain === 'psychic');
+        const barrierType = isPsychic ? barrierTypes[idx % barrierTypes.length] : null;
+
         return {
             x: rx, y: ry,
             w: 1.5, h: 1.5, hp: 100 + currentStage * 25, maxHp: 100 + currentStage * 25,
@@ -403,7 +408,9 @@ function initStage() {
             hasCloud: isSkyMap,
             shake: 0, vx: 0, vy: 0,
             rotation: 0, angularVelocity: 0, isKnockedBack: false,
-            name: e.name, type: e.type
+            name: e.name, type: e.type,
+            barrierType: barrierType,
+            barrierCycleIndex: 0
         };
     });
 
@@ -639,10 +646,167 @@ window.fireMissile = function (isCheat = false) {
         hasLeftPlayer: false, isCheat, dx: dir * 0.15,
         type: window.currentMissileType,
         hitTargets: new Set(),
-        powerBoosted: false
+        powerBoosted: false,
+        isReflected: false
     });
+    
+    // 배리어 주기 갱신
+    if (enemies && enemies.length > 0) {
+        enemies.forEach(e => {
+            if (e.barrierType) {
+                e.barrierCycleIndex = (e.barrierCycleIndex + 1) % 5;
+            }
+        });
+    }
+
     document.getElementById('fire-btn').disabled = true;
 };
+
+// ---------- Barrier System ----------
+function getBarrierColors(type, alphaMult = 1.0) {
+    switch (type) {
+        case 'reflect':
+            return {
+                fill: `rgba(0, 191, 255, ${0.15 * alphaMult})`,
+                stroke: `rgba(0, 191, 255, ${0.8 * alphaMult})`,
+                name: '반사'
+            };
+        case 'absorb':
+            return {
+                fill: `rgba(50, 205, 50, ${0.15 * alphaMult})`,
+                stroke: `rgba(50, 205, 50, ${0.8 * alphaMult})`,
+                name: '흡수'
+            };
+        case 'absolute':
+            return {
+                fill: `rgba(255, 215, 0, ${0.15 * alphaMult})`,
+                stroke: `rgba(255, 215, 0, ${0.8 * alphaMult})`,
+                name: '절대방어'
+            };
+        case 'warp':
+            return {
+                fill: `rgba(186, 85, 211, ${0.15 * alphaMult})`,
+                stroke: `rgba(186, 85, 211, ${0.8 * alphaMult})`,
+                name: '워프'
+            };
+        default:
+            return {
+                fill: 'transparent',
+                stroke: 'transparent',
+                name: ''
+            };
+    }
+}
+
+function checkBarrierCollision(mx, my, t) {
+    if (!t.barrierType || t.barrierCycleIndex > 2) return false;
+    const offsetY = t.isFlying ? t.h * 0.15 : -t.h * 0.35;
+    const ty = t.y + offsetY;
+    const dist = Math.hypot(mx - t.x, my - ty);
+    return dist <= 1.4; // 배리어 반경
+}
+
+function handleBarrierCollision(e) {
+    if (e.barrierType === 'reflect') {
+        missile.isReflected = true;
+        missile.dx = -missile.dx;
+        
+        for (let i = 0; i < 15; i++) {
+            effects.push({
+                type: 'particle',
+                x: missile.x, y: missile.y,
+                vx: (Math.random() - 0.5) * 0.4 - missile.dx,
+                vy: (Math.random() - 0.5) * 0.4,
+                life: 25,
+                color: '#00bfff'
+            });
+        }
+        effects.push({ type: 'text', x: missile.x, y: missile.y + 1, text: 'REFLECT!', color: '#00bfff', life: 60 });
+    } 
+    else if (e.barrierType === 'absorb') {
+        missile.active = false;
+        GAME_STATE = 'IDLE';
+        
+        const heal = 40;
+        e.hp = Math.min(e.maxHp, e.hp + heal);
+        updateHPUI();
+        
+        for (let i = 0; i < 20; i++) {
+            effects.push({
+                type: 'particle',
+                x: missile.x, y: missile.y,
+                vx: (Math.random() - 0.5) * 0.3,
+                vy: (Math.random() - 0.5) * 0.3,
+                life: 30,
+                color: '#32cd32'
+            });
+        }
+        effects.push({ type: 'text', x: e.x, y: e.y + 1, text: `+${heal} HP`, color: '#32cd32', life: 80 });
+        
+        setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 800);
+    } 
+    else if (e.barrierType === 'absolute') {
+        missile.active = false;
+        GAME_STATE = 'IDLE';
+        
+        for (let i = 0; i < 20; i++) {
+            effects.push({
+                type: 'particle',
+                x: missile.x, y: missile.y,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                life: 30,
+                color: '#ffd700'
+            });
+        }
+        effects.push({ type: 'text', x: e.x, y: e.y + 1, text: 'BLOCK!', color: '#ffd700', life: 80 });
+        
+        setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 800);
+    } 
+    else if (e.barrierType === 'warp') {
+        missile.active = false;
+        GAME_STATE = 'IDLE';
+        
+        for (let i = 0; i < 20; i++) {
+            effects.push({
+                type: 'particle',
+                x: e.x, y: e.y,
+                vx: (Math.random() - 0.5) * 0.6,
+                vy: (Math.random() - 0.5) * 0.6,
+                life: 30,
+                color: '#ba55d3'
+            });
+        }
+        
+        let validX = false;
+        let attempts = 0;
+        let rx = e.x;
+        while (!validX && attempts < 100) {
+            rx = -18 + Math.random() * 36;
+            if (Math.abs(rx - player.x) >= 4) {
+                validX = true;
+            }
+            attempts++;
+        }
+        
+        e.x = rx;
+        e.y = getTerrainY(rx) + (e.isFlying ? 6 : (e.type === 'ground' ? -0.5 : 0.75));
+        
+        for (let i = 0; i < 20; i++) {
+            effects.push({
+                type: 'particle',
+                x: e.x, y: e.y,
+                vx: (Math.random() - 0.5) * 0.6,
+                vy: (Math.random() - 0.5) * 0.6,
+                life: 30,
+                color: '#ba55d3'
+            });
+        }
+        effects.push({ type: 'text', x: e.x, y: e.y + 1.5, text: 'WARP!', color: '#ba55d3', life: 80 });
+        
+        setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 800);
+    }
+}
 
 // ---------- Collision & Combat ----------
 function checkCollision(mx, my, t) {
@@ -927,6 +1091,29 @@ function updateGame() {
                 setTimeout(() => showMessage('OUT!', '그래프가 천장 (<math-field read-only style="font-size:1.1rem; min-height:0; padding:2px 2px; border:none; background:rgba(0,0,0,0.5); display:inline-block; vertical-align:-1px;">y=30</math-field>)을 벗어났습니다.'), 500);
                 return;
             }
+            // 반사된 미사일이 플레이어와 충돌하는지 체크
+            if (missile.isReflected && checkCollision(missile.x, missile.y, player)) {
+                missile.active = false;
+                applyDamageAndEffects(player, missile.x, missile.y);
+                return;
+            }
+
+            // 배리어 충돌 체크 (활성화 상태 0, 1, 2일 때만)
+            let barrierHitEnemy = null;
+            for (const e of enemies) {
+                if (e.hp > 0 && e.barrierType && e.barrierCycleIndex <= 2) {
+                    if (checkBarrierCollision(missile.x, missile.y, e)) {
+                        barrierHitEnemy = e;
+                        break;
+                    }
+                }
+            }
+
+            if (barrierHitEnemy) {
+                handleBarrierCollision(barrierHitEnemy);
+                return;
+            }
+
             if (missile.type === 'pierce') {
                 const targets = missile.hasLeftPlayer ? [player, ...enemies] : enemies;
                 for (const e of targets) {
@@ -939,7 +1126,9 @@ function updateGame() {
                 }
             } else {
                 let directHit = null;
-                for (const e of enemies) { if (e.hp > 0 && checkCollision(missile.x, missile.y, e)) { directHit = e; break; } }
+                let targetsToCheck = [...enemies];
+                if (missile.isReflected) targetsToCheck.push(player);
+                for (const e of targetsToCheck) { if (e.hp > 0 && checkCollision(missile.x, missile.y, e)) { directHit = e; break; } }
                 if (directHit) {
                     missile.active = false;
                     const targetX = directHit.x;
@@ -1201,6 +1390,22 @@ function drawEntity(ent) {
         const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444';
         ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-20, -drawH/2 - 5, 40, 6);
         ctx.fillStyle = hpColor;           ctx.fillRect(-20, -drawH/2 - 5, 40 * hpPct, 6);
+
+        // 배리어 상태 텍스트
+        if (ent.barrierType) {
+            const info = getBarrierColors(ent.barrierType);
+            let stateText = '';
+            if (ent.barrierCycleIndex === 0) stateText = '유지';
+            else if (ent.barrierCycleIndex === 1 || ent.barrierCycleIndex === 2) stateText = '깜빡';
+            else stateText = '해제';
+            
+            ctx.save();
+            ctx.fillStyle = info.stroke;
+            ctx.font = 'bold 9px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`[${info.name}: ${stateText}]`, 0, -drawH/2 - 9);
+            ctx.restore();
+        }
     }
     // Facing flip for player
     // 스프라이트 기본 방향이 좌측이므로 우측(1)일 때 좌우 반전
@@ -1245,6 +1450,29 @@ function drawEntity(ent) {
             ctx.fillRect(-sw/2, -sh/2, sw, sh);
         }
     }
+
+    // 배리어 그리기 (활성화 상태 0, 1, 2일 때만)
+    if (ent.hp > 0 && ent.barrierType && ent.barrierCycleIndex <= 2) {
+        ctx.save();
+        
+        let alphaMultiplier = 1.0;
+        if (ent.barrierCycleIndex === 1 || ent.barrierCycleIndex === 2) {
+            alphaMultiplier = (Math.floor(Date.now() / 250) % 2 === 0) ? 0.25 : 1.0;
+        }
+        
+        const info = getBarrierColors(ent.barrierType, alphaMultiplier);
+        ctx.strokeStyle = info.stroke;
+        ctx.lineWidth = 3;
+        ctx.fillStyle = info.fill;
+        
+        const r = scaleLength(1.4);
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+
     ctx.restore();
 }
 
