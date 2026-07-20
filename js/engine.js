@@ -536,7 +536,7 @@ window.addEventListener('keydown', (e) => {
         const inputVal = mathInput ? mathInput.value.trim() : '';
         const stageNum = parseInt(inputVal, 10);
         
-        if (!isNaN(stageNum) && stageNum >= 1 && stageNum <= LEVELS.length) {
+        if (!isNaN(stageNum) && stageNum >= 1) {
             currentStage = stageNum - 1; // 0-indexed
             initStage();
             if (mathInput) mathInput.value = '';
