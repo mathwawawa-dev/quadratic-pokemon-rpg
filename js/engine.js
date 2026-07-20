@@ -705,6 +705,55 @@ function getBarrierColors(type, alphaMult = 1.0) {
     }
 }
 
+function pathPolygon(ctx, sides, r, progress) {
+    const startAngle = -Math.PI / 2;
+    const limitAngle = startAngle + Math.PI * 2 * progress;
+    ctx.beginPath();
+    for (let i = 0; i <= sides; i++) {
+        const angle = startAngle + (i / sides) * Math.PI * 2;
+        if (angle > limitAngle && progress < 1.0) {
+            const prevAngle = startAngle + ((i - 1) / sides) * Math.PI * 2;
+            const ratio = (limitAngle - prevAngle) / (angle - prevAngle);
+            if (ratio > 0) {
+                const interAngle = prevAngle + (angle - prevAngle) * ratio;
+                ctx.lineTo(Math.cos(interAngle) * r, Math.sin(interAngle) * r);
+            }
+            break;
+        }
+        const px = Math.cos(angle) * r;
+        const py = Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+}
+
+function pathHexagon(ctx, r, progress) {
+    pathPolygon(ctx, 6, r, progress);
+}
+
+// 8각형 경로
+function pathOctagon(ctx, r, progress) {
+    pathPolygon(ctx, 8, r, progress);
+}
+
+// 나선(소용돌이) 경로
+function pathSpiral(ctx, r, progress, rotSpeed = 1.0) {
+    ctx.beginPath();
+    const turns = 2.0;
+    const steps = 100;
+    const timeRot = (Date.now() / 250) * rotSpeed;
+    
+    for (let i = 0; i <= steps * progress; i++) {
+        const theta = (i / steps) * Math.PI * 2 * turns;
+        const currentR = r * (0.15 + 0.85 * (i / steps));
+        const angle = theta + timeRot;
+        const px = Math.cos(angle) * currentR;
+        const py = Math.sin(angle) * currentR;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+}
+
 function checkBarrierCollision(mx, my, t) {
     if (!t.barrierType) return false;
     if (!t.barrierStartTime) t.barrierStartTime = Date.now();
@@ -1490,21 +1539,101 @@ function drawEntity(ent) {
         if (drawType !== 'none' && (drawType !== 'flashing' || isFlashVisible)) {
             ctx.save();
             ctx.strokeStyle = info.stroke;
-            ctx.lineWidth = 3;
             ctx.fillStyle = info.fill;
-            
             const r = scaleLength(1.4);
-            
-            if (drawType === 'generating') {
-                // 시계방향 가장자리(외곽선) 그리기 (12시 방향인 -Math.PI/2에서 시작)
-                ctx.beginPath();
-                ctx.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
-                ctx.stroke();
-            } else {
-                ctx.beginPath();
-                ctx.arc(0, 0, r, 0, Math.PI * 2);
+
+            if (ent.barrierType === 'reflect') {
+                // 반사 배리어: 날카로운 육각형 + 꼭짓점 가시 돌출형
+                ctx.lineWidth = 2.5;
+                pathHexagon(ctx, r, progress);
                 ctx.fill();
                 ctx.stroke();
+                
+                // 생성 중이 아닐 때만 가시 렌더링
+                if (drawType !== 'generating') {
+                    ctx.beginPath();
+                    const sides = 6;
+                    const startAngle = -Math.PI / 2;
+                    for (let i = 0; i < sides; i++) {
+                        const angle = startAngle + (i / sides) * Math.PI * 2;
+                        const px = Math.cos(angle) * r;
+                        const py = Math.sin(angle) * r;
+                        const spikeX = Math.cos(angle) * (r + scaleLength(0.22));
+                        const spikeY = Math.sin(angle) * (r + scaleLength(0.22));
+                        ctx.moveTo(px, py);
+                        ctx.lineTo(spikeX, spikeY);
+                    }
+                    ctx.strokeStyle = info.stroke;
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                }
+            } 
+            else if (ent.barrierType === 'absorb') {
+                // 흡수 배리어: 맥동하는 이중 오각형
+                const pulse = drawType === 'generating' ? 1.0 : 1.0 + Math.sin(Date.now() / 200) * 0.08;
+                ctx.lineWidth = 2.5;
+                
+                // 외곽 오각형
+                pathPolygon(ctx, 5, r * pulse, progress);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 내부 오각형 (엇박자 맥동)
+                if (drawType !== 'generating') {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(50, 205, 50, 0.45)';
+                    ctx.lineWidth = 1.5;
+                    const innerPulse = 1.0 + Math.cos(Date.now() / 200) * 0.06;
+                    pathPolygon(ctx, 5, r * 0.65 * innerPulse, 1.0);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            } 
+            else if (ent.barrierType === 'absolute') {
+                // 절대방어 배리어: 튼튼한 팔각형 성벽 + 격자형 차단층
+                ctx.lineWidth = 3.5;
+                pathOctagon(ctx, r, progress);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 내부 격자 쉴드 무늬
+                if (drawType !== 'generating') {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(255, 215, 0, 0.2)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    
+                    // 팔각형 내부 클리핑
+                    pathOctagon(ctx, r, 1.0);
+                    ctx.clip();
+                    
+                    // 격선 그리기
+                    ctx.beginPath();
+                    const spacing = scaleLength(0.35);
+                    for (let d = -r; d <= r; d += spacing) {
+                        ctx.moveTo(-r, d);
+                        ctx.lineTo(r, d);
+                        ctx.moveTo(d, -r);
+                        ctx.lineTo(d, r);
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            } 
+            else if (ent.barrierType === 'warp') {
+                // 워프 배리어: 불안정한 이중 나선 블랙홀/포탈
+                ctx.lineWidth = 3.0;
+                pathSpiral(ctx, r, progress, 1.0);
+                ctx.stroke();
+                
+                if (drawType !== 'generating') {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(186, 85, 211, 0.45)';
+                    ctx.lineWidth = 1.5;
+                    pathSpiral(ctx, r * 0.75, 1.0, -1.3);
+                    ctx.stroke();
+                    ctx.restore();
+                }
             }
             ctx.restore();
         }
