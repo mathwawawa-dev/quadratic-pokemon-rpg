@@ -410,7 +410,7 @@ function initStage() {
             rotation: 0, angularVelocity: 0, isKnockedBack: false,
             name: e.name, type: e.type,
             barrierType: barrierType,
-            barrierCycleIndex: 0
+            barrierStartTime: Date.now() + idx * 2500
         };
     });
 
@@ -666,15 +666,6 @@ window.fireMissile = function (isCheat = false) {
         isReflected: false
     });
     
-    // 배리어 주기 갱신
-    if (enemies && enemies.length > 0) {
-        enemies.forEach(e => {
-            if (e.barrierType) {
-                e.barrierCycleIndex = (e.barrierCycleIndex + 1) % 5;
-            }
-        });
-    }
-
     document.getElementById('fire-btn').disabled = true;
 };
 
@@ -715,7 +706,15 @@ function getBarrierColors(type, alphaMult = 1.0) {
 }
 
 function checkBarrierCollision(mx, my, t) {
-    if (!t.barrierType || t.barrierCycleIndex > 2) return false;
+    if (!t.barrierType) return false;
+    if (!t.barrierStartTime) t.barrierStartTime = Date.now();
+    const elapsed = (Date.now() - t.barrierStartTime) / 1000;
+    const cycleTime = elapsed % 9.5;
+    
+    // 1.0초 ~ 5.5초(유지 b초 + 깜빡임 1.5초) 구간에만 배리어가 물리적으로 타격 차단(활성)됨
+    const isActive = (cycleTime >= 1.0 && cycleTime < 5.5);
+    if (!isActive) return false;
+
     const offsetY = t.isFlying ? t.h * 0.15 : -t.h * 0.35;
     const ty = t.y + offsetY;
     const dist = Math.hypot(mx - t.x, my - ty);
@@ -1114,10 +1113,10 @@ function updateGame() {
                 return;
             }
 
-            // 배리어 충돌 체크 (활성화 상태 0, 1, 2일 때만)
+            // 배리어 충돌 체크
             let barrierHitEnemy = null;
             for (const e of enemies) {
-                if (e.hp > 0 && e.barrierType && e.barrierCycleIndex <= 2) {
+                if (e.hp > 0 && e.barrierType) {
                     if (checkBarrierCollision(missile.x, missile.y, e)) {
                         barrierHitEnemy = e;
                         break;
@@ -1406,22 +1405,6 @@ function drawEntity(ent) {
         const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444';
         ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-20, -drawH/2 - 5, 40, 6);
         ctx.fillStyle = hpColor;           ctx.fillRect(-20, -drawH/2 - 5, 40 * hpPct, 6);
-
-        // 배리어 상태 텍스트
-        if (ent.barrierType) {
-            const info = getBarrierColors(ent.barrierType);
-            let stateText = '';
-            if (ent.barrierCycleIndex === 0) stateText = '유지';
-            else if (ent.barrierCycleIndex === 1 || ent.barrierCycleIndex === 2) stateText = '깜빡';
-            else stateText = '해제';
-            
-            ctx.save();
-            ctx.fillStyle = info.stroke;
-            ctx.font = 'bold 9px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(`[${info.name}: ${stateText}]`, 0, -drawH/2 - 9);
-            ctx.restore();
-        }
     }
     // Facing flip for player
     // 스프라이트 기본 방향이 좌측이므로 우측(1)일 때 좌우 반전
@@ -1467,25 +1450,81 @@ function drawEntity(ent) {
         }
     }
 
-    // 배리어 그리기 (활성화 상태 0, 1, 2일 때만)
-    if (ent.hp > 0 && ent.barrierType && ent.barrierCycleIndex <= 2) {
-        ctx.save();
+    // 배리어 그리기 및 텍스트 표시 (시간 기반)
+    if (ent.hp > 0 && ent.barrierType) {
+        if (!ent.barrierStartTime) ent.barrierStartTime = Date.now();
+        const elapsed = (Date.now() - ent.barrierStartTime) / 1000;
+        const cycleTime = elapsed % 9.5;
         
-        let alphaMultiplier = 1.0;
-        if (ent.barrierCycleIndex === 1 || ent.barrierCycleIndex === 2) {
-            alphaMultiplier = (Math.floor(Date.now() / 250) % 2 === 0) ? 0.25 : 1.0;
+        let stateText = '';
+        let descText = '';
+        let drawType = 'none'; // 'none' | 'generating' | 'active' | 'flashing'
+        let progress = 1.0;
+        let isFlashVisible = true;
+        
+        if (cycleTime < 1.0) {
+            stateText = '생성 중';
+            drawType = 'generating';
+            progress = cycleTime / 1.0;
+        } else if (cycleTime < 4.0) {
+            stateText = '유지';
+            drawType = 'active';
+        } else if (cycleTime < 5.5) {
+            stateText = '깜빡임';
+            drawType = 'flashing';
+            const flashTime = cycleTime - 4.0; // 0.0 ~ 1.5
+            isFlashVisible = (flashTime % 0.5) < 0.25; // 0.5초 주기 중 앞의 0.25초만 보임 (총 3번 깜빡)
+        } else {
+            stateText = '해제';
+            drawType = 'none';
         }
         
-        const info = getBarrierColors(ent.barrierType, alphaMultiplier);
-        ctx.strokeStyle = info.stroke;
-        ctx.lineWidth = 3;
-        ctx.fillStyle = info.fill;
+        if (ent.barrierType === 'reflect')  descText = '포탄 반사 (아군 피해)';
+        if (ent.barrierType === 'absorb')   descText = '포탄 흡수 (체력 회복)';
+        if (ent.barrierType === 'absolute') descText = '완벽 방어 (해제 시 공격 가능)';
+        if (ent.barrierType === 'warp')     descText = '피격 시 다른 위치로 순간이동';
+
+        const info = getBarrierColors(ent.barrierType);
         
-        const r = scaleLength(1.4);
-        ctx.beginPath();
-        ctx.arc(0, 0, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        // 쉴드 원 및 외곽 가장자리 그리기
+        if (drawType !== 'none' && (drawType !== 'flashing' || isFlashVisible)) {
+            ctx.save();
+            ctx.strokeStyle = info.stroke;
+            ctx.lineWidth = 3;
+            ctx.fillStyle = info.fill;
+            
+            const r = scaleLength(1.4);
+            
+            if (drawType === 'generating') {
+                // 시계방향 가장자리(외곽선) 그리기 (12시 방향인 -Math.PI/2에서 시작)
+                ctx.beginPath();
+                ctx.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        // 배리어 설명 및 상태 텍스트 (원의 아래쪽에 표시)
+        ctx.save();
+        ctx.textAlign = 'center';
+        
+        const textY = scaleLength(1.4) + 12; // 원 반지름 아래쪽
+        
+        // 1. 상태 텍스트
+        ctx.fillStyle = info.stroke;
+        ctx.font = 'bold 10px Arial';
+        ctx.fillText(`[${info.name}: ${stateText}]`, 0, textY);
+        
+        // 2. 설명 텍스트
+        ctx.fillStyle = (drawType === 'none') ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.75)';
+        ctx.font = '9px Arial';
+        ctx.fillText(descText, 0, textY + 11);
+        
         ctx.restore();
     }
 
