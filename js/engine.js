@@ -526,6 +526,29 @@ window.updateDirectionUI = function() {
 
 // ---------- Cheat Keys & UI Shortcuts ----------
 window.addEventListener('keydown', (e) => {
+    // Ctrl+Shift+A: 스테이지 스킵 (탭 검색 방지, 수식입력창 숫자로 특정 스테이지 이동)
+    if (e.ctrlKey && e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // 수식입력창에 숫자가 있으면 해당 스테이지로 이동
+        const mathInput = document.getElementById('math-input');
+        const inputVal = mathInput ? mathInput.value.trim() : '';
+        const stageNum = parseInt(inputVal, 10);
+        
+        if (!isNaN(stageNum) && stageNum >= 1 && stageNum <= LEVELS.length) {
+            currentStage = stageNum - 1; // 0-indexed
+            initStage();
+            if (mathInput) mathInput.value = '';
+            return;
+        }
+        
+        // 숫자가 없으면 다음 스테이지로
+        currentStage++;
+        initStage();
+        if (mathInput) mathInput.value = '';
+        return;
+    }
     if (e.ctrlKey && e.shiftKey && (e.key === 'q' || e.key === 'Q')) {
         if (GAME_STATE !== 'IDLE' || enemies.length < 2) return;
         const p1 = { x: player.x, y: player.y };
@@ -541,17 +564,10 @@ window.addEventListener('keydown', (e) => {
         fireMissile(true);
         return;
     }
-    if (e.ctrlKey && e.shiftKey && (e.key === 'a' || e.key === 'A')) {
-        if (GAME_STATE !== 'IDLE') return;
-        enemies.forEach(en => en.hp = 0);
-        GAME_STATE = 'OVER';
-        showMessage('STAGE CLEAR', '치트키로 적을 처치했습니다! (+200G)', false);
-        return;
-    }
     if (e.target.tagName.toLowerCase() === 'math-field') return;
     if (e.key === 'a' || e.key === 'A') window.movePlayer(-1);
     if (e.key === 'd' || e.key === 'D') window.movePlayer(1);
-});
+}, { capture: true });
 
 // ---------- Fire Missile ----------
 function getMissileColor() {
