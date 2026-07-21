@@ -756,8 +756,13 @@ function pathSpiral(ctx, r, progress, rotSpeed = 1.0) {
 
 function checkBarrierCollision(mx, my, t) {
     if (!t.barrierType) return false;
-    if (!t.barrierStartTime) t.barrierStartTime = Date.now();
+    if (!t.barrierStartTime) {
+        t.barrierStartTime = Date.now();
+        if (t.barrierType === 'warp') t.barrierStartTime += 800;
+    }
     const elapsed = (Date.now() - t.barrierStartTime) / 1000;
+    if (elapsed < 0) return false;
+    
     const cycleTime = elapsed % 9.5;
     
     // 1.0초 ~ 5.5초(유지 b초 + 깜빡임 1.5초) 구간에만 배리어가 물리적으로 타격 차단(활성)됨
@@ -1501,8 +1506,17 @@ function drawEntity(ent) {
 
     // 배리어 그리기 및 텍스트 표시 (시간 기반)
     if (ent.hp > 0 && ent.barrierType) {
-        if (!ent.barrierStartTime) ent.barrierStartTime = Date.now();
+        if (!ent.barrierStartTime) {
+            ent.barrierStartTime = Date.now();
+            if (ent.barrierType === 'warp') ent.barrierStartTime += 800;
+        }
         const elapsed = (Date.now() - ent.barrierStartTime) / 1000;
+        
+        if (elapsed < 0) {
+            ctx.restore();
+            return;
+        }
+        
         const cycleTime = elapsed % 9.5;
         
         let drawType = 'none'; // 'none' | 'generating' | 'active' | 'flashing'
@@ -1610,67 +1624,27 @@ function drawEntity(ent) {
                 }
             } 
             else if (ent.barrierType === 'warp') {
-                // 워프 배리어: 고화질 SF 동심원 테크 HUD 포탈 디자인 (검은색 내핵 제거)
-                const time = Date.now() / 1000;
+                // 워프 배리어: 맥동하는 이중 원 (피해흡수 배리어의 밝은 보라색 버전)
+                const pulse = drawType === 'generating' ? 1.0 : 1.0 + Math.sin(Date.now() / 200) * 0.08;
+                ctx.lineWidth = 2.5;
                 
-                ctx.save();
-                ctx.strokeStyle = info.stroke; // 보라색
-                ctx.fillStyle = info.stroke;
-                ctx.shadowColor = info.stroke;
-
-                // 1. 바깥쪽 메인 테크 아크 링 (시계 방향 회전, 굵기 3px, 글로우 효과)
-                ctx.save();
-                ctx.lineWidth = 3.0;
-                ctx.shadowBlur = 12;
-                ctx.rotate(time * 0.7);
-                
-                // 아크 2개 끊어지게 그리기 (progress 연동)
+                // 외곽 원
                 ctx.beginPath();
-                ctx.arc(0, 0, r, 0, Math.PI * 0.7 * progress);
+                ctx.arc(0, 0, r * pulse, 0, Math.PI * 2 * progress);
+                ctx.fill();
                 ctx.stroke();
                 
-                ctx.beginPath();
-                ctx.arc(0, 0, r, Math.PI * 1.0, (Math.PI * 1.0 + Math.PI * 0.7) * progress);
-                ctx.stroke();
-                ctx.restore();
-
-                // 3. 중간 서브 링 (반시계 방향 회전, 미세한 눈금 패턴)
+                // 내부 원 (엇박자 맥동)
                 if (drawType !== 'generating') {
                     ctx.save();
-                    ctx.lineWidth = 1.0;
-                    ctx.shadowBlur = 6;
-                    ctx.rotate(-time * 1.1);
-                    
-                    // 점선 아크
-                    ctx.setLineDash([scaleLength(0.08), scaleLength(0.08)]);
-                    ctx.beginPath();
-                    ctx.arc(0, 0, r * 0.75, 0, Math.PI * 2);
-                    ctx.stroke();
-                    ctx.restore();
-                }
-
-                // 4. 안쪽 링의 십자 크로스헤어 / 타겟 조준선 표식
-                if (drawType !== 'generating') {
-                    ctx.save();
+                    ctx.strokeStyle = 'rgba(186, 85, 211, 0.45)';
                     ctx.lineWidth = 1.5;
-                    ctx.strokeStyle = 'rgba(186, 85, 211, 0.7)';
-                    ctx.shadowBlur = 4;
-                    ctx.rotate(time * 0.4);
-                    
+                    const innerPulse = 1.0 + Math.cos(Date.now() / 200) * 0.06;
                     ctx.beginPath();
-                    const ticks = 4;
-                    for (let i = 0; i < ticks; i++) {
-                        const angle = (i / ticks) * Math.PI * 2;
-                        const startD = r * 0.45;
-                        const endD = r * 0.58;
-                        ctx.moveTo(Math.cos(angle) * startD, Math.sin(angle) * startD);
-                        ctx.lineTo(Math.cos(angle) * endD, Math.sin(angle) * endD);
-                    }
+                    ctx.arc(0, 0, r * 0.65 * innerPulse, 0, Math.PI * 2);
                     ctx.stroke();
                     ctx.restore();
                 }
-                
-                ctx.restore();
             }
             ctx.restore();
         }
