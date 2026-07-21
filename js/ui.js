@@ -173,32 +173,46 @@ function setupMathInput() {
     // MathLive 자동변환 방지 (xx 가 곱하기로 변하는 것 방지)
     try { mf.inlineShortcuts = Object.assign({}, mf.inlineShortcuts || {}, { 'xx': 'xx' }); } catch(e) {}
 
-    // 한글 IME 차단 및 'ㅌ' -> 'x', 'ㅛ' -> 'y' 자동 변환
+    // 한글 IME 차단 및 자동 영문 변환
     const blockKorean = (e) => {
-        // 'ㅌ', 'ㅛ' 키를 누르면 강제로 한글 IME 조합을 깨고 x, y를 삽입합니다.
-        if (e.type === 'keydown' && e.code === 'KeyX' && (e.keyCode === 229 || e.key === 'ㅌ' || e.key === 'Process')) {
-            e.preventDefault(); e.stopPropagation();
-            mf.executeCommand(['insert', 'x']);
+        if (e.type === 'keydown' && (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key))) {
             
-            // 입력 직후 커서를 완전히 풀어서(blur) 한글 조합 상태를 원천 파괴합니다.
-            mf.blur();
-            setTimeout(() => {
-                mf.focus();
-            }, 10);
-            return;
-        }
-        if (e.type === 'keydown' && e.code === 'KeyY' && (e.keyCode === 229 || e.key === 'ㅛ' || e.key === 'Process')) {
-            e.preventDefault(); e.stopPropagation();
-            mf.executeCommand(['insert', 'y']);
+            // 1. 영문자 입력 (KeyA ~ KeyZ)
+            if (e.code && e.code.startsWith('Key')) {
+                e.preventDefault(); e.stopPropagation();
+                // 사용자가 입력한 키보드 물리 키(e.code)를 바탕으로 해당 영문자를 강제 삽입
+                const engChar = e.code.replace('Key', '').toLowerCase();
+                mf.executeCommand(['insert', engChar]);
+                
+                // 문자(Letter)인 경우에만 포커스를 완전히 풀어서 IME 조합 상태를 파괴합니다.
+                mf.blur();
+                setTimeout(() => {
+                    mf.focus();
+                }, 10);
+                return;
+            }
             
-            mf.blur();
-            setTimeout(() => {
-                mf.focus();
-            }, 10);
-            return;
+            // 2. 숫자 입력 (Digit0~9, Numpad0~9)
+            if (e.code && (e.code.startsWith('Digit') || e.code.startsWith('Numpad'))) {
+                e.preventDefault(); e.stopPropagation();
+                let insertChar = e.code.replace('Digit', '').replace('Numpad', '');
+                
+                // Shift 키가 눌려있으면 특수기호로 매핑
+                if (e.shiftKey) {
+                    const shiftMap = { '1':'!', '2':'@', '3':'#', '4':'$', '5':'%', '6':'^', '7':'&', '8':'*', '9':'(', '0':')' };
+                    if (shiftMap[insertChar]) insertChar = shiftMap[insertChar];
+                }
+                
+                mf.executeCommand(['insert', insertChar]);
+                // 숫자인 경우에는 blur/focus 트릭을 사용하지 않습니다.
+                return;
+            }
+
+            // 그 외의 키(연산자 등)인 경우 기본적으로 한글 찌꺼기 입력을 차단
+            e.preventDefault(); e.stopPropagation();
         }
 
-        if (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key) || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
+        if (e.type === 'beforeinput' && /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
             e.preventDefault(); e.stopPropagation();
         }
     };
