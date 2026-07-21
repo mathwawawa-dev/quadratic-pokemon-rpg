@@ -410,7 +410,7 @@ function initStage() {
             rotation: 0, angularVelocity: 0, isKnockedBack: false,
             name: e.name, type: e.type,
             barrierType: barrierType,
-            barrierStartTime: Date.now() + idx * 2500
+            barrierStartTime: Date.now() + (isPsychic ? 3000 : 0) + idx * 2500
         };
     });
 
@@ -754,19 +754,32 @@ function pathSpiral(ctx, r, progress, rotSpeed = 1.0) {
     }
 }
 
+function getBarrierTiming(type) {
+    let genTime = 1.0;
+    let activeTime = 3.0;
+    if (type === 'absolute') activeTime = 4.0;
+    if (type === 'absorb') activeTime = 4.5;
+    let flashTime = 1.5;
+    let noneTime = 4.0;
+    return {
+        gen: genTime,
+        active: activeTime,
+        flash: flashTime,
+        none: noneTime,
+        total: genTime + activeTime + flashTime + noneTime
+    };
+}
+
 function checkBarrierCollision(mx, my, t) {
     if (!t.barrierType) return false;
-    if (!t.barrierStartTime) {
-        t.barrierStartTime = Date.now();
-        if (t.barrierType === 'warp') t.barrierStartTime += 2000;
-    }
+    if (!t.barrierStartTime) t.barrierStartTime = Date.now();
     const elapsed = (Date.now() - t.barrierStartTime) / 1000;
     if (elapsed < 0) return false;
     
-    const cycleTime = elapsed % 9.5;
+    const timing = getBarrierTiming(t.barrierType);
+    const cycleTime = elapsed % timing.total;
     
-    // 1.0초 ~ 5.5초(유지 b초 + 깜빡임 1.5초) 구간에만 배리어가 물리적으로 타격 차단(활성)됨
-    const isActive = (cycleTime >= 1.0 && cycleTime < 5.5);
+    const isActive = (cycleTime >= timing.gen && cycleTime < timing.gen + timing.active + timing.flash);
     if (!isActive) return false;
 
     const offsetY = t.isFlying ? t.h * 0.15 : -t.h * 0.35;
@@ -1506,10 +1519,7 @@ function drawEntity(ent) {
 
     // 배리어 그리기 및 텍스트 표시 (시간 기반)
     if (ent.hp > 0 && ent.barrierType) {
-        if (!ent.barrierStartTime) {
-            ent.barrierStartTime = Date.now();
-            if (ent.barrierType === 'warp') ent.barrierStartTime += 2000;
-        }
+        if (!ent.barrierStartTime) ent.barrierStartTime = Date.now();
         const elapsed = (Date.now() - ent.barrierStartTime) / 1000;
         
         if (elapsed < 0) {
@@ -1517,21 +1527,22 @@ function drawEntity(ent) {
             return;
         }
         
-        const cycleTime = elapsed % 9.5;
+        const timing = getBarrierTiming(ent.barrierType);
+        const cycleTime = elapsed % timing.total;
         
         let drawType = 'none'; // 'none' | 'generating' | 'active' | 'flashing'
         let progress = 1.0;
         let isFlashVisible = true;
         
-        if (cycleTime < 1.0) {
+        if (cycleTime < timing.gen) {
             drawType = 'generating';
-            progress = cycleTime / 1.0;
-        } else if (cycleTime < 4.0) {
+            progress = cycleTime / timing.gen;
+        } else if (cycleTime < timing.gen + timing.active) {
             drawType = 'active';
-        } else if (cycleTime < 5.5) {
+        } else if (cycleTime < timing.gen + timing.active + timing.flash) {
             drawType = 'flashing';
-            const flashTime = cycleTime - 4.0; // 0.0 ~ 1.5
-            isFlashVisible = (flashTime % 0.5) < 0.25; // 0.5초 주기 중 앞의 0.25초만 보임 (총 3번 깜빡)
+            const flashTime = cycleTime - (timing.gen + timing.active);
+            isFlashVisible = (flashTime % 0.5) < 0.25;
         } else {
             drawType = 'none';
         }
