@@ -422,6 +422,14 @@ function applyMathFieldCaretStyle() {
                 50%, 95% { opacity: 0; visibility: hidden; }
                 100% { opacity: 1; visibility: visible; }
             }
+            textarea, .ML__textarea {
+                caret-color: transparent !important;
+                width: 0 !important;
+                font-size: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                outline: none !important;
+            }
             .ML__caret {
                 border-left: 3px solid #fbbf24 !important;
                 border-right: none !important;
