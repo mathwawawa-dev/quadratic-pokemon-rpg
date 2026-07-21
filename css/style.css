@@ -435,15 +435,18 @@ math-field {
     100% { opacity: 1; visibility: visible; }
 }
 
-/* 커스텀 3.5px 네온 골드 커서 단독 렌더링 (세로 높이 기존 커서 1.05em 일치) */
+/* 커스텀 2.5px 네온 골드 커서 (width: 0px 레이아웃 고정으로 글자 밀림 100% 방지) */
 math-field::part(caret),
 math-field .ML__caret {
-    background-color: #fbbf24 !important;
-    border: none !important;
-    width: 3.5px !important;
+    border-left: 2.5px solid #fbbf24 !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    width: 0 !important;
     height: 1.05em !important;
     margin: auto 0 !important;
     padding: 0 !important;
+    background: transparent !important;
     box-shadow: 0 0 8px rgba(251, 191, 36, 0.9) !important;
     animation: custom-caret-blink 1.0s step-end infinite !important;
 }

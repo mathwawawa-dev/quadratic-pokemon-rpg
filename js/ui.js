@@ -423,12 +423,15 @@ function applyMathFieldCaretStyle() {
                 100% { opacity: 1; visibility: visible; }
             }
             .ML__caret {
-                background-color: #fbbf24 !important;
-                border: none !important;
-                width: 3.5px !important;
+                border-left: 2.5px solid #fbbf24 !important;
+                border-right: none !important;
+                border-top: none !important;
+                border-bottom: none !important;
+                width: 0 !important;
                 height: 1.05em !important;
                 margin: auto 0 !important;
                 padding: 0 !important;
+                background: transparent !important;
                 box-shadow: 0 0 8px rgba(251, 191, 36, 0.9) !important;
                 animation: custom-caret-blink 1.0s step-end infinite !important;
             }
