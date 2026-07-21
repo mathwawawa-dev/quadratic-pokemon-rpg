@@ -767,7 +767,7 @@ function checkBarrierCollision(mx, my, t) {
     const offsetY = t.isFlying ? t.h * 0.15 : -t.h * 0.35;
     const ty = t.y + offsetY;
     const dist = Math.hypot(mx - t.x, my - ty);
-    return dist <= 1.4; // 배리어 반경
+    return dist <= 1.68; // 배리어 반경 (시각 반경과 동기화)
 }
 
 function handleBarrierCollision(e) {
@@ -1505,33 +1505,22 @@ function drawEntity(ent) {
         const elapsed = (Date.now() - ent.barrierStartTime) / 1000;
         const cycleTime = elapsed % 9.5;
         
-        let stateText = '';
-        let descText = '';
         let drawType = 'none'; // 'none' | 'generating' | 'active' | 'flashing'
         let progress = 1.0;
         let isFlashVisible = true;
         
         if (cycleTime < 1.0) {
-            stateText = '생성 중';
             drawType = 'generating';
             progress = cycleTime / 1.0;
         } else if (cycleTime < 4.0) {
-            stateText = '유지';
             drawType = 'active';
         } else if (cycleTime < 5.5) {
-            stateText = '깜빡임';
             drawType = 'flashing';
             const flashTime = cycleTime - 4.0; // 0.0 ~ 1.5
             isFlashVisible = (flashTime % 0.5) < 0.25; // 0.5초 주기 중 앞의 0.25초만 보임 (총 3번 깜빡)
         } else {
-            stateText = '해제';
             drawType = 'none';
         }
-        
-        if (ent.barrierType === 'reflect')  descText = '포탄 반사 (아군 피해)';
-        if (ent.barrierType === 'absorb')   descText = '포탄 흡수 (체력 회복)';
-        if (ent.barrierType === 'absolute') descText = '완벽 방어 (해제 시 공격 가능)';
-        if (ent.barrierType === 'warp')     descText = '피격 시 다른 위치로 순간이동';
 
         const info = getBarrierColors(ent.barrierType);
         
@@ -1540,7 +1529,7 @@ function drawEntity(ent) {
             ctx.save();
             ctx.strokeStyle = info.stroke;
             ctx.fillStyle = info.fill;
-            const r = scaleLength(1.4);
+            const r = scaleLength(1.68); // 1.4 * 1.2배
 
             if (ent.barrierType === 'reflect') {
                 // 반사 배리어: 날카로운 육각형 + 꼭짓점 가시 돌출형
@@ -1621,25 +1610,44 @@ function drawEntity(ent) {
                 }
             } 
             else if (ent.barrierType === 'warp') {
-                // 워프 배리어: 불안정한 이중 나선 블랙홀/포탈
-                ctx.lineWidth = 3.0;
-                pathSpiral(ctx, r, progress, 1.0);
-                ctx.stroke();
+                // 워프 배리어: 생성 시 X 하나가 중앙에서 확산 → 이후 여러 X가 퍼지며 천천히 회전
+                const timeRot = Date.now() / 1800; // 천천히 회전
+                const xCount = drawType === 'generating' ? 1 : 4; // 생성 중 X 1개, 이후 4개
                 
-                if (drawType !== 'generating') {
+                const drawX = (cx, cy, size, alpha) => {
                     ctx.save();
-                    ctx.strokeStyle = 'rgba(186, 85, 211, 0.45)';
-                    ctx.lineWidth = 1.5;
-                    pathSpiral(ctx, r * 0.75, 1.0, -1.3);
+                    ctx.strokeStyle = `rgba(186, 85, 211, ${alpha})`;
+                    ctx.lineWidth = drawType === 'generating' ? 3.0 : 2.0;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - size, cy - size); ctx.lineTo(cx + size, cy + size);
+                    ctx.moveTo(cx + size, cy - size); ctx.lineTo(cx - size, cy + size);
                     ctx.stroke();
                     ctx.restore();
+                };
+                
+                if (drawType === 'generating') {
+                    // 생성 애니메이션: 중앙의 X 하나가 progress에 따라 크기 확산
+                    const size = r * progress;
+                    drawX(0, 0, size, 0.9);
+                } else {
+                    // 활성: X 4개가 각각 다른 거리에서 천천히 공전
+                    for (let xi = 0; xi < xCount; xi++) {
+                        const angle = timeRot + (xi / xCount) * Math.PI * 2;
+                        const dist = r * 0.45;
+                        const cx = Math.cos(angle) * dist;
+                        const cy = Math.sin(angle) * dist;
+                        const size = r * 0.28;
+                        drawX(cx, cy, size, xi % 2 === 0 ? 0.9 : 0.5);
+                    }
+                    // 중앙 작은 X (고정)
+                    drawX(0, 0, r * 0.15, 0.6);
                 }
             }
             ctx.restore();
         }
         
-        // 배리어 설명 텍스트 (원의 아래쪽에 표시, 가로 반전 시 글자 뒤집힘 방지, 활성 시에만 표시)
-        if (drawType !== 'none') {
+        // 배리어 이름 텍스트 (활성/생성/깜빡임 시에만 표시, 깜빡임 시 함께 깜빡임, 반전 보정)
+        if (drawType !== 'none' && (drawType !== 'flashing' || isFlashVisible)) {
             ctx.save();
             if (ent !== player && ent.x < player.x) {
                 ctx.scale(-1, 1);
@@ -1647,7 +1655,7 @@ function drawEntity(ent) {
             
             ctx.font = 'bold 10px Arial';
             const tw = ctx.measureText(info.name).width;
-            const textY = scaleLength(1.4) + 12;
+            const textY = scaleLength(1.68) + 13; // 새 반경 기준
             
             // 검은색 텍스트 상자 배경 (둥근 사각형)
             ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
