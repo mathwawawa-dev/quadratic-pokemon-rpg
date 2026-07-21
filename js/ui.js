@@ -180,29 +180,21 @@ function setupMathInput() {
             e.preventDefault(); e.stopPropagation();
             mf.executeCommand(['insert', 'x']);
             
-            // 이벤트 루프가 돌고 나서(브라우저가 IME 조합을 시작한 직후) 조합을 강제로 깹니다.
+            // 입력 직후 커서를 완전히 풀어서(blur) 한글 조합 상태를 원천 파괴합니다.
+            mf.blur();
             setTimeout(() => {
-                const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
-                if (textarea) {
-                    textarea.blur();
-                    textarea.value = '';
-                    textarea.focus();
-                }
-            }, 0);
+                mf.focus();
+            }, 10);
             return;
         }
         if (e.type === 'keydown' && e.code === 'KeyY' && (e.keyCode === 229 || e.key === 'ㅛ' || e.key === 'Process')) {
             e.preventDefault(); e.stopPropagation();
             mf.executeCommand(['insert', 'y']);
             
+            mf.blur();
             setTimeout(() => {
-                const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
-                if (textarea) {
-                    textarea.blur();
-                    textarea.value = '';
-                    textarea.focus();
-                }
-            }, 0);
+                mf.focus();
+            }, 10);
             return;
         }
 
