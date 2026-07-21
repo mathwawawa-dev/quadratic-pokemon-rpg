@@ -481,17 +481,23 @@ function initStage() {
     const maxWait = new Promise(resolve => setTimeout(resolve, 1500)); // 최대 1500ms 캡
 
     Promise.race([waitForImages, maxWait]).then(() => {
+        const finalizeStageInit = () => {
+            GAME_STATE = 'IDLE';
+            if (window.startGuideMessageRotation) window.startGuideMessageRotation();
+            // 스테이지 시작 직후 자동으로 수식입력창에 포커스를 줍니다.
+            const mf = document.getElementById('math-input');
+            if (mf) mf.focus();
+        };
+
         if (overlay) {
             overlay.classList.add('hiding');         // 0.4s fade-out 시작
             setTimeout(() => {
                 overlay.classList.remove('hiding');
                 overlay.classList.add('hidden');     // 완전히 숨김
-                GAME_STATE = 'IDLE';
-                if (window.startGuideMessageRotation) window.startGuideMessageRotation();
+                finalizeStageInit();
             }, 400);
         } else {
-            GAME_STATE = 'IDLE';
-            if (window.startGuideMessageRotation) window.startGuideMessageRotation();
+            finalizeStageInit();
         }
     });
 }
