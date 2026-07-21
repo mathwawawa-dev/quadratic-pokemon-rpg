@@ -216,12 +216,14 @@ window.addEventListener('touchend', () => { pointerTooltip.active = false; isDra
 let terrainSpikes = []; // 스테이지마다 랜덤으로 생성되는 뾰족한 언덕 목록
 
 function getTerrainY(x) {
+    const key = (Math.round(x * 10) / 10).toFixed(1);
+    if (terrainHeights[key] !== undefined) return terrainHeights[key];
+
     const stage = LEVELS[currentStage % LEVELS.length];
     let y = TERRAINS[stage.terrain].func(x);
-    if (x < -20) { const dx = -20 - x; y += dx * dx * 5; return y; }
-    if (x >  20) { const dx =  x - 20; y += dx * dx * 5; return y; }
-    const key = (Math.round(x * 10) / 10).toFixed(1);
-    return terrainHeights[key] !== undefined ? terrainHeights[key] : y;
+    if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
+    else if (x >  20) { const dx =  x - 20; y += dx * dx * 5; }
+    return y;
 }
 function createCrater(cx, cy, radius) {
     for (let x = cx - radius; x <= cx + radius; x += 0.1) {
@@ -326,9 +328,11 @@ function initStage() {
         });
     }
 
-    for (let x = -20; x <= 20; x += 0.1) {
+    for (let x = -35; x <= 35; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
         let y = tFunc(x);
+        if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
+        else if (x > 20) { const dx = x - 20; y += dx * dx * 5; }
         // 스파이크 적용: 가우시안 형태로 솟아오르는 언덕
         for (const sp of terrainSpikes) {
             const d = x - sp.cx;
