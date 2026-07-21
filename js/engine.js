@@ -758,7 +758,7 @@ function checkBarrierCollision(mx, my, t) {
     if (!t.barrierType) return false;
     if (!t.barrierStartTime) {
         t.barrierStartTime = Date.now();
-        if (t.barrierType === 'warp') t.barrierStartTime += 1200;
+        if (t.barrierType === 'warp') t.barrierStartTime += 2000;
     }
     const elapsed = (Date.now() - t.barrierStartTime) / 1000;
     if (elapsed < 0) return false;
@@ -1508,7 +1508,7 @@ function drawEntity(ent) {
     if (ent.hp > 0 && ent.barrierType) {
         if (!ent.barrierStartTime) {
             ent.barrierStartTime = Date.now();
-            if (ent.barrierType === 'warp') ent.barrierStartTime += 1200;
+            if (ent.barrierType === 'warp') ent.barrierStartTime += 2000;
         }
         const elapsed = (Date.now() - ent.barrierStartTime) / 1000;
         
