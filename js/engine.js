@@ -1610,29 +1610,15 @@ function drawEntity(ent) {
                 }
             } 
             else if (ent.barrierType === 'warp') {
-                // 워프 배리어: 고화질 SF 동심원 테크 HUD 포탈 디자인
+                // 워프 배리어: 고화질 SF 동심원 테크 HUD 포탈 디자인 (검은색 내핵 제거)
                 const time = Date.now() / 1000;
                 
                 ctx.save();
                 ctx.strokeStyle = info.stroke; // 보라색
                 ctx.fillStyle = info.stroke;
                 ctx.shadowColor = info.stroke;
-                
-                // 1. 중앙의 시공간 비틀림/포탈 중심 코어 (검은 구멍 + 외곽 보라 광원)
-                if (drawType !== 'generating') {
-                    ctx.save();
-                    const grad = ctx.createRadialGradient(0, 0, r * 0.1, 0, 0, r * 0.45);
-                    grad.addColorStop(0, 'rgba(0, 0, 0, 0.95)');
-                    grad.addColorStop(0.5, 'rgba(75, 0, 130, 0.6)');
-                    grad.addColorStop(1, 'rgba(186, 85, 211, 0.0)');
-                    ctx.fillStyle = grad;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, r * 0.45, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.restore();
-                }
 
-                // 2. 바깥쪽 메인 테크 아크 링 (시계 방향 회전, 굵기 3px, 글로우 효과)
+                // 1. 바깥쪽 메인 테크 아크 링 (시계 방향 회전, 굵기 3px, 글로우 효과)
                 ctx.save();
                 ctx.lineWidth = 3.0;
                 ctx.shadowBlur = 12;
