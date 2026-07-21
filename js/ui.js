@@ -178,28 +178,31 @@ function setupMathInput() {
         // 'ㅌ', 'ㅛ' 키를 누르면 강제로 한글 IME 조합을 깨고 x, y를 삽입합니다.
         if (e.type === 'keydown' && e.code === 'KeyX' && (e.keyCode === 229 || e.key === 'ㅌ' || e.key === 'Process')) {
             e.preventDefault(); e.stopPropagation();
-            const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
-            if (textarea) {
-                textarea.disabled = true; // IME 조합(Composition) 강제 종료를 위한 확실한 트릭
-                textarea.disabled = false;
-                textarea.focus();
-            }
+            mf.executeCommand(['insert', 'x']);
+            
+            // 이벤트 루프가 돌고 나서(브라우저가 IME 조합을 시작한 직후) 조합을 강제로 깹니다.
             setTimeout(() => {
-                mf.executeCommand(['insert', 'x']);
-            }, 10);
+                const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
+                if (textarea) {
+                    textarea.blur();
+                    textarea.value = '';
+                    textarea.focus();
+                }
+            }, 0);
             return;
         }
         if (e.type === 'keydown' && e.code === 'KeyY' && (e.keyCode === 229 || e.key === 'ㅛ' || e.key === 'Process')) {
             e.preventDefault(); e.stopPropagation();
-            const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
-            if (textarea) {
-                textarea.disabled = true;
-                textarea.disabled = false;
-                textarea.focus();
-            }
+            mf.executeCommand(['insert', 'y']);
+            
             setTimeout(() => {
-                mf.executeCommand(['insert', 'y']);
-            }, 10);
+                const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
+                if (textarea) {
+                    textarea.blur();
+                    textarea.value = '';
+                    textarea.focus();
+                }
+            }, 0);
             return;
         }
 
