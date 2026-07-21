@@ -416,10 +416,10 @@ math-field {
     display: flex; align-items: center; /* 수직 중앙 정렬 */
     transition: border-color 0.2s;
     ime-mode: disabled;
-    /* MathLive 커서(Caret) 선명도 및 굵기 설정 (원상복구 시 주석 보존) */
-    /* [원상복구용 기존 커서 설정]: --caret-color: default; */
-    --caret-color: #fbbf24;
-    caret-color: #fbbf24;
+    /* 기존 MathLive/브라우저 고유 커서는 완전 투명(투명도 0)으로 숨김 처리 */
+    /* [원상복구 대비 주석]: --caret-color: #fbbf24; */
+    --caret-color: transparent !important;
+    caret-color: transparent !important;
     /* MathLive 선택 영역 및 배경 문제 수정 CSS 변수 */
     --selection-background-color: rgba(59, 130, 246, 0.4);
     --selection-color: #ffffff;
@@ -435,17 +435,14 @@ math-field {
     100% { opacity: 1; visibility: visible; }
 }
 
-/* MathLive 커서(Caret) 굵기 확장(3.5px) - 순수 border-left 직접 재정의로 입력 시 튀어나옴 완벽 방지 */
+/* 커스텀 3.5px 네온 골드 커서 단독 렌더링 (기존 커서 튀어나옴 100% 소멸) */
 math-field::part(caret),
 math-field .ML__caret {
-    border-left: 3.5px solid #fbbf24 !important;
-    border-right: none !important;
-    border-top: none !important;
-    border-bottom: none !important;
-    width: 0 !important;
+    background-color: #fbbf24 !important;
+    border: none !important;
+    width: 3.5px !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: transparent !important;
     box-shadow: 0 0 8px rgba(251, 191, 36, 0.9) !important;
     animation: custom-caret-blink 1.0s step-end infinite !important;
 }
