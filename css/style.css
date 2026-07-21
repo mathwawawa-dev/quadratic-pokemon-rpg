@@ -428,11 +428,23 @@ math-field {
     --contains-highlight-background-color: transparent;
 }
 
-/* MathLive 커서(Caret) 굵기 확장(3.5px) 및 선명한 네온 발광 효과 */
+/* MathLive 커서(Caret) 깜빡임(Blink) 애니메이션 정의 */
+@keyframes custom-caret-blink {
+    0%, 45% { opacity: 1; visibility: visible; }
+    50%, 95% { opacity: 0; visibility: hidden; }
+    100% { opacity: 1; visibility: visible; }
+}
+
+/* MathLive 커서(Caret) 굵기 확장(3.5px), 완벽한 중앙 위치 중첩 및 깜빡임 연동 */
 math-field::part(caret),
 math-field .ML__caret {
-    border-left: 3.5px solid #fbbf24 !important;
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.9) !important;
+    box-sizing: border-box !important;
+    width: 3.5px !important;
+    margin-left: -1px !important;
+    background-color: #fbbf24 !important;
+    border: none !important;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.9) !important;
+    animation: custom-caret-blink 1.0s step-end infinite !important;
 }
 math-field:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
 math-field::part(virtual-keyboard-toggle) { display: none !important; pointer-events: none; }

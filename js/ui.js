@@ -417,9 +417,19 @@ function applyMathFieldCaretStyle() {
     const inject = () => {
         const styleId = 'custom-caret-style';
         const css = `
+            @keyframes custom-caret-blink {
+                0%, 45% { opacity: 1; visibility: visible; }
+                50%, 95% { opacity: 0; visibility: hidden; }
+                100% { opacity: 1; visibility: visible; }
+            }
             .ML__caret {
-                border-left: 3.5px solid #fbbf24 !important;
-                box-shadow: 0 0 10px rgba(251, 191, 36, 0.9) !important;
+                box-sizing: border-box !important;
+                width: 3.5px !important;
+                margin-left: -1px !important;
+                background-color: #fbbf24 !important;
+                border: none !important;
+                box-shadow: 0 0 8px rgba(251, 191, 36, 0.9) !important;
+                animation: custom-caret-blink 1.0s step-end infinite !important;
             }
         `;
         if (mf.shadowRoot && !mf.shadowRoot.getElementById(styleId)) {
