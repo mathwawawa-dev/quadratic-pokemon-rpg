@@ -140,6 +140,9 @@ function setupMathInput() {
     const mf = document.getElementById('math-input');
     if (!mf) return;
 
+    // 지수에 연속으로 숫자를 쓸 때 자동으로 지수 밖으로 커서가 빠져나가는 기본 동작 방지
+    mf.smartSuperscript = false;
+
     // 우클릭 금지 (강제 차단)
     mf.addEventListener('contextmenu', e => {
         e.preventDefault();
