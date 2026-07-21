@@ -1085,9 +1085,9 @@ function stepParabolaMissile() {
         // 상승 구간: 초기 발사 각도 가속 적용
         speedMult = missile.launchBoost || 1.0;
     } else {
-        // 하강 구간: 1.1배 -> 1.95배 -> 최대 4.0배 폭속 낙하 가속
+        // 하강 구간: 1.1배 -> 2.5배 -> 최대 4.0배 폭속 낙하 가속
         const fallDistance = Math.max(0, (missile.maxY || missile.y) - missile.y);
-        const descentAccel = 1.1 + Math.min(2.9, fallDistance * 0.35 + absSlope * 0.4);
+        const descentAccel = 1.1 + Math.min(2.9, fallDistance * 0.55 + absSlope * 0.5);
         speedMult = descentAccel;
     }
 
