@@ -3,10 +3,10 @@
 // ============================================================
 
 const STARTERS = {
-    pikachu:    { name: '피카츄',   img: '25.png',  type: 'electric', x: -2 },
-    bulbasaur:  { name: '이상해씨', img: '1.png',   type: 'grass',    x: -2 },
-    charmander: { name: '파이리',   img: '4.png',   type: 'fire',     x: -2 },
-    squirtle:   { name: '꼬부기',   img: '7.png',   type: 'water',    x: -2 },
+    pikachu:    { name: '피카츄',   img: 'assets/starters/25.png',  type: 'electric', x: -2 },
+    bulbasaur:  { name: '이상해씨', img: 'assets/starters/1.png',   type: 'grass',    x: -2 },
+    charmander: { name: '파이리',   img: 'assets/starters/4.png',   type: 'fire',     x: -2 },
+    squirtle:   { name: '꼬부기',   img: 'assets/starters/7.png',   type: 'water',    x: -2 },
 };
 
 // 선택된 스타팅 포켓몬. 인트로 화면에서 설정됩니다.

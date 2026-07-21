@@ -36,14 +36,14 @@ function showIntro() {
     intro.classList.remove('hidden');
     game.classList.add('hidden');
 
-    // 스타팅 포켓몬 이미지를 일반 게임용 스프라이트로 변경하여 로딩 속도 대폭 개선
+    // 스타팅 포켓몬 이미지를 로컬 파일에서 우선 로딩하여 0ms 인스턴트 표시
     document.querySelectorAll('.starter-card').forEach(card => {
         const id = card.dataset.id;
         const img = card.querySelector('img');
+        const localSrc = `assets/starters/${id}.png`;
         const primary  = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${id}.png`;
-        const fallback = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-        img.src = primary;
-        img.onerror = () => { if (img.src !== fallback) img.src = fallback; };
+        img.src = localSrc;
+        img.onerror = () => { if (img.src !== primary) img.src = primary; };
     });
 }
 

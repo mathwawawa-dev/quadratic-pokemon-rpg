@@ -69,10 +69,14 @@ const spriteCache = {};
 function loadSprite(idOrName) {
     if (spriteCache[idOrName]) return spriteCache[idOrName];
     const img = new Image();
-    const primarySrc  = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${idOrName}`;
-    const fallbackSrc = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${idOrName}`;
-    img.src = primarySrc;
-    img.onerror = () => { if (img.src !== fallbackSrc) img.src = fallbackSrc; };
+    if (idOrName.startsWith('assets/') || idOrName.includes('/')) {
+        img.src = idOrName;
+    } else {
+        const primarySrc  = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${idOrName}`;
+        const fallbackSrc = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${idOrName}`;
+        img.src = primarySrc;
+        img.onerror = () => { if (img.src !== fallbackSrc) img.src = fallbackSrc; };
+    }
     spriteCache[idOrName] = img;
     return img;
 }
