@@ -369,7 +369,7 @@ function initStage() {
     let nPool = [...ENEMY_POOL].sort(() => Math.random() - 0.5);
     for (let i = 0; i < nCount; i++) stageEnemies.push(nPool[i % nPool.length]);
 
-    const MIN_X_GAP = 4;
+    const MIN_X_GAP = 5;
     const MIN_Y_GAP = 2.0; // 지상 포켓몬끼리 y좌표 최소 간격
     const placedX = [];
     const placedY = [];
