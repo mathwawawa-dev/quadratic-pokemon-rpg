@@ -408,3 +408,31 @@ window.startGuideMessageRotation = function() {
         }
     }, 9000);
 };
+
+// ---------- MathLive 커서(Caret) 굵기 및 네온 발광 효과 Shadow DOM 주입 ----------
+// [원상복구 시 유용한 기존 설정 보존]: 이 함수 호출을 주석 처리하면 원래 커서 스타일로 즉시 돌아갑니다.
+function applyMathFieldCaretStyle() {
+    const mf = document.getElementById('math-input');
+    if (!mf) return;
+    const inject = () => {
+        const styleId = 'custom-caret-style';
+        const css = `
+            .ML__caret {
+                border-left: 3.5px solid #fbbf24 !important;
+                box-shadow: 0 0 10px rgba(251, 191, 36, 0.9) !important;
+            }
+        `;
+        if (mf.shadowRoot && !mf.shadowRoot.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = css;
+            mf.shadowRoot.appendChild(style);
+        }
+    };
+    inject();
+    // MathLive 렌더링 지연 대비 주기적 갱신
+    setTimeout(inject, 300);
+    setTimeout(inject, 1000);
+}
+window.addEventListener('DOMContentLoaded', applyMathFieldCaretStyle);
+window.applyMathFieldCaretStyle = applyMathFieldCaretStyle;
