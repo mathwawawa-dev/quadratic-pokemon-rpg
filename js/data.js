@@ -233,6 +233,7 @@ const LEVELS = [
     { title: "Stage 5", terrain: 'cave',  count: 3, flyingCount: 2 },
     { title: "Stage 6", terrain: 'electric', count: 4, flyingCount: 1 },
     { title: "Stage 7", terrain: 'psychic',  count: 4, flyingCount: 2 },
+    { title: "Stage 8", terrain: 'garden',   count: 4, flyingCount: 2 },
 ];
 
 let terrainSeed = 0;
@@ -278,6 +279,22 @@ const TERRAINS = {
         name: "왜곡된 차원",
         bg: ["#3b0764", "#581c87", "#f472b6"],
         color: "#3e1b5d", outColor: "#1d0333", // 약간만 더 연하고 부드러운 딥 바이올렛 톤으로 조정
-        func: (x) => Math.sin((x + terrainSeed) / 3) * 3 + Math.cos((x - terrainSeed) / 3) * 1.5 - 2
+    },
+    garden: {
+        name: "공중정원",
+        bg: ["#0ea5e9", "#7dd3fc", "#e0f2fe"],
+        color: "#10b981", outColor: "#059669",
+        isFloating: true,
+        func: (x) => {
+            // 섬(Island) 맵: 약 6의 길이와 2.5의 간격
+            const period = 8.5;
+            const phase = (x + terrainSeed) % period;
+            const norm = phase >= 0 ? phase : phase + period;
+            if (norm < 6.0) {
+                return Math.sin((x + terrainSeed) / 2) * 1.2 + Math.cos((x - terrainSeed) / 1.5) * 1.0 - 1;
+            } else {
+                return -100; // 빈 공간(구멍)
+            }
+        }
     }
 };

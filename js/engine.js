@@ -229,12 +229,27 @@ function getTerrainY(x) {
     return y;
 }
 function createCrater(cx, cy, radius) {
+    const stage = LEVELS[currentStage % LEVELS.length];
+    const isFloating = TERRAINS[stage.terrain].isFloating;
+    const islandThickness = 4.0; // 섬의 두께
+
     for (let x = cx - radius; x <= cx + radius; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
         if (terrainHeights[key] === undefined) continue;
         const dx = x - cx;
         const craterY = cy - Math.sqrt(radius * radius - dx * dx);
-        if (craterY < terrainHeights[key]) terrainHeights[key] = craterY;
+        
+        if (craterY < terrainHeights[key]) {
+            terrainHeights[key] = craterY;
+            
+            if (isFloating) {
+                const originalY = TERRAINS[stage.terrain].func(x);
+                // 원래 지형 높이보다 두께 이상 파였으면 완전히 뚫림
+                if (originalY !== -100 && terrainHeights[key] < originalY - islandThickness) {
+                    terrainHeights[key] = -100;
+                }
+            }
+        }
     }
 
     // 숨겨진 땅 포켓몬 근처(반경 1.0 이내)의 지형이 폭발로 파여질 때 즉시 파헤쳐짐 처리
@@ -1952,14 +1967,58 @@ function render() {
     ctx.drawImage(offCanvas, 0, 0);
 
     // Terrain polygon
-    ctx.beginPath();
-    const startP = gridToScreen(X_MIN, getTerrainY(X_MIN));
-    ctx.moveTo(startP.x, startP.y);
-    for (let x = X_MIN; x <= X_MAX; x += 0.2) { const p = gridToScreen(x, getTerrainY(x)); ctx.lineTo(p.x, p.y); }
-    const br = gridToScreen(X_MAX, Y_MIN - 10), bl = gridToScreen(X_MIN, Y_MIN - 10);
-    ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y); ctx.closePath();
-    ctx.fillStyle = tData.color; ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.stroke();
+    ctx.fillStyle = tData.color;
+    ctx.lineWidth = 2; 
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    
+    if (tData.isFloating) {
+        let inIsland = false;
+        let islandPoints = [];
+        const islandThickness = 4.0;
+        
+        const drawIslandPoly = (pts) => {
+            if (pts.length === 0) return;
+            ctx.beginPath();
+            let p = gridToScreen(pts[0].x, pts[0].y);
+            ctx.moveTo(p.x, p.y);
+            for (let i = 1; i < pts.length; i++) {
+                p = gridToScreen(pts[i].x, pts[i].y);
+                ctx.lineTo(p.x, p.y);
+            }
+            for (let i = pts.length - 1; i >= 0; i--) {
+                p = gridToScreen(pts[i].x, pts[i].y - islandThickness);
+                ctx.lineTo(p.x, p.y);
+            }
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        };
+
+        for (let x = X_MIN; x <= X_MAX + 0.2; x += 0.2) {
+            let cx = Math.min(x, X_MAX);
+            let y = getTerrainY(cx);
+            if (y > -50) {
+                if (!inIsland) { inIsland = true; islandPoints = []; }
+                islandPoints.push({x: cx, y: y});
+            } else {
+                if (inIsland) {
+                    drawIslandPoly(islandPoints);
+                    inIsland = false;
+                }
+            }
+        }
+        if (inIsland) drawIslandPoly(islandPoints);
+    } else {
+        ctx.beginPath();
+        const startP = gridToScreen(X_MIN, getTerrainY(X_MIN));
+        ctx.moveTo(startP.x, startP.y);
+        for (let x = X_MIN; x <= X_MAX; x += 0.2) { 
+            const p = gridToScreen(x, getTerrainY(x)); 
+            ctx.lineTo(p.x, p.y); 
+        }
+        const br = gridToScreen(X_MAX, Y_MIN - 10), bl = gridToScreen(X_MIN, Y_MIN - 10);
+        ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+    }
 
     // Grid & Axes
     const isBright = ['sky', 'ice'].includes(LEVELS[currentStage % LEVELS.length].terrain);
