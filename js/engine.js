@@ -236,6 +236,9 @@ function showMessage(title, desc, isError = true) {
     btn.innerHTML = (GAME_STATE === 'OVER' && enemies.filter(e => e.hp <= 0).length >= 2) ? '다음 단계로 <span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>' : '다시 시도 <span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>';
     document.getElementById('message-overlay').classList.add('show');
     document.getElementById('fire-btn').disabled = true;
+    
+    // 창이 뜨면 즉시 버튼에 포커스를 주어 엔터키로 바로 닫을 수 있게 함
+    setTimeout(() => { btn.focus(); }, 10);
 }
 window.closeMessage = function () {
     document.getElementById('message-overlay').classList.remove('show');
@@ -260,6 +263,10 @@ function resetTurn() {
     player.movePoints = player.maxMovePoints;
     updateHPUI();
     document.getElementById('fire-btn').disabled = false;
+    
+    // 턴이 리셋될 때 다시 수식창으로 포커스
+    const mf = document.getElementById('math-input');
+    if (mf) mf.focus();
 }
 
 // ---------- Init Stage ----------
