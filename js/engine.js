@@ -1061,8 +1061,8 @@ function stepParabolaMissile() {
     // x 진행 방향 기준 y가 감소 중이면 하강 상태로 간주
     const isDescending = (slope * dirX < 0);
     
-    // 2D 실제 이동 속도 (기본 0.08, 하강 시 1.3배 가속)
-    const baseDS = 0.08;
+    // 2D 실제 이동 속도 (기본 0.18, 하강 시 1.3배 가속)
+    const baseDS = 0.18;
     const targetDS = isDescending ? baseDS * 1.3 : baseDS;
     
     // 2D 곡선 거리를 유지하도록 dx 계산: dx = targetDS / sqrt(1 + slope^2) * dirX
