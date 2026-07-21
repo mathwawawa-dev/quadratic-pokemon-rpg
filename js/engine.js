@@ -377,7 +377,7 @@ function initStage() {
             flyingYIdx++;
         } else {
             const isGroundType = e.type === 'ground';
-            const yOffset = isGroundType ? -0.5 : 0.75; // 땅포켓몬은 언덕선보다 아래에 생성
+            const yOffset = isGroundType ? -1.3 : 0.75; // 땅포켓몬은 언덕선보다 더 깊게(-1.3) 생성
             do {
                 rx = side === 'L'
                     ? player.x - MIN_X_GAP - Math.random() * 12
@@ -409,6 +409,7 @@ function initStage() {
             shake: 0, vx: 0, vy: 0,
             rotation: 0, angularVelocity: 0, isKnockedBack: false,
             name: e.name, type: e.type,
+            isSurfaced: false,
             barrierType: barrierType,
             barrierStartTime: Date.now() + (isPsychic ? 3000 : 0) + idx * 2500
         };
@@ -924,6 +925,11 @@ function createCloudPop(x, y) {
 }
 
 function applyDamageAndEffects(target, mx, my) {
+    if (target.type === 'ground' && !target.isSurfaced) {
+        target.isSurfaced = true;
+        effects.push({ type: 'text', x: target.x, y: target.y + 2, text: '파헤치기 성공!', color: '#fbbf24', life: 60 });
+    }
+    
     if (target.hasCloud) {
         target.hasCloud = false;
         target.isFlying = false;
@@ -1040,8 +1046,8 @@ function updateGame() {
                 }
             }
         } else if (!ent.isFlying) {
-            const isGroundType = ent.type === 'ground';
-            const groundY = getTerrainY(ent.x) + (isGroundType ? -0.5 : 0.75);
+            const isGroundType = ent.type === 'ground' && !ent.isSurfaced;
+            const groundY = getTerrainY(ent.x) + (isGroundType ? -1.3 : 0.75);
             if (ent.y > groundY + 0.1) { ent.vy -= 0.02; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
