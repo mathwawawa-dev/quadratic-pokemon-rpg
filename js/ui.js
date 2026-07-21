@@ -192,24 +192,9 @@ function setupMathInput() {
                 return;
             }
             
-            // 2. 숫자 입력 (Digit0~9, Numpad0~9)
-            if (e.code && (e.code.startsWith('Digit') || e.code.startsWith('Numpad'))) {
-                e.preventDefault(); e.stopPropagation();
-                let insertChar = e.code.replace('Digit', '').replace('Numpad', '');
-                
-                // Shift 키가 눌려있으면 특수기호로 매핑
-                if (e.shiftKey) {
-                    const shiftMap = { '1':'!', '2':'@', '3':'#', '4':'$', '5':'%', '6':'^', '7':'&', '8':'*', '9':'(', '0':')' };
-                    if (shiftMap[insertChar]) insertChar = shiftMap[insertChar];
-                }
-                
-                mf.executeCommand(['insert', insertChar]);
-                // 숫자인 경우에는 blur/focus 트릭을 사용하지 않습니다.
-                return;
-            }
-
-            // 그 외의 키(연산자 등)인 경우 기본적으로 한글 찌꺼기 입력을 차단
-            e.preventDefault(); e.stopPropagation();
+            // 2. 영문자가 아닌 숫자, 기호 등은 브라우저 및 MathLive의 기본 동작에 완전히 맡깁니다.
+            // 이렇게 해야 x^23 처럼 지수에 연속으로 숫자를 쓸 때 커서가 지수를 빠져나오는 문제가 발생하지 않습니다.
+            return;
         }
 
         if (e.type === 'beforeinput' && /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
