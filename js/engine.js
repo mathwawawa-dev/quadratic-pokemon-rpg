@@ -1901,7 +1901,12 @@ function render() {
         // 포켓볼 이미지 그리기
         if (pokeballImg && pokeballImg.complete && pokeballImg.naturalWidth > 0) {
             ctx.imageSmoothingEnabled = false;
+            if (b.type === 'gold') {
+                // 골드 풍선일 경우 빨간색 몬스터볼을 황금색으로 변환
+                ctx.filter = 'hue-rotate(50deg) saturate(200%) brightness(130%)';
+            }
             ctx.drawImage(pokeballImg, cx - sz / 2, cy - sz / 2, sz, sz);
+            ctx.filter = 'none'; // 필터 초기화
         } else {
             // 이미지 로드 전 대체 원
             ctx.fillStyle = b.type === 'gold' ? '#fbbf24' : '#ef4444';

@@ -36,12 +36,12 @@ function showIntro() {
     intro.classList.remove('hidden');
     game.classList.add('hidden');
 
-    // 스타팅 포켓몬 이미지를 jsDelivr CDN에서 미리 로드하여 카드에 표시
+    // 스타팅 포켓몬 이미지를 일반 게임용 스프라이트로 변경하여 로딩 속도 대폭 개선
     document.querySelectorAll('.starter-card').forEach(card => {
         const id = card.dataset.id;
         const img = card.querySelector('img');
-        const primary  = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${id}.png`;
-        const fallback = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+        const primary  = `https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/${id}.png`;
+        const fallback = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
         img.src = primary;
         img.onerror = () => { if (img.src !== fallback) img.src = fallback; };
     });
