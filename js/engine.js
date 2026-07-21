@@ -1080,7 +1080,16 @@ function updateGame() {
             if (ent.x + ent.w/2 >  20) { ent.x =  20 - ent.w/2; ent.vx *= -0.8; }
             const groundY = getTerrainY(ent.x) + 0.75;
             if (ent.y < groundY) {
-                ent.y = groundY; ent.vy *= -0.5; ent.vx *= 0.6; ent.angularVelocity *= 0.6;
+                // 지형 경사도 계산 (현재 x 기준 좌우 0.1의 높이차)
+                const slope = (getTerrainY(ent.x + 0.1) - getTerrainY(ent.x - 0.1)) / 0.2;
+                // 경사에 따라 미끄러지는 힘 추가 (내리막 방향으로 가속)
+                ent.vx += -slope * 0.05;
+
+                ent.y = groundY; 
+                ent.vy *= -0.5; 
+                ent.vx *= 0.6; 
+                ent.angularVelocity *= 0.6;
+                
                 if (Math.abs(ent.vy) < 0.05 && Math.abs(ent.vx) < 0.05) {
                     ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
                 }
