@@ -173,10 +173,36 @@ function setupMathInput() {
     // MathLive 자동변환 방지 (xx 가 곱하기로 변하는 것 방지)
     try { mf.inlineShortcuts = Object.assign({}, mf.inlineShortcuts || {}, { 'xx': 'xx' }); } catch(e) {}
 
-    // 한글 IME 차단 및 'ㅌ' -> 'x' 자동 변환
+    // 한글 IME 차단 및 'ㅌ' -> 'x', 'ㅛ' -> 'y' 자동 변환
     const blockKorean = (e) => {
-        // x, y 자동 변환 코드는 IME 조합(이중 백스페이스 버그)과 충돌하므로 제거합니다.
-        // 대신 한글 입력 자체를 차단하고, input 이벤트에서 찌꺼기를 제거합니다.
+        // 'ㅌ', 'ㅛ' 키를 누르면 강제로 한글 IME 조합을 깨고 x, y를 삽입합니다.
+        if (e.type === 'keydown' && e.code === 'KeyX' && (e.keyCode === 229 || e.key === 'ㅌ' || e.key === 'Process')) {
+            e.preventDefault(); e.stopPropagation();
+            const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
+            if (textarea) {
+                textarea.blur(); // IME 조합(Composition) 강제 종료
+                textarea.value = ''; 
+            }
+            setTimeout(() => {
+                mf.executeCommand(['insert', 'x']);
+                if (textarea) textarea.focus();
+            }, 10);
+            return;
+        }
+        if (e.type === 'keydown' && e.code === 'KeyY' && (e.keyCode === 229 || e.key === 'ㅛ' || e.key === 'Process')) {
+            e.preventDefault(); e.stopPropagation();
+            const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
+            if (textarea) {
+                textarea.blur();
+                textarea.value = '';
+            }
+            setTimeout(() => {
+                mf.executeCommand(['insert', 'y']);
+                if (textarea) textarea.focus();
+            }, 10);
+            return;
+        }
+
         if (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key) || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
             e.preventDefault(); e.stopPropagation();
         }
