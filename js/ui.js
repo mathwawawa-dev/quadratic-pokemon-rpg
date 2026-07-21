@@ -2,6 +2,33 @@
 // ui.js  —  UI Events & Intro Screen logic
 // ============================================================
 
+// ---------- Global Navigation Prevention ----------
+window.addEventListener('keydown', (e) => {
+    // F5, Ctrl+R, Ctrl+Shift+R 방지
+    if (e.key === 'F5' || (e.ctrlKey && (e.key.toLowerCase() === 'r'))) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    // 백스페이스 및 Alt+Left 뒤로가기 방지
+    const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'MATH-FIELD';
+    if ((e.altKey && e.key === 'ArrowLeft') || (e.key === 'Backspace' && !isInput)) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+}, { capture: true });
+
+// 브라우저 뒤로가기 버튼 방지
+history.pushState(null, null, location.href);
+window.addEventListener('popstate', () => {
+    history.pushState(null, null, location.href);
+});
+
+// 창 닫기/새로고침 시도 시 브라우저 기본 경고창 띄우기
+window.addEventListener('beforeunload', (e) => {
+    e.preventDefault();
+    e.returnValue = '';
+});
+
 // ---------- Intro Screen ----------
 function showIntro() {
     const intro = document.getElementById('intro-screen');
@@ -148,18 +175,8 @@ function setupMathInput() {
 
     // 한글 IME 차단 및 'ㅌ' -> 'x' 자동 변환
     const blockKorean = (e) => {
-        // 물리적인 'X' 키를 눌렀을 때 (한글 상태에서 ㅌ 누름)
-        if (e.type === 'keydown' && e.code === 'KeyX' && (e.keyCode === 229 || e.key === 'ㅌ')) {
-            e.preventDefault(); e.stopPropagation();
-            mf.executeCommand(['insert', 'x']);
-            return;
-        }
-        // 물리적인 'Y' 키를 눌렀을 때 (한글 상태에서 ㅛ 누름)
-        if (e.type === 'keydown' && e.code === 'KeyY' && (e.keyCode === 229 || e.key === 'ㅛ')) {
-            e.preventDefault(); e.stopPropagation();
-            mf.executeCommand(['insert', 'y']);
-            return;
-        }
+        // x, y 자동 변환 코드는 IME 조합(이중 백스페이스 버그)과 충돌하므로 제거합니다.
+        // 대신 한글 입력 자체를 차단하고, input 이벤트에서 찌꺼기를 제거합니다.
         if (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key) || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
             e.preventDefault(); e.stopPropagation();
         }
