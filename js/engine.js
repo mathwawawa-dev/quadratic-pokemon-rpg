@@ -1638,22 +1638,15 @@ function drawEntity(ent) {
             ctx.restore();
         }
         
-        // 배리어 설명 및 상태 텍스트 (원의 아래쪽에 표시)
+        // 배리어 설명 텍스트 (원의 아래쪽에 표시, 가로 반전 시 글자 뒤집힘 방지)
         ctx.save();
+        if (ent !== player && ent.x < player.x) {
+            ctx.scale(-1, 1);
+        }
         ctx.textAlign = 'center';
-        
-        const textY = scaleLength(1.4) + 12; // 원 반지름 아래쪽
-        
-        // 1. 상태 텍스트
         ctx.fillStyle = info.stroke;
         ctx.font = 'bold 10px Arial';
-        ctx.fillText(`[${info.name}: ${stateText}]`, 0, textY);
-        
-        // 2. 설명 텍스트
-        ctx.fillStyle = (drawType === 'none') ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.75)';
-        ctx.font = '9px Arial';
-        ctx.fillText(descText, 0, textY + 11);
-        
+        ctx.fillText(info.name, 0, scaleLength(1.4) + 12);
         ctx.restore();
     }
 
