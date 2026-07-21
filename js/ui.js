@@ -158,6 +158,11 @@ function setupMathInput() {
     // 백틱(`) 토글: 수식창 <-> 좌표평면(캔버스)
     window.addEventListener('keydown', (e) => {
         if (e.key === '`') {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                window.showAllEnemyHP = !window.showAllEnemyHP;
+                return;
+            }
             e.preventDefault();
             const mfEl = document.getElementById('math-input');
             const canvas = document.getElementById('game-canvas');

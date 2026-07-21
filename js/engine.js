@@ -6,6 +6,21 @@
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
+window.gameMouseX = -1000;
+window.gameMouseY = -1000;
+window.showAllEnemyHP = false;
+
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    window.gameMouseX = e.clientX - rect.left;
+    window.gameMouseY = e.clientY - rect.top;
+});
+canvas.addEventListener('mouseleave', () => {
+    window.gameMouseX = -1000;
+    window.gameMouseY = -1000;
+});
+
+
 // ---------- Coordinate System ----------
 let X_MIN = -10, X_MAX = 20, Y_MIN = -15, Y_MAX = 25;
 let CELL_SIZE = 1;
@@ -1501,8 +1516,30 @@ function drawEntity(ent) {
     if (enemies.includes(ent) && ent.hp > 0) {
         const hpPct = Math.max(0, ent.hp / ent.maxHp);
         const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444';
-        ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-20, -drawH/2 - 5, 40, 6);
-        ctx.fillStyle = hpColor;           ctx.fillRect(-20, -drawH/2 - 5, 40 * hpPct, 6);
+        
+        const barX = -20;
+        const barY = -drawH/2 - 5;
+        const barW = 40;
+        const barH = 6;
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = hpColor;           ctx.fillRect(barX, barY, barW * hpPct, barH);
+        
+        // 마우스 호버 여부 확인 (스크린 좌표 기준)
+        let isHovered = false;
+        if (window.gameMouseX !== -1000) {
+            if (window.gameMouseX >= sc.x + barX - 10 && window.gameMouseX <= sc.x + barX + barW + 10 &&
+                window.gameMouseY >= sc.y + barY - 15 && window.gameMouseY <= sc.y + barY + barH + 15) {
+                isHovered = true;
+            }
+        }
+        
+        if (isHovered || window.showAllEnemyHP) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${Math.floor(ent.hp)}/${ent.maxHp}`, 0, barY - 3);
+        }
     }
     // Facing flip for player
     // 스프라이트 기본 방향이 좌측이므로 우측(1)일 때 좌우 반전
