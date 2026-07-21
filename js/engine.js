@@ -716,6 +716,10 @@ window.fireMissile = function (isCheat = false) {
         if (window.updateInventoryUI) window.updateInventoryUI();
     }
 
+    const deltaCheck = dir * 0.005;
+    const launchSlope = Math.abs((func(projStartX + deltaCheck) - func(projStartX)) / 0.005);
+    const launchBoost = Math.max(1.0, Math.min(2.2, 1.0 + (launchSlope - 0.3) * 0.4));
+
     GAME_STATE = 'FIRING';
     player.animFrame = 30; // 30 프레임(0.5초) 동안 발사 모션
     Object.assign(missile, { 
@@ -726,7 +730,8 @@ window.fireMissile = function (isCheat = false) {
         type: window.currentMissileType,
         hitTargets: new Set(),
         powerBoosted: false,
-        isReflected: false
+        isReflected: false,
+        launchBoost: launchBoost
     });
     
     document.getElementById('fire-btn').disabled = true;
@@ -1065,9 +1070,9 @@ function stepParabolaMissile() {
     const absSlope = Math.abs(slope);
     const apexFactor = Math.min(1.0, 0.65 + absSlope * 0.45);
     
-    // 2D 실제 이동 속도 (기본 0.18, 최고점 감속, 하강 시 1.3배 가속)
+    // 2D 실제 이동 속도 (기본 0.18, 초기 높은 발사 각도 가속, 최고점 감속, 하강 시 1.3배 가속)
     const baseDS = 0.18;
-    const rawDS = isDescending ? baseDS * 1.3 : baseDS;
+    const rawDS = isDescending ? baseDS * 1.3 : baseDS * (missile.launchBoost || 1.0);
     const targetDS = rawDS * apexFactor;
     
     // 2D 곡선 거리를 유지하도록 dx 계산: dx = targetDS / sqrt(1 + slope^2) * dirX
