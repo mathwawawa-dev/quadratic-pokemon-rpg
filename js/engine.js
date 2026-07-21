@@ -1072,9 +1072,10 @@ function stepParabolaMissile() {
     // x 진행 방향 기준 y가 감소 중이면 하강 상태로 간주
     const isDescending = (slope * dirX < 0);
     
-    // 1. 최고점 부근(|slope|가 0에 가까울 때) 연속적인 감속 효과 (50% ~ 100%)
-    // 점진적으로 부드럽게 감속되어 꺾이는 느낌을 유기적으로 흡수함
-    const apexFactor = 0.5 + 0.5 * Math.min(1.0, absSlope / 0.8);
+    // 1. 최고점 부근 실크처럼 부드러운 삼각함수(Sin) 감속 곡선 (45% ~ 100%)
+    // 미분값이 0인 sin(t * PI/2) 커브를 적용하여 경계선 꺾임(Kink)을 완벽 차단
+    const apexProgress = Math.min(1.0, absSlope / 1.2);
+    const apexFactor = 0.45 + 0.55 * Math.sin(apexProgress * Math.PI * 0.5);
     
     // 2. 이동 속도 계산
     const baseDS = 0.18;
@@ -1084,9 +1085,9 @@ function stepParabolaMissile() {
         // 상승 구간: 초기 발사 각도 가속 적용
         speedMult = missile.launchBoost || 1.0;
     } else {
-        // 하강 구간: 최고점으로부터 낙하 거리 및 경사도에 따라 지속적인 중력 가속도 적용 (1.0배 -> 최대 2.2배 가속)
+        // 하강 구간: 낙하 거리 및 경사도에 따른 강력한 중력 가속도 (1.0배 -> 최대 3.0배 폭속 낙하)
         const fallDistance = Math.max(0, (missile.maxY || missile.y) - missile.y);
-        const descentAccel = 1.0 + Math.min(1.2, fallDistance * 0.12 + absSlope * 0.15);
+        const descentAccel = 1.0 + Math.min(2.0, fallDistance * 0.22 + absSlope * 0.3);
         speedMult = descentAccel;
     }
 
