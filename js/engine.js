@@ -1778,21 +1778,25 @@ function drawEntity(ent) {
             const tw = ctx.measureText(info.name).width;
             const textY = scaleLength(1.68) + 14; // 글꼴 크기에 맞춘 Y 오프셋 조정
             
-            // 검은색 텍스트 상자 배경 (둥근 사각형)
+            // 검은색 텍스트 상자 배경 (상/하 여백 균형 잡힌 둥근 사각형)
+            const boxPaddingX = 6;
+            const boxHeight = 20;
+            const boxY = textY - 11;
+            
             ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
             if (ctx.roundRect) {
                 ctx.beginPath();
-                ctx.roundRect(-tw/2 - 6, textY - 9, tw + 12, 16, 4);
+                ctx.roundRect(-tw/2 - boxPaddingX, boxY, tw + boxPaddingX * 2, boxHeight, 4);
                 ctx.fill();
             } else {
-                ctx.fillRect(-tw/2 - 6, textY - 9, tw + 12, 16);
+                ctx.fillRect(-tw/2 - boxPaddingX, boxY, tw + boxPaddingX * 2, boxHeight);
             }
             
-            // 텍스트 출력
+            // 텍스트 출력 (한글 시각적 중앙 위치 보정)
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = info.stroke;
-            ctx.fillText(info.name, 0, textY - 1);
+            ctx.fillText(info.name, 0, textY + 1);
             ctx.restore();
         }
     }
