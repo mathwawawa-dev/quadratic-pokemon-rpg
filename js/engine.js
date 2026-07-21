@@ -231,7 +231,6 @@ function getTerrainY(x) {
 function createCrater(cx, cy, radius) {
     const stage = LEVELS[currentStage % LEVELS.length];
     const isFloating = TERRAINS[stage.terrain].isFloating;
-    const islandThickness = 4.0; // 섬의 두께
 
     for (let x = cx - radius; x <= cx + radius; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -244,6 +243,7 @@ function createCrater(cx, cy, radius) {
             
             if (isFloating) {
                 const originalY = TERRAINS[stage.terrain].func(x);
+                const islandThickness = TERRAINS[stage.terrain].getThickness ? TERRAINS[stage.terrain].getThickness(x) : 4.0;
                 // 원래 지형 높이보다 두께 이상 파였으면 완전히 뚫림
                 if (originalY !== -100 && terrainHeights[key] < originalY - islandThickness) {
                     terrainHeights[key] = -100;
@@ -1990,9 +1990,9 @@ function render() {
     if (tData.isFloating) {
         let inIsland = false;
         let islandPoints = [];
-        const islandThickness = 4.0;
+        let islandThickness = 4.0; // 기본값
         
-        const drawIslandPoly = (pts) => {
+        const drawIslandPoly = (pts, thickness) => {
             if (pts.length === 0) return;
             ctx.beginPath();
             let p = gridToScreen(pts[0].x, pts[0].y);
@@ -2002,7 +2002,7 @@ function render() {
                 ctx.lineTo(p.x, p.y);
             }
             for (let i = pts.length - 1; i >= 0; i--) {
-                p = gridToScreen(pts[i].x, pts[i].y - islandThickness);
+                p = gridToScreen(pts[i].x, pts[i].y - thickness);
                 ctx.lineTo(p.x, p.y);
             }
             ctx.closePath();
@@ -2013,16 +2013,20 @@ function render() {
             let cx = Math.min(x, X_MAX);
             let y = getTerrainY(cx);
             if (y > -50) {
-                if (!inIsland) { inIsland = true; islandPoints = []; }
+                if (!inIsland) { 
+                    inIsland = true; 
+                    islandPoints = []; 
+                    islandThickness = tData.getThickness ? tData.getThickness(cx) : 4.0;
+                }
                 islandPoints.push({x: cx, y: y});
             } else {
                 if (inIsland) {
-                    drawIslandPoly(islandPoints);
+                    drawIslandPoly(islandPoints, islandThickness);
                     inIsland = false;
                 }
             }
         }
-        if (inIsland) drawIslandPoly(islandPoints);
+        if (inIsland) drawIslandPoly(islandPoints, islandThickness);
     } else {
         ctx.beginPath();
         const startP = gridToScreen(X_MIN, getTerrainY(X_MIN));

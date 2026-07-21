@@ -286,18 +286,29 @@ const TERRAINS = {
         bg: ["#0ea5e9", "#7dd3fc", "#e0f2fe"],
         color: "#10b981", outColor: "#059669",
         isFloating: true,
-        func: (x) => {
-            // 섬(Island) 맵: 섬마다 높낮이가 다름
-            const period = 9.5;
-            const phase = (x + terrainSeed) % period;
-            const norm = phase >= 0 ? phase : phase + period;
-            
-            // 섬의 인덱스를 구해서 해당 섬만의 고유한 높이 오프셋 생성
+        getThickness: (x) => {
+            const period = 10.5;
             const islandIdx = Math.floor((x + terrainSeed) / period);
-            // 2 단위부터 -3 단위까지 섬마다 높낮이 변형
-            const heightOffset = Math.sin(islandIdx * 1234.567) * 3.5;
+            const rng = Math.sin(islandIdx * 4567.89);
+            return 3.0 + (rng + 1) * 2.5; // 3.0 ~ 8.0 두께 (다양한 두께)
+        },
+        func: (x) => {
+            // 섬(Island) 맵: 섬마다 높낮이, 너비, 배치가 다름
+            const period = 10.5;
+            const phase = (x + terrainSeed) % period;
+            const normX = phase >= 0 ? phase : phase + period;
+            const islandIdx = Math.floor((x + terrainSeed) / period);
             
-            if (norm < 6.5) {
+            // 섬 고유의 해시값들로 속성 결정
+            const h1 = Math.sin(islandIdx * 1234.56);
+            const h2 = Math.sin(islandIdx * 2345.67);
+            const h3 = Math.sin(islandIdx * 3456.78);
+            
+            const heightOffset = h1 * 4.5;         // -4.5 ~ +4.5 다양한 높낮이
+            const width = 5.0 + (h2 + 1) * 1.5;    // 5.0 ~ 8.0 너비 다양화
+            const center = period / 2 + h3 * 1.0;  // 중심축 약간의 편향
+            
+            if (Math.abs(normX - center) < width / 2) {
                 // 섬 윗부분 굴곡 + 고유 높이
                 return Math.sin((x + terrainSeed) / 2) * 1.0 + heightOffset - 1;
             } else {
