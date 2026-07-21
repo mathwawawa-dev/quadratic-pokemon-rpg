@@ -369,17 +369,6 @@ function initStage() {
     let nPool = [...ENEMY_POOL].sort(() => Math.random() - 0.5);
     for (let i = 0; i < nCount; i++) stageEnemies.push(nPool[i % nPool.length]);
 
-    const MIN_X_GAP = 5;
-    const MIN_Y_GAP = 2.0; // 지상 포켓몬끼리 y좌표 최소 간격
-    const placedX = [];
-    const placedY = [];
-    // 비행 포켓몬 배치 높이도 분산 (모두 y=8이 되지 않도록)
-    const isSkyMap = (stage.terrain === 'sky');
-    let flyingYPool = isSkyMap 
-        ? [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5)
-        : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
-    let flyingYIdx = 0;
-
     // 적들이 플레이어 양쪽에 고르게 분산되도록 사이드 배정
     // 총 적 수의 절반은 왼쪽, 절반은 오른쪽 (홀수이면 한쪽이 1개 더)
     const totalCount = stageEnemies.length;
@@ -389,47 +378,76 @@ function initStage() {
     const sideAssignments = [...Array(leftCount).fill('L'), ...Array(rightCount).fill('R')]
         .sort(() => Math.random() - 0.5);
 
+    const isSkyMap = (stage.terrain === 'sky');
+    let flyingYPool = isSkyMap 
+        ? [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5)
+        : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
+    let flyingYIdx = 0;
+
     const barrierTypes = ['reflect', 'absorb', 'absolute', 'warp'].sort(() => Math.random() - 0.5);
+    
+    // 배치된 포켓몬들의 좌표(플레이어 포함)
+    const placedPos = [{ x: player.x, y: player.y }];
+    
+    const checkValidPos = (rx, ry) => {
+        for (const p of placedPos) {
+            const dx = Math.abs(rx - p.x);
+            const dy = Math.abs(ry - p.y);
+            // 1. 유클리드 거리 5 이상
+            if (Math.hypot(dx, dy) < 5.0) return false;
+            // 2. x좌표 동일 방지 (오차 0.1)
+            if (dx < 0.1) return false;
+            // 3. y좌표 동일 방지 (오차 0.1)
+            if (dy < 0.1) return false;
+        }
+        return true;
+    };
+
     enemies = stageEnemies.map((e, idx) => {
         const side = sideAssignments[idx]; // 'L': 플레이어보다 왼쪽, 'R': 오른쪽
         let rx, ry, valid, attempts = 0;
 
-        const isSkyMap = (stage.terrain === 'sky');
         if (e.isFlying || isSkyMap) {
             do {
-                // 배정된 사이드에서만 x 샘플링
                 rx = side === 'L'
-                    ? player.x - MIN_X_GAP - Math.random() * 12   // 왼쪽 영역
-                    : player.x + MIN_X_GAP + Math.random() * 12;  // 오른쪽 영역
+                    ? player.x - 5 - Math.random() * 12
+                    : player.x + 5 + Math.random() * 12;
                 rx = Math.max(-8, Math.min(18, rx));
-                valid = Math.abs(rx - player.x) >= MIN_X_GAP &&
-                        placedX.every(px => Math.abs(rx - px) >= MIN_X_GAP);
+                ry = flyingYPool[flyingYIdx % flyingYPool.length];
+                
+                valid = checkValidPos(rx, ry);
+                if (!valid) {
+                    // 유효하지 않으면 y좌표를 조금씩 바꿔가며 시도
+                    ry += (Math.random() - 0.5) * 3;
+                }
                 attempts++;
             } while (!valid && attempts < 300);
-            if (!valid) rx = side === 'L' ? player.x - 6 : player.x + 6;
-            ry = flyingYPool[flyingYIdx % flyingYPool.length];
+            
+            if (!valid) {
+                rx = side === 'L' ? player.x - 6 - Math.random()*2 : player.x + 6 + Math.random()*2;
+                ry = flyingYPool[flyingYIdx % flyingYPool.length] + Math.random()*2;
+            }
             flyingYIdx++;
         } else {
             const isGroundType = e.type === 'ground';
             const yOffset = isGroundType ? -1.3 : 0.75; // 땅포켓몬은 언덕선보다 더 깊게(-1.3) 생성
             do {
                 rx = side === 'L'
-                    ? player.x - MIN_X_GAP - Math.random() * 12
-                    : player.x + MIN_X_GAP + Math.random() * 12;
+                    ? player.x - 5 - Math.random() * 12
+                    : player.x + 5 + Math.random() * 12;
                 rx = Math.max(-8, Math.min(18, rx));
                 ry = getTerrainY(rx) + yOffset;
-                valid = Math.abs(rx - player.x) >= MIN_X_GAP &&
-                        placedX.every(px => Math.abs(rx - px) >= MIN_X_GAP) &&
-                        placedY.filter(py => !py.isFlying).every(py => Math.abs(ry - py.y) >= MIN_Y_GAP);
+                
+                valid = checkValidPos(rx, ry);
                 attempts++;
             } while (!valid && attempts < 400);
+            
             if (!valid) {
-                rx = side === 'L' ? player.x - 6 : player.x + 6;
+                rx = side === 'L' ? player.x - 6 - Math.random()*2 : player.x + 6 + Math.random()*2;
                 ry = getTerrainY(rx) + yOffset;
             }
         }
-        placedX.push(rx);
-        placedY.push({ y: ry, isFlying: e.isFlying || isSkyMap });
+        placedPos.push({ x: rx, y: ry });
 
         const isPsychic = (stage.terrain === 'psychic');
         const barrierType = isPsychic ? barrierTypes[idx % barrierTypes.length] : null;
