@@ -217,15 +217,7 @@ function setupMathInput() {
         }
     };
     mf.addEventListener('keydown',     blockKorean, { capture: true });
-    // 수식입력창 포커스 상태에서도 [, ] 단축키 작동 및 입력 방지
-    mf.addEventListener('keydown', (e) => {
-        if (e.key === '[' || e.key === ']') {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.key === '[') setPlayerFacing(-1);
-            if (e.key === ']') setPlayerFacing(1);
-        }
-    }, { capture: true });
+    // 수식입력창 포커스 상태에서 발생할 수 있는 찌꺼기 방지 이벤트
     mf.addEventListener('beforeinput', blockKorean, { capture: true });
     mf.addEventListener('compositionstart',  e => { e.preventDefault(); e.stopPropagation(); }, { capture: true });
     mf.addEventListener('compositionupdate', e => { e.preventDefault(); e.stopPropagation(); }, { capture: true });
@@ -234,67 +226,60 @@ function setupMathInput() {
         if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(val)) mf.setValue(val.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, ''));
     }, true);
 
-    // 미사일 단축키 (Q,W,E,R,T) 및 발사(Enter)
+    // 글로벌 단축키 (Q,W,E,R,T 미사일 / A,D 이동 / [, ] 방향 / Enter 발사)
+    // 수식입력창에 포커스가 있어도 우선적으로 단축키가 작동하도록 capture 단계에서 처리합니다.
     document.addEventListener('keydown', (e) => {
         const overlay = document.getElementById('message-overlay');
         if (overlay && overlay.classList.contains('show')) {
             if (e.key === 'Enter') {
-                e.preventDefault();
+                e.preventDefault(); e.stopPropagation();
                 closeMessage();
             }
             return;
         }
 
-        const mfEl = document.getElementById('math-input');
-        const active = document.activeElement;
-        const isInputFocused = (active === mfEl || (mfEl && mfEl.contains(active)));
-
-        // 발사 단축키 (Enter)
-        // - 수식창 포커스: 항상 발사 가능
-        // - 그 외 위치(캔버스 포커스 등): 발사 가능
-        if (e.key === 'Enter') {
+        // 발사 단축키 (Enter) - 어디서든 발사 가능
+        if (e.code === 'Enter' || e.code === 'NumpadEnter') {
             const fireEl = document.getElementById('fire-btn');
-            e.preventDefault();
+            e.preventDefault(); e.stopPropagation();
             if (fireEl && !fireEl.disabled && GAME_STATE === 'IDLE') fireMissile();
             return;
         }
 
-        if (isInputFocused) return;
+        // Ctrl, Alt, Meta 등 보조키가 눌린 상태면 무시 (Ctrl+A 등 방해 방지)
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-        const keyMap = { 'q': 'normal', 'w': 'pierce', 'e': 'homing', 'r': 'satellite', 't': 'net' };
-        const k = e.key.toLowerCase();
-
-        if (keyMap[k]) {
-            e.preventDefault();
-            e.stopPropagation();
-            selectMissile(keyMap[k]);
+        // 물리적 키보드 코드를 기반으로 한글 모드(ㅂ,ㅈ,ㄷ,ㄱ,ㅅ,ㅁ,ㅇ)에서도 동일하게 작동하도록 함
+        const code = e.code;
+        const keyMap = { 'KeyQ': 'normal', 'KeyW': 'pierce', 'KeyE': 'homing', 'KeyR': 'satellite', 'KeyT': 'net' };
+        
+        // 미사일 변경 (Q,W,E,R,T)
+        if (keyMap[code]) {
+            e.preventDefault(); e.stopPropagation();
+            selectMissile(keyMap[code]);
             return;
         }
 
-        // 조준방향 단축키 ([: 왼쪽, ]: 오른쪽)
-        if (e.key === '[') {
-            e.preventDefault();
-            e.stopPropagation();
+        // 조준방향 단축키 ([, ])
+        if (code === 'BracketLeft') {
+            e.preventDefault(); e.stopPropagation();
             setPlayerFacing(-1);
             return;
         }
-        if (e.key === ']') {
-            e.preventDefault();
-            e.stopPropagation();
+        if (code === 'BracketRight') {
+            e.preventDefault(); e.stopPropagation();
             setPlayerFacing(1);
             return;
         }
 
-        // 이동 단축키 (A: 왼쪽, D: 오른쪽)
-        if (k === 'a') {
-            e.preventDefault();
-            e.stopPropagation();
+        // 이동 단축키 (A, D)
+        if (code === 'KeyA') {
+            e.preventDefault(); e.stopPropagation();
             movePlayer(-1);
             return;
         }
-        if (k === 'd') {
-            e.preventDefault();
-            e.stopPropagation();
+        if (code === 'KeyD') {
+            e.preventDefault(); e.stopPropagation();
             movePlayer(1);
             return;
         }
