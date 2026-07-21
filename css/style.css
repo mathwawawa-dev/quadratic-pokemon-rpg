@@ -416,52 +416,15 @@ math-field {
     display: flex; align-items: center; /* 수직 중앙 정렬 */
     transition: border-color 0.2s;
     ime-mode: disabled;
-    /* 기존 MathLive/브라우저 고유 커서 완전 투명 무력화 */
-    /* [원상복구 대비 보존 주석]: --caret-color: default; */
-    --caret-color: transparent !important;
-    caret-color: transparent !important;
+    /* 원래 MathLive/브라우저 고유 커서 완벽 복구 & 색상만 선명한 노란색(#fbbf24) 지정 */
+    --caret-color: #fbbf24 !important;
+    caret-color: #fbbf24 !important;
     /* MathLive 선택 영역 및 배경 문제 수정 CSS 변수 */
     --selection-background-color: rgba(59, 130, 246, 0.4);
     --selection-color: #ffffff;
     --placeholder-color: rgba(255, 255, 255, 0.3);
     --placeholder-opacity: 1;
     --contains-highlight-background-color: transparent;
-}
-
-/* 기존 브라우저/MathLive 고유 textarea 커서 요소 완전 삭제/무력화 (원상복구 보존 주석 포함) */
-/* [원상복구용 기존 설정]: math-field textarea { width: auto; font-size: initial; } */
-math-field textarea,
-math-field::part(textarea),
-math-field .ML__textarea {
-    caret-color: transparent !important;
-    width: 0 !important;
-    font-size: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    outline: none !important;
-}
-
-/* MathLive 커서(Caret) 깜빡임(Blink) 애니메이션 정의 */
-@keyframes custom-caret-blink {
-    0%, 45% { opacity: 1; visibility: visible; }
-    50%, 95% { opacity: 0; visibility: hidden; }
-    100% { opacity: 1; visibility: visible; }
-}
-
-/* 커스텀 3px 네온 골드 커서 (width: 0px 레이아웃 고정으로 글자 밀림 100% 방지) */
-math-field::part(caret),
-math-field .ML__caret {
-    border-left: 3px solid #fbbf24 !important;
-    border-right: none !important;
-    border-top: none !important;
-    border-bottom: none !important;
-    width: 0 !important;
-    height: 1.05em !important;
-    margin: auto 0 !important;
-    padding: 0 !important;
-    background: transparent !important;
-    box-shadow: 0 0 8px rgba(251, 191, 36, 0.9) !important;
-    animation: custom-caret-blink 1.0s step-end infinite !important;
 }
 math-field:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
 math-field::part(virtual-keyboard-toggle) { display: none !important; pointer-events: none; }
