@@ -1046,6 +1046,32 @@ function applyDamageAndEffects(target, mx, my) {
     }
 }
 
+// ---------- Parabola Missile Step Helper (Constant 2D Speed + 1.3x Descent Acceleration) ----------
+// [원상복구 요청 시 사용 가능한 기존 코드]:
+// missile.x += missile.dx / 3;
+// missile.y = missile.func(missile.x);
+function stepParabolaMissile() {
+    const dirX = Math.sign(missile.dx) || 1;
+    const currY = missile.func(missile.x);
+    // 현재 위치에서의 경사도(기울기) 계산
+    const deltaCheck = 0.005 * dirX;
+    const nextYCheck = missile.func(missile.x + deltaCheck);
+    const slope = (nextYCheck - currY) / deltaCheck;
+    
+    // x 진행 방향 기준 y가 감소 중이면 하강 상태로 간주
+    const isDescending = (slope * dirX < 0);
+    
+    // 2D 실제 이동 속도 (기본 0.08, 하강 시 1.3배 가속)
+    const baseDS = 0.08;
+    const targetDS = isDescending ? baseDS * 1.3 : baseDS;
+    
+    // 2D 곡선 거리를 유지하도록 dx 계산: dx = targetDS / sqrt(1 + slope^2) * dirX
+    const stepDx = (targetDS / Math.sqrt(1 + slope * slope)) * dirX;
+    
+    missile.x += stepDx;
+    missile.y = missile.func(missile.x);
+}
+
 // ---------- Update Loop ----------
 function updateGame() {
     if (screenShake > 0) screenShake--;
@@ -1138,7 +1164,8 @@ function updateGame() {
             if (!missile.hasLeftPlayer && (!checkCollision(missile.x, missile.y, player) || distFromLaunch > 0.4)) {
                 missile.hasLeftPlayer = true;
             }
-            
+
+// ...
             if (missile.type === 'homing') {
                 if (missile.isHoming) {
                     if (missile.homingTarget && missile.homingTarget.hp > 0) {
@@ -1155,8 +1182,7 @@ function updateGame() {
                     }
                 } else {
                     const prevY = missile.y;
-                    missile.x += missile.dx / 3;
-                    missile.y = missile.func(missile.x);
+                    stepParabolaMissile();
                     
                     // 최고점 도달 후 하강 시작 시점 (꼭짓점)
                     if (missile.y < prevY) {
@@ -1179,8 +1205,7 @@ function updateGame() {
                     }
                 }
             } else {
-                missile.x += missile.dx / 3;
-                missile.y = missile.func(missile.x);
+                stepParabolaMissile();
             }
             
             missile.distanceTraveled = Math.abs(missile.x - missile.startX);
