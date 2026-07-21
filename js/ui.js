@@ -180,12 +180,12 @@ function setupMathInput() {
             e.preventDefault(); e.stopPropagation();
             const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
             if (textarea) {
-                textarea.blur(); // IME 조합(Composition) 강제 종료
-                textarea.value = ''; 
+                textarea.disabled = true; // IME 조합(Composition) 강제 종료를 위한 확실한 트릭
+                textarea.disabled = false;
+                textarea.focus();
             }
             setTimeout(() => {
                 mf.executeCommand(['insert', 'x']);
-                if (textarea) textarea.focus();
             }, 10);
             return;
         }
@@ -193,12 +193,12 @@ function setupMathInput() {
             e.preventDefault(); e.stopPropagation();
             const textarea = mf.shadowRoot ? mf.shadowRoot.querySelector('textarea') : null;
             if (textarea) {
-                textarea.blur();
-                textarea.value = '';
+                textarea.disabled = true;
+                textarea.disabled = false;
+                textarea.focus();
             }
             setTimeout(() => {
                 mf.executeCommand(['insert', 'y']);
-                if (textarea) textarea.focus();
             }, 10);
             return;
         }
