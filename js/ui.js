@@ -182,26 +182,39 @@ function setupMathInput() {
     try { mf.inlineShortcuts = Object.assign({}, mf.inlineShortcuts || {}, { 'xx': 'xx' }); } catch(e) {}
 
     // 한글 IME 차단 및 자동 영문 변환
+    // 핵심 원리: blur/focus 딜레이 방식은 빠른 연속 입력 시 키 씹힘 발생 → 제거
+    // 대신 IME 조합 버퍼만 즉시 파괴하고 포커스는 유지
+    let imeFlushTimer = null;
+
     const blockKorean = (e) => {
         if (e.type === 'keydown' && (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key))) {
-            
+
             // 1. 영문자 입력 (KeyA ~ KeyZ)
             if (e.code && e.code.startsWith('Key')) {
                 e.preventDefault(); e.stopPropagation();
-                // 사용자가 입력한 키보드 물리 키(e.code)를 바탕으로 해당 영문자를 강제 삽입
+                // 물리 키 코드로 영문자 삽입
                 const engChar = e.code.replace('Key', '').toLowerCase();
                 mf.executeCommand(['insert', engChar]);
-                
-                // 문자(Letter)인 경우에만 포커스를 완전히 풀어서 IME 조합 상태를 파괴합니다.
-                mf.blur();
-                setTimeout(() => {
-                    mf.focus();
-                }, 10);
+
+                // IME 조합 상태 파괴: blur/focus 대신 MathLive의 nativeEvents 채널을 즉시 flush
+                // (타이머 중복 방지: 이전 flush 예약이 있으면 취소 후 재예약)
+                if (imeFlushTimer) clearTimeout(imeFlushTimer);
+                imeFlushTimer = setTimeout(() => {
+                    imeFlushTimer = null;
+                    // shadowRoot 내부의 textarea에 직접 compositionend 이벤트를 발사해
+                    // IME 조합 버퍼만 파괴하고, 포커스는 절대 빼앗지 않음
+                    try {
+                        const sr = mf.shadowRoot;
+                        const ta = sr && sr.querySelector('textarea');
+                        if (ta) {
+                            ta.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }));
+                        }
+                    } catch (_) {}
+                }, 0); // 0ms: 현재 이벤트 큐가 모두 처리된 직후 실행 (마이크로태스크 이후)
                 return;
             }
-            
-            // 2. 영문자가 아닌 숫자, 기호 등은 브라우저 및 MathLive의 기본 동작에 완전히 맡깁니다.
-            // 이렇게 해야 x^23 처럼 지수에 연속으로 숫자를 쓸 때 커서가 지수를 빠져나오는 문제가 발생하지 않습니다.
+
+            // 2. 영문자가 아닌 숫자/기호는 MathLive 기본 동작에 맡김
             return;
         }
 
