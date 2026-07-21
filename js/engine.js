@@ -1610,61 +1610,55 @@ function drawEntity(ent) {
                 }
             } 
             else if (ent.barrierType === 'warp') {
-                // 워프 배리어: 생성 시 X 하나가 중앙에서 확산 → 이후 여러 X가 퍼지며 천천히 회전
-                const timeRot = Date.now() / 1800; // 천천히 회전
-                const xCount = drawType === 'generating' ? 1 : 4; // 생성 중 X 1개, 이후 4개
-                
-                const drawX = (cx, cy, size, alpha) => {
+                // 워프 배리어: 끊긴 구간이 있는 보라색 동심원 테크 링 3개
+                const drawTechRing = (radius, speed, dashArr, strokeColor) => {
                     ctx.save();
-                    ctx.strokeStyle = `rgba(186, 85, 211, ${alpha})`;
-                    ctx.lineWidth = drawType === 'generating' ? 3.0 : 2.0;
+                    ctx.strokeStyle = strokeColor;
+                    ctx.lineWidth = 2.0;
+                    ctx.setLineDash(dashArr);
+                    
+                    const rotation = (Date.now() / 1000) * speed;
+                    ctx.rotate(rotation);
+                    
                     ctx.beginPath();
-                    ctx.moveTo(cx - size, cy - size); ctx.lineTo(cx + size, cy + size);
-                    ctx.moveTo(cx + size, cy - size); ctx.lineTo(cx - size, cy + size);
+                    ctx.arc(0, 0, radius, 0, Math.PI * 2 * progress);
                     ctx.stroke();
                     ctx.restore();
                 };
+
+                const color = info.stroke; // 보라색
                 
-                if (drawType === 'generating') {
-                    // 생성 애니메이션: 중앙의 X 하나가 progress에 따라 크기 확산
-                    const size = r * progress;
-                    drawX(0, 0, size, 0.9);
-                } else {
-                    // 활성: X 4개가 각각 다른 거리에서 천천히 공전
-                    for (let xi = 0; xi < xCount; xi++) {
-                        const angle = timeRot + (xi / xCount) * Math.PI * 2;
-                        const dist = r * 0.45;
-                        const cx = Math.cos(angle) * dist;
-                        const cy = Math.sin(angle) * dist;
-                        const size = r * 0.28;
-                        drawX(cx, cy, size, xi % 2 === 0 ? 0.9 : 0.5);
-                    }
-                    // 중앙 작은 X (고정)
-                    drawX(0, 0, r * 0.15, 0.6);
-                }
+                // 링 3개 각각 반경, 회전 속도, 선 패턴 다르게 지정
+                drawTechRing(r, 0.8, [scaleLength(0.6), scaleLength(0.4)], color);
+                drawTechRing(r * 0.7, -1.2, [scaleLength(0.8), scaleLength(0.5)], color);
+                drawTechRing(r * 0.4, 1.5, [scaleLength(0.3), scaleLength(0.3)], color);
             }
             ctx.restore();
         }
         
-        // 배리어 이름 텍스트 (활성/생성/깜빡임 시에만 표시, 깜빡임 시 함께 깜빡임, 반전 보정)
+        // 배리어 이름 텍스트 (활성/생성/깜빡임 시에만 표시, 깜빡임 시 함께 깜빡임, 생성 시 fade-in, 반전 보정)
         if (drawType !== 'none' && (drawType !== 'flashing' || isFlashVisible)) {
             ctx.save();
             if (ent !== player && ent.x < player.x) {
                 ctx.scale(-1, 1);
             }
             
-            ctx.font = 'bold 10px Arial';
+            // 생성 중일 때는 progress에 따라 서서히 나타남 (fade in)
+            const textAlpha = drawType === 'generating' ? progress : 1.0;
+            ctx.globalAlpha = textAlpha;
+            
+            ctx.font = 'bold 12px Arial'; // 크기 1단계 확대
             const tw = ctx.measureText(info.name).width;
-            const textY = scaleLength(1.68) + 13; // 새 반경 기준
+            const textY = scaleLength(1.68) + 14; // 글꼴 크기에 맞춘 Y 오프셋 조정
             
             // 검은색 텍스트 상자 배경 (둥근 사각형)
             ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
             if (ctx.roundRect) {
                 ctx.beginPath();
-                ctx.roundRect(-tw/2 - 6, textY - 8, tw + 12, 14, 4);
+                ctx.roundRect(-tw/2 - 6, textY - 9, tw + 12, 16, 4);
                 ctx.fill();
             } else {
-                ctx.fillRect(-tw/2 - 6, textY - 8, tw + 12, 14);
+                ctx.fillRect(-tw/2 - 6, textY - 9, tw + 12, 16);
             }
             
             // 텍스트 출력
