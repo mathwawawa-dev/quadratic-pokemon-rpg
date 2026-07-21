@@ -1062,18 +1062,35 @@ function stepParabolaMissile() {
     const deltaCheck = 0.005 * dirX;
     const nextYCheck = missile.func(missile.x + deltaCheck);
     const slope = (nextYCheck - currY) / deltaCheck;
+    const absSlope = Math.abs(slope);
     
+    // 최고점 Y 갱신
+    if (missile.y > (missile.maxY || -Infinity)) {
+        missile.maxY = missile.y;
+    }
+
     // x 진행 방향 기준 y가 감소 중이면 하강 상태로 간주
     const isDescending = (slope * dirX < 0);
     
-    // 최고점 부근(|slope|가 0에 가까울 때) 자연스러운 감속 효과 (65% ~ 100%)
-    const absSlope = Math.abs(slope);
-    const apexFactor = Math.min(1.0, 0.65 + absSlope * 0.45);
+    // 1. 최고점 부근(|slope|가 0에 가까울 때) 연속적인 감속 효과 (50% ~ 100%)
+    // 점진적으로 부드럽게 감속되어 꺾이는 느낌을 유기적으로 흡수함
+    const apexFactor = 0.5 + 0.5 * Math.min(1.0, absSlope / 0.8);
     
-    // 2D 실제 이동 속도 (기본 0.18, 초기 높은 발사 각도 가속, 최고점 감속, 하강 시 1.3배 가속)
+    // 2. 이동 속도 계산
     const baseDS = 0.18;
-    const rawDS = isDescending ? baseDS * 1.3 : baseDS * (missile.launchBoost || 1.0);
-    const targetDS = rawDS * apexFactor;
+    let speedMult = 1.0;
+
+    if (!isDescending) {
+        // 상승 구간: 초기 발사 각도 가속 적용
+        speedMult = missile.launchBoost || 1.0;
+    } else {
+        // 하강 구간: 최고점으로부터 낙하 거리 및 경사도에 따라 지속적인 중력 가속도 적용 (1.0배 -> 최대 2.2배 가속)
+        const fallDistance = Math.max(0, (missile.maxY || missile.y) - missile.y);
+        const descentAccel = 1.0 + Math.min(1.2, fallDistance * 0.12 + absSlope * 0.15);
+        speedMult = descentAccel;
+    }
+
+    const targetDS = baseDS * speedMult * apexFactor;
     
     // 2D 곡선 거리를 유지하도록 dx 계산: dx = targetDS / sqrt(1 + slope^2) * dirX
     const stepDx = (targetDS / Math.sqrt(1 + slope * slope)) * dirX;
