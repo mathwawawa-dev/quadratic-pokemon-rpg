@@ -423,7 +423,7 @@ function applyMathFieldCaretStyle() {
                 100% { opacity: 1; visibility: visible; }
             }
             .ML__caret {
-                border-left: 2.5px solid #fbbf24 !important;
+                border-left: 3px solid #fbbf24 !important;
                 border-right: none !important;
                 border-top: none !important;
                 border-bottom: none !important;

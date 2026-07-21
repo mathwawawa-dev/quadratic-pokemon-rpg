@@ -435,10 +435,10 @@ math-field {
     100% { opacity: 1; visibility: visible; }
 }
 
-/* 커스텀 2.5px 네온 골드 커서 (width: 0px 레이아웃 고정으로 글자 밀림 100% 방지) */
+/* 커스텀 3px 네온 골드 커서 (width: 0px 레이아웃 고정으로 글자 밀림 100% 방지) */
 math-field::part(caret),
 math-field .ML__caret {
-    border-left: 2.5px solid #fbbf24 !important;
+    border-left: 3px solid #fbbf24 !important;
     border-right: none !important;
     border-top: none !important;
     border-bottom: none !important;
