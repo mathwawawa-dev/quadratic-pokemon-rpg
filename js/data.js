@@ -279,6 +279,7 @@ const TERRAINS = {
         name: "왜곡된 차원",
         bg: ["#3b0764", "#581c87", "#f472b6"],
         color: "#3e1b5d", outColor: "#1d0333", // 약간만 더 연하고 부드러운 딥 바이올렛 톤으로 조정
+        func: (x) => Math.sin((x + terrainSeed) / 3) * 3 + Math.cos((x - terrainSeed) / 3) * 1.5 - 2
     },
     garden: {
         name: "공중정원",
@@ -286,12 +287,19 @@ const TERRAINS = {
         color: "#10b981", outColor: "#059669",
         isFloating: true,
         func: (x) => {
-            // 섬(Island) 맵: 약 6의 길이와 2.5의 간격
-            const period = 8.5;
+            // 섬(Island) 맵: 섬마다 높낮이가 다름
+            const period = 9.5;
             const phase = (x + terrainSeed) % period;
             const norm = phase >= 0 ? phase : phase + period;
-            if (norm < 6.0) {
-                return Math.sin((x + terrainSeed) / 2) * 1.2 + Math.cos((x - terrainSeed) / 1.5) * 1.0 - 1;
+            
+            // 섬의 인덱스를 구해서 해당 섬만의 고유한 높이 오프셋 생성
+            const islandIdx = Math.floor((x + terrainSeed) / period);
+            // 2 단위부터 -3 단위까지 섬마다 높낮이 변형
+            const heightOffset = Math.sin(islandIdx * 1234.567) * 3.5;
+            
+            if (norm < 6.5) {
+                // 섬 윗부분 굴곡 + 고유 높이
+                return Math.sin((x + terrainSeed) / 2) * 1.0 + heightOffset - 1;
             } else {
                 return -100; // 빈 공간(구멍)
             }

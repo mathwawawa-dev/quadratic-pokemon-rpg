@@ -373,11 +373,19 @@ function initStage() {
         const yVal = terrainHeights[key] !== undefined ? terrainHeights[key] : tFunc(px);
         const isSpikePeak = terrainSpikes.some(sp => Math.abs(px - sp.cx) < sp.width * 1.5 && sp.height >= 5);
 
-        if (yVal < 1.5 && !isSpikePeak) {
-            break; // 낮고 평탄한 곳에만 배치 (높은 언덕 파묻힘 방지)
+        if (yVal !== -100 && yVal < 5.0 && !isSpikePeak) {
+            break; // 낮고 평탄한 곳에만 배치 (빈 공간 및 과도하게 높은 언덕 제외)
         }
         attempts++;
     } while (attempts < 50);
+
+    // 강제 배치되었는데 허공(-100)이라면 주변 섬으로 이동
+    if (getTerrainY(px) === -100) {
+        for (let step = 0.5; step < 10; step += 0.5) {
+            if (getTerrainY(px + step) !== -100) { px += step; break; }
+            if (getTerrainY(px - step) !== -100) { px -= step; break; }
+        }
+    }
 
     player.x = px;
     player.facing        = player.x >= 0 ? -1 : 1;
@@ -465,12 +473,20 @@ function initStage() {
                 ry = getTerrainY(rx) + yOffset;
                 
                 valid = checkValidPos(rx, ry);
+                if (ry < -50) valid = false; // 빈 공간(구멍)에는 생성하지 않음
                 attempts++;
             } while (!valid && attempts < 400);
             
             if (!valid) {
                 rx = side === 'L' ? player.x - 6 - Math.random()*2 : player.x + 6 + Math.random()*2;
                 ry = getTerrainY(rx) + yOffset;
+                // 강제 배치 시 허공이면 가장 가까운 섬 찾기
+                if (ry < -50) {
+                    for (let step = 0.5; step < 10; step += 0.5) {
+                        if (getTerrainY(rx + step) !== -100) { rx += step; ry = getTerrainY(rx) + yOffset; break; }
+                        if (getTerrainY(rx - step) !== -100) { rx -= step; ry = getTerrainY(rx) + yOffset; break; }
+                    }
+                }
             }
         }
         placedPos.push({ x: rx, y: ry });
