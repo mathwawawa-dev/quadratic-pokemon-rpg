@@ -10,6 +10,9 @@ window.gameMouseX = -1000;
 window.gameMouseY = -1000;
 window.showAllEnemyHP = false;
 
+// shadowBlur 조건부 비활성화 플래그: IDLE 중에는 0, FIRING 또는 이펙트 있을 때만 1
+let isFiring = false;
+
 canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
     window.gameMouseX = e.clientX - rect.left;
@@ -1653,8 +1656,8 @@ function drawEntity(ent) {
     if (ent.hasCloud && ent.hp > 0) {
         ctx.save();
         ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-        ctx.shadowBlur = 10;
+        // 구름 받침 shadowBlur: IDLE 중에는 비활성화하여 CPU 부하 감소
+        if (isFiring) { ctx.shadowColor = 'rgba(255, 255, 255, 0.6)'; ctx.shadowBlur = 10; }
         
         const cloudW = drawW * 0.85;
         const cloudH = drawH * 0.32;
@@ -1894,8 +1897,8 @@ function render() {
             const colors = { fire: '239, 68, 68', water: '59, 130, 246', grass: '45, 106, 79', electric: '250, 204, 21', poison: '168, 85, 247', ground: '217, 119, 6', normal: '200, 200, 200', psychic: '168, 85, 247' };
             const rgb = colors[colorType] || '200, 200, 200';
             octx.fillStyle = `rgba(${rgb}, ${alpha})`;
-            octx.shadowColor = `rgba(${rgb}, 0.8)`;
-            octx.shadowBlur = 15 + (pulse || 0) * 5;
+            // 배경 구름 shadowBlur: IDLE 중에는 비활성화
+            if (isFiring) { octx.shadowColor = `rgba(${rgb}, 0.8)`; octx.shadowBlur = 15 + (pulse || 0) * 5; }
         } else {
             octx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         }
@@ -1966,7 +1969,9 @@ function render() {
     const axisLine  = isBright ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.9)';
     ctx.font = "16px 'Cambria Math','Times New Roman',serif";
     ctx.fillStyle = gridColor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.shadowColor = isBright ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4;
+    // isFiring 플래그 갱신 (모듈 레벨 변수 - drawEntity에서도 참조)
+    isFiring = GAME_STATE === 'FIRING' || effects.length > 0;
+    ctx.shadowBlur = 0; // 그리드 레이블 shadowBlur 제거 (상시 부하 원인)
 
     for (let x = Math.ceil(X_MIN); x <= Math.floor(X_MAX); x++) {
         const p0 = gridToScreen(x, Y_MIN), p1 = gridToScreen(x, Y_MAX);
@@ -1984,7 +1989,7 @@ function render() {
         ctx.stroke();
         if (y % 5 === 0 && y !== 0) ctx.fillText(y < 0 ? '−' + Math.abs(y) : y, gridToScreen(0, y).x - 20, p0.y);
     }
-    ctx.shadowBlur = 0;
+    ctx.shadowBlur = 0; // 축 렌더 후 초기화
 
     // Axes
     ctx.strokeStyle = axisLine; ctx.lineWidth = isBright ? 3 : 4;
@@ -2071,17 +2076,18 @@ function render() {
 
         ctx.save();
         // 글로우 (종류에 따라 색상)
+        // 포켓볼 글로우: IDLE 중에는 가벼운 고정값, FIRING 중에는 맥박 글로우
         ctx.shadowColor = b.type === 'gold' ? '#fbbf24' : '#ef4444';
-        ctx.shadowBlur  = 18 + Math.sin(tNow * 2.0 + b.phase) * 6;
+        ctx.shadowBlur  = isFiring ? 18 + Math.sin(tNow * 2.0 + b.phase) * 6 : 8;
         // 포켓볼 이미지 그리기
         if (pokeballImg && pokeballImg.complete && pokeballImg.naturalWidth > 0) {
             ctx.imageSmoothingEnabled = false;
             if (b.type === 'gold') {
-                // 골드 풍선일 경우 빨간색 몬스터볼을 황금색으로 변환
+                // 골드 풍선일 경우 빨간색 몬스터볼을 황금색으로 변환 (filter 문자열 캐싱)
                 ctx.filter = 'hue-rotate(50deg) saturate(200%) brightness(130%)';
             }
             ctx.drawImage(pokeballImg, cx - sz / 2, cy - sz / 2, sz, sz);
-            ctx.filter = 'none'; // 필터 초기화
+            if (b.type === 'gold') ctx.filter = 'none'; // 골드일 때만 초기화
         } else {
             // 이미지 로드 전 대체 원
             ctx.fillStyle = b.type === 'gold' ? '#fbbf24' : '#ef4444';
@@ -2247,7 +2253,7 @@ function render() {
             ctx.globalAlpha = Math.max(0, e.life / 15);
             ctx.lineWidth = 15 + Math.random() * 10;
             ctx.strokeStyle = '#10b981'; // 에메랄드 그린 레이저
-            ctx.shadowBlur = 30; ctx.shadowColor = '#34d399';
+            ctx.shadowBlur = isFiring ? 30 : 0; ctx.shadowColor = '#34d399';
             ctx.beginPath(); ctx.moveTo(scTop.x, scTop.y); ctx.lineTo(scBottom.x, scBottom.y); ctx.stroke();
             
             // 바닥 충돌 광원
@@ -2264,7 +2270,7 @@ function render() {
             ctx.globalAlpha = Math.max(0, e.life / e.maxLife) * 0.85;
             ctx.strokeStyle = '#2dd4bf';
             ctx.lineWidth = 3;
-            ctx.shadowBlur = 10; ctx.shadowColor = '#2dd4bf';
+            ctx.shadowBlur = isFiring ? 10 : 0; ctx.shadowColor = '#2dd4bf';
             ctx.setLineDash([8, 8]);
             ctx.beginPath(); ctx.arc(sc.x, sc.y, rad, 0, Math.PI * 2); ctx.stroke();
             // 방사형 선 (8개)
