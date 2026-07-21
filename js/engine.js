@@ -1622,10 +1622,21 @@ function drawEntity(ent) {
             ctx.save();
             // 적 포켓몬이 왼쪽을 보고 있어서 좌우반전된 상태라면, 텍스트를 그릴 때는 다시 반전해서 똑바로 보이게 함
             if (ent !== player && ent.x < player.x) ctx.scale(-1, 1);
-            ctx.fillStyle = '#ffffff';
+            
+            const hpText = `${Math.floor(ent.hp)}/${ent.maxHp}`;
+            const textY = barY - 9; // 체력바와의 유격을 살짝 늘려 겹침 완벽 방지 (-6 -> -9)
+            
             ctx.font = 'bold 12px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(`${Math.floor(ent.hp)}/${ent.maxHp}`, 0, barY - 6);
+            
+            // 시독성 확보: 검은색 두꺼운 테두리(Outline)를 먼저 그린 후 흰색 글씨 출력
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.strokeText(hpText, 0, textY);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(hpText, 0, textY);
             ctx.restore();
         }
     }
