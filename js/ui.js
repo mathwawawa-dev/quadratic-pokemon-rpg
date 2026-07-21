@@ -426,7 +426,8 @@ function applyMathFieldCaretStyle() {
                 background-color: #fbbf24 !important;
                 border: none !important;
                 width: 3.5px !important;
-                margin: 0 !important;
+                height: 1.05em !important;
+                margin: auto 0 !important;
                 padding: 0 !important;
                 box-shadow: 0 0 8px rgba(251, 191, 36, 0.9) !important;
                 animation: custom-caret-blink 1.0s step-end infinite !important;
