@@ -682,7 +682,7 @@ function getBarrierColors(type, alphaMult = 1.0) {
             return {
                 fill: `rgba(50, 205, 50, ${0.15 * alphaMult})`,
                 stroke: `rgba(50, 205, 50, ${0.8 * alphaMult})`,
-                name: '흡수'
+                name: '피해흡수'
             };
         case 'absolute':
             return {
@@ -1638,16 +1638,34 @@ function drawEntity(ent) {
             ctx.restore();
         }
         
-        // 배리어 설명 텍스트 (원의 아래쪽에 표시, 가로 반전 시 글자 뒤집힘 방지)
-        ctx.save();
-        if (ent !== player && ent.x < player.x) {
-            ctx.scale(-1, 1);
+        // 배리어 설명 텍스트 (원의 아래쪽에 표시, 가로 반전 시 글자 뒤집힘 방지, 활성 시에만 표시)
+        if (drawType !== 'none') {
+            ctx.save();
+            if (ent !== player && ent.x < player.x) {
+                ctx.scale(-1, 1);
+            }
+            
+            ctx.font = 'bold 10px Arial';
+            const tw = ctx.measureText(info.name).width;
+            const textY = scaleLength(1.4) + 12;
+            
+            // 검은색 텍스트 상자 배경 (둥근 사각형)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(-tw/2 - 6, textY - 8, tw + 12, 14, 4);
+                ctx.fill();
+            } else {
+                ctx.fillRect(-tw/2 - 6, textY - 8, tw + 12, 14);
+            }
+            
+            // 텍스트 출력
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = info.stroke;
+            ctx.fillText(info.name, 0, textY - 1);
+            ctx.restore();
         }
-        ctx.textAlign = 'center';
-        ctx.fillStyle = info.stroke;
-        ctx.font = 'bold 10px Arial';
-        ctx.fillText(info.name, 0, scaleLength(1.4) + 12);
-        ctx.restore();
     }
 
     ctx.restore();
