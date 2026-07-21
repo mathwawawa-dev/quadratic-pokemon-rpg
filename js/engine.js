@@ -1610,28 +1610,81 @@ function drawEntity(ent) {
                 }
             } 
             else if (ent.barrierType === 'warp') {
-                // 워프 배리어: 끊긴 구간이 있는 보라색 동심원 테크 링 3개
-                const drawTechRing = (radius, speed, dashArr, strokeColor) => {
+                // 워프 배리어: 고화질 SF 동심원 테크 HUD 포탈 디자인
+                const time = Date.now() / 1000;
+                
+                ctx.save();
+                ctx.strokeStyle = info.stroke; // 보라색
+                ctx.fillStyle = info.stroke;
+                ctx.shadowColor = info.stroke;
+                
+                // 1. 중앙의 시공간 비틀림/포탈 중심 코어 (검은 구멍 + 외곽 보라 광원)
+                if (drawType !== 'generating') {
                     ctx.save();
-                    ctx.strokeStyle = strokeColor;
-                    ctx.lineWidth = 2.0;
-                    ctx.setLineDash(dashArr);
-                    
-                    const rotation = (Date.now() / 1000) * speed;
-                    ctx.rotate(rotation);
-                    
+                    const grad = ctx.createRadialGradient(0, 0, r * 0.1, 0, 0, r * 0.45);
+                    grad.addColorStop(0, 'rgba(0, 0, 0, 0.95)');
+                    grad.addColorStop(0.5, 'rgba(75, 0, 130, 0.6)');
+                    grad.addColorStop(1, 'rgba(186, 85, 211, 0.0)');
+                    ctx.fillStyle = grad;
                     ctx.beginPath();
-                    ctx.arc(0, 0, radius, 0, Math.PI * 2 * progress);
+                    ctx.arc(0, 0, r * 0.45, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 2. 바깥쪽 메인 테크 아크 링 (시계 방향 회전, 굵기 3px, 글로우 효과)
+                ctx.save();
+                ctx.lineWidth = 3.0;
+                ctx.shadowBlur = 12;
+                ctx.rotate(time * 0.7);
+                
+                // 아크 2개 끊어지게 그리기 (progress 연동)
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 0.7 * progress);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, r, Math.PI * 1.0, (Math.PI * 1.0 + Math.PI * 0.7) * progress);
+                ctx.stroke();
+                ctx.restore();
+
+                // 3. 중간 서브 링 (반시계 방향 회전, 미세한 눈금 패턴)
+                if (drawType !== 'generating') {
+                    ctx.save();
+                    ctx.lineWidth = 1.0;
+                    ctx.shadowBlur = 6;
+                    ctx.rotate(-time * 1.1);
+                    
+                    // 점선 아크
+                    ctx.setLineDash([scaleLength(0.08), scaleLength(0.08)]);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, r * 0.75, 0, Math.PI * 2);
                     ctx.stroke();
                     ctx.restore();
-                };
+                }
 
-                const color = info.stroke; // 보라색
+                // 4. 안쪽 링의 십자 크로스헤어 / 타겟 조준선 표식
+                if (drawType !== 'generating') {
+                    ctx.save();
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeStyle = 'rgba(186, 85, 211, 0.7)';
+                    ctx.shadowBlur = 4;
+                    ctx.rotate(time * 0.4);
+                    
+                    ctx.beginPath();
+                    const ticks = 4;
+                    for (let i = 0; i < ticks; i++) {
+                        const angle = (i / ticks) * Math.PI * 2;
+                        const startD = r * 0.45;
+                        const endD = r * 0.58;
+                        ctx.moveTo(Math.cos(angle) * startD, Math.sin(angle) * startD);
+                        ctx.lineTo(Math.cos(angle) * endD, Math.sin(angle) * endD);
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
                 
-                // 링 3개 각각 반경, 회전 속도, 선 패턴 다르게 지정
-                drawTechRing(r, 0.8, [scaleLength(0.6), scaleLength(0.4)], color);
-                drawTechRing(r * 0.7, -1.2, [scaleLength(0.8), scaleLength(0.5)], color);
-                drawTechRing(r * 0.4, 1.5, [scaleLength(0.3), scaleLength(0.3)], color);
+                ctx.restore();
             }
             ctx.restore();
         }
