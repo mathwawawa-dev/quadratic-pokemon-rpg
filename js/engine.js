@@ -1003,13 +1003,13 @@ function applyDamageAndEffects(target, mx, my) {
     Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.03+0.05), vy: 0.1+Math.random()*0.08, angularVelocity: kbDir*(Math.random()*0.03+0.02) });
     createCrater(target.x, target.y - 0.75, explosionRadius + 0.5);
     createExplosion(target.x, target.y, getMissileColor());
-    effects.push({ type: 'text', x: target.x, y: target.y+1, text: `-${totalDamage}`, color: '#ff4444', life: 180 });
+    effects.push({ type: 'text', x: target.x, y: target.y+1.2, text: `-${totalDamage}`, color: '#ff4444', life: 180 });
     if (enemies.includes(target))
-        effects.push({ type: 'text', x: target.x, y: target.y+2, text: `${hitQuality}! +${hitGold}G`, color: '#fbbf24', life: 180 });
+        effects.push({ type: 'text', x: target.x, y: target.y+2.8, text: `${hitQuality}! +${hitGold}G`, color: '#fbbf24', life: 180 });
     else
-        effects.push({ type: 'text', x: target.x, y: target.y+2, text: 'OUCH!', color: '#ef4444', life: 180 });
+        effects.push({ type: 'text', x: target.x, y: target.y+2.8, text: 'OUCH!', color: '#ef4444', life: 180 });
     if (fallHeight * 1.7 > 20)
-        effects.push({ type: 'text', x: target.x, y: target.y+3, text: 'FALL DMG!', color: '#fbbf24', life: 240 });
+        effects.push({ type: 'text', x: target.x, y: target.y+4.4, text: 'FALL DMG!', color: '#fbbf24', life: 240 });
     updateHPUI();
 
     const deadEnemies = enemies.filter(e => e.hp <= 0).length;
@@ -1535,10 +1535,14 @@ function drawEntity(ent) {
         }
         
         if (isHovered || window.showAllEnemyHP) {
+            ctx.save();
+            // 적 포켓몬이 왼쪽을 보고 있어서 좌우반전된 상태라면, 텍스트를 그릴 때는 다시 반전해서 똑바로 보이게 함
+            if (ent !== player && ent.x < player.x) ctx.scale(-1, 1);
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 12px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(`${Math.floor(ent.hp)}/${ent.maxHp}`, 0, barY - 3);
+            ctx.fillText(`${Math.floor(ent.hp)}/${ent.maxHp}`, 0, barY - 6);
+            ctx.restore();
         }
     }
     // Facing flip for player
