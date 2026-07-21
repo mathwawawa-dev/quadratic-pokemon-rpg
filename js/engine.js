@@ -1072,8 +1072,10 @@ function stepParabolaMissile() {
     // x 진행 방향 기준 y가 감소 중이면 하강 상태로 간주
     const isDescending = (slope * dirX < 0);
     
-    // 1. 최고점 부근 감속 효과 (65% ~ 100% - 사용자 요청 이전 수치 원복)
-    const apexFactor = Math.min(1.0, 0.65 + absSlope * 0.45);
+    // 1. 최고점 부근 삼각함수(Sin) 기반 유기적 감속 효과 (v1.2.47 방식 적용)
+    // 미분값이 0인 sin(t * PI/2) 커브를 적용하여 최고점 꺾임을 부드럽게 방지
+    const apexProgress = Math.min(1.0, absSlope / 1.2);
+    const apexFactor = 0.45 + 0.55 * Math.sin(apexProgress * Math.PI * 0.5);
     
     // 2. 이동 속도 계산
     const baseDS = 0.18;
