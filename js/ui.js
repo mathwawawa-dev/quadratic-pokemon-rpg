@@ -181,58 +181,61 @@ function setupMathInput() {
     // MathLive 자동변환 방지 (xx 가 곱하기로 변하는 것 방지)
     try { mf.inlineShortcuts = Object.assign({}, mf.inlineShortcuts || {}, { 'xx': 'xx' }); } catch(e) {}
 
-    // 한글 IME 차단 및 자동 영문 변환
-    // 핵심 원리: blur/focus 딜레이 방식은 빠른 연속 입력 시 키 씹힘 발생 → 제거
-    // 대신 IME 조합 버퍼만 즉시 파괴하고 포커스는 유지
-    let imeFlushTimer = null;
+    // 한글 IME 차단 및 영문 자동 변환 (ShadowRoot 캡처 이벤트 세밀 제어)
+    // 핵심 원리: MathLive 내부 textarea의 이벤트 수신부보다 먼저 capture 단계에서 이벤트를 가로채
+    // stopImmediatePropagation()으로 중복 입력 및 IME 찌꺼기를 원천 차단합니다.
+    const attachImeBlocker = () => {
+        const sr = mf.shadowRoot;
+        const ta = sr && sr.querySelector('textarea');
 
-    const blockKorean = (e) => {
-        // Backspace / Delete 키 입력 시 한글 IME 조합 상태로 인해 1번째 백스페이스가 무시되는 현성 완전 차단
-        if (e.type === 'keydown' && (e.code === 'Backspace' || e.key === 'Backspace')) {
-            e.preventDefault(); e.stopPropagation();
-            mf.executeCommand('deleteBackward');
-            return;
-        }
-        if (e.type === 'keydown' && (e.code === 'Delete' || e.key === 'Delete')) {
-            e.preventDefault(); e.stopPropagation();
-            mf.executeCommand('deleteForward');
-            return;
-        }
-
-        if (e.type === 'keydown' && (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key))) {
-
-            // 1. 영문자 입력 (KeyA ~ KeyZ)
-            if (e.code && e.code.startsWith('Key')) {
+        const handleKeyDown = (e) => {
+            // 1. Backspace / Delete 지우기 단축키 가로채기
+            if (e.code === 'Backspace' || e.key === 'Backspace') {
                 e.preventDefault(); e.stopPropagation();
-                // 물리 키 코드로 영문자 삽입
-                const engChar = e.code.replace('Key', '').toLowerCase();
-                mf.executeCommand(['insert', engChar]);
-
-                // IME 조합 상태 파괴 및 네이티브 textarea 버퍼 완전 비우기
-                try {
-                    const sr = mf.shadowRoot;
-                    const ta = sr && sr.querySelector('textarea');
-                    if (ta) {
-                        ta.value = '';
-                        ta.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }));
-                    }
-                } catch (_) {}
+                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+                mf.executeCommand('deleteBackward');
+                return;
+            }
+            if (e.code === 'Delete' || e.key === 'Delete') {
+                e.preventDefault(); e.stopPropagation();
+                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+                mf.executeCommand('deleteForward');
                 return;
             }
 
-            // 2. 영문자가 아닌 숫자/기호는 MathLive 기본 동작에 맡김
-            return;
-        }
+            // 2. 한글 IME 입력 가로채기 및 영문자 자동 전환
+            if (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key)) {
+                if (e.code && e.code.startsWith('Key')) {
+                    e.preventDefault(); e.stopPropagation();
+                    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
 
-        if (e.type === 'beforeinput' && /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
-            e.preventDefault(); e.stopPropagation();
-        }
+                    const engChar = e.code.replace('Key', '').toLowerCase();
+                    mf.executeCommand(['insert', engChar]);
+                    return;
+                }
+            }
+        };
+
+        const blockEvent = (e) => {
+            if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data || '') || e.type === 'compositionstart' || e.type === 'compositionupdate') {
+                e.preventDefault(); e.stopPropagation();
+                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            }
+        };
+
+        // mf(Host), shadowRoot, inner textarea 모두에 최우선 capture 이벤트 등록
+        [mf, sr, ta].filter(Boolean).forEach(target => {
+            target.addEventListener('keydown',           handleKeyDown, { capture: true });
+            target.addEventListener('beforeinput',       blockEvent,    { capture: true });
+            target.addEventListener('compositionstart',  blockEvent,    { capture: true });
+            target.addEventListener('compositionupdate', blockEvent,    { capture: true });
+        });
     };
-    mf.addEventListener('keydown',     blockKorean, { capture: true });
-    // 수식입력창 포커스 상태에서 발생할 수 있는 찌꺼기 방지 이벤트
-    mf.addEventListener('beforeinput', blockKorean, { capture: true });
-    mf.addEventListener('compositionstart',  e => { e.preventDefault(); e.stopPropagation(); }, { capture: true });
-    mf.addEventListener('compositionupdate', e => { e.preventDefault(); e.stopPropagation(); }, { capture: true });
+
+    // MathLive 요소 준비 완료 시 즉시 억제기 부착
+    attachImeBlocker();
+    setTimeout(attachImeBlocker, 100);
+
     mf.addEventListener('input', () => {
         const val = mf.getValue();
         if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(val)) mf.setValue(val.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, ''));
