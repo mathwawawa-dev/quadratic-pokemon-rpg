@@ -622,13 +622,24 @@ window.setPlayerFacing = function (dir) {
 window.updateDirectionUI = function() {
     const leftBtn = document.getElementById('dir-left-btn');
     const rightBtn = document.getElementById('dir-right-btn');
-    if (!leftBtn || !rightBtn) return;
-    if (player.facing === -1) {
-        leftBtn.classList.add('active');
-        rightBtn.classList.remove('active');
-    } else {
-        leftBtn.classList.remove('active');
-        rightBtn.classList.add('active');
+    if (leftBtn && rightBtn) {
+        if (player.facing === -1) {
+            leftBtn.classList.add('active');
+            rightBtn.classList.remove('active');
+        } else {
+            leftBtn.classList.remove('active');
+            rightBtn.classList.add('active');
+        }
+    }
+
+    // UI 프로필 이미지도 캐릭터 조준 방향에 맞게 좌우 반전 (facing: -1 왼쪽, facing: 1 오른쪽)
+    const profileImg = document.getElementById('ui-player-img');
+    if (profileImg) {
+        if (player.facing === 1) {
+            profileImg.style.transform = 'translate(-50%, -50%) scaleX(-1)';
+        } else {
+            profileImg.style.transform = 'translate(-50%, -50%) scaleX(1)';
+        }
     }
 };
 
