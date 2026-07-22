@@ -49,27 +49,21 @@ function setupMathInput() {
     // MathLive 자동변환 방지 (xx 가 곱하기로 변하는 것 방지)
     try { mf.inlineShortcuts = Object.assign({}, mf.inlineShortcuts || {}, { 'xx': 'xx' }); } catch(e) {}
 
-    // 한글 IME 차단 및 자동 영문 변환
+    // 수식입력창은 기본 영어 입력이 되도록 설정 (지원되는 브라우저에 한함)
+    mf.style.imeMode = 'disabled';
+    mf.setAttribute('inputmode', 'url'); // 모바일 등에서 영문 키보드를 띄우기 위함
+
+    // 한글 IME 완전 차단 (자동 영문 변환 제거, 단순히 입력 무시)
     const blockKorean = (e) => {
         if (e.type === 'keydown' && (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key))) {
+            e.preventDefault(); 
+            e.stopPropagation();
             
-            // 1. 영문자 입력 (KeyA ~ KeyZ)
-            if (e.code && e.code.startsWith('Key')) {
-                e.preventDefault(); e.stopPropagation();
-                // 사용자가 입력한 키보드 물리 키(e.code)를 바탕으로 해당 영문자를 강제 삽입
-                const engChar = e.code.replace('Key', '').toLowerCase();
-                mf.executeCommand(['insert', engChar]);
-                
-                // 문자(Letter)인 경우에만 포커스를 완전히 풀어서 IME 조합 상태를 파괴합니다.
-                mf.blur();
-                setTimeout(() => {
-                    mf.focus();
-                }, 10);
-                return;
-            }
-            
-            // 2. 영문자가 아닌 숫자, 기호 등은 브라우저 및 MathLive의 기본 동작에 완전히 맡깁니다.
-            // 이렇게 해야 x^23 처럼 지수에 연속으로 숫자를 쓸 때 커서가 지수를 빠져나오는 문제가 발생하지 않습니다.
+            // IME 조합 상태를 즉시 파괴
+            mf.blur();
+            setTimeout(() => {
+                mf.focus();
+            }, 0);
             return;
         }
 
