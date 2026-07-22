@@ -113,34 +113,34 @@ window.addEventListener('resize', resize);
 function resetView() {
     if (!window.innerWidth) return;
     const aspect = window.innerWidth / window.innerHeight;
+    
     let minX = player.x, maxX = player.x;
     let minY = player.y, maxY = player.y;
+    
     enemies.forEach(e => {
         if (e.x < minX) minX = e.x; if (e.x > maxX) maxX = e.x;
         if (e.y < minY) minY = e.y; if (e.y > maxY) maxY = e.y;
     });
 
-    const stage = LEVELS[currentStage % LEVELS.length];
-    const isGardenMap = stage && stage.terrain === 'garden';
+    // 1. 등장하는 모든 포켓몬(아군+적군)의 X, Y 좌표 평균 (중앙 지점)
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
 
-    let maxAbsX = Math.max(Math.abs(minX), Math.abs(maxX));
-    let reqXSpan = 2 * (maxAbsX + 4); 
+    // 2. 모든 포켓몬이 여유롭게 포함되는 최소 범위 (여백 포함)
+    let spanX = (maxX - minX) + 4.5;
+    let spanY = (maxY - minY) + 4.5;
+
+    // 3. 화면 비율에 맞춰 모든 포켓몬이 100% 보이되 확대 배율을 최대화
+    let reqXSpan = Math.max(spanX, spanY * aspect);
+    if (reqXSpan < 18) reqXSpan = 18; // 과도한 확대 방지
     let reqYSpan = reqXSpan / aspect;
 
-    // y축 높이차 반영 비율 완화 및 줌아웃 한계선 제한
-    const neededYSpan = Math.min((maxY - minY + 4) / (isGardenMap ? 0.8 : 0.5), 32);
-    if (reqYSpan < neededYSpan) { reqYSpan = neededYSpan; reqXSpan = reqYSpan * aspect; }
-    if (reqYSpan < 25) { reqYSpan = 25; reqXSpan = reqYSpan * aspect; }
+    // 4. (centerX, centerY)가 화면 중앙에 오도록 배치
+    X_MIN = centerX - reqXSpan / 2;
+    X_MAX = centerX + reqXSpan / 2;
+    Y_MIN = centerY - reqYSpan / 2;
+    Y_MAX = centerY + reqYSpan / 2;
 
-    // 한 단계 더 높은 확대 배율 적용
-    reqXSpan *= 0.65;
-    reqYSpan *= 0.65;
-
-    // 카메라 시점을 위로 1만큼 상향 조정
-    Y_MIN = minY - reqYSpan * 0.35 + 1.0;
-    Y_MAX = Y_MIN + reqYSpan;
-    X_MIN = -reqXSpan / 2;
-    X_MAX = reqXSpan / 2;
     resize();
 }
 window.resetView = resetView;
