@@ -2301,21 +2301,20 @@ function render() {
     ctx.fillStyle = gridColor; ctx.fillText('O', origin.x - 15, origin.y + 15);
 
     // Death Zone
-    const dTop = gridToScreen(0, -8);
-    if (Y_MIN < -8) {
+    const isGardenMap = LEVELS[currentStage % LEVELS.length].terrain === 'garden';
+    const dzValue = isGardenMap ? -20 : -8;
+    const dTop = gridToScreen(0, dzValue);
+    if (Y_MIN < dzValue) {
         ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, dTop.y, canvas.width, canvas.height - dTop.y);
         ctx.strokeStyle = 'rgba(239,68,68,0.8)'; ctx.lineWidth = 2;
         ctx.setLineDash([10, 10]);
         ctx.beginPath(); ctx.moveTo(0, dTop.y); ctx.lineTo(canvas.width, dTop.y); ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = 'rgba(239,68,68,0.8)';
-        // 기존 소스 유지
-        // ctx.font = "italic bold 16px 'Cambria Math','Times New Roman',serif";
-        // ctx.fillText('DEATH ZONE (y = -8)', canvas.width/2, dTop.y + 15);
         
         ctx.textAlign = "left";
         const dTxt1 = "DEATH ZONE ( ";
-        const dTxt2 = "y = −8"; // U+2212 Minus Sign
+        const dTxt2 = `y = −${Math.abs(dzValue)}`; // U+2212 Minus Sign
         const dTxt3 = " )";
         
         ctx.font = "bold 16px 'Outfit', sans-serif";
@@ -2335,18 +2334,15 @@ function render() {
     }
 
     // OUT Line
-    const outSc = gridToScreen(0, 30);
+    const outSc = gridToScreen(0, 40);
     ctx.strokeStyle = 'rgba(239,68,68,0.6)'; ctx.lineWidth = 2; ctx.setLineDash([15, 10]);
     ctx.beginPath(); ctx.moveTo(0, outSc.y); ctx.lineTo(canvas.width, outSc.y); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(239,68,68,0.8)';
-    // 기존 소스 유지
-    // ctx.font = "italic bold 16px 'Cambria Math','Times New Roman',serif";
-    // ctx.fillText('DANGER / OUT LINE (y = 30)', canvas.width/2, outSc.y - 15);
     
     ctx.textAlign = "left";
     const oTxt1 = "DANGER / OUT LINE ( ";
-    const oTxt2 = "y = 30";
+    const oTxt2 = "y = 40";
     const oTxt3 = " )";
     
     ctx.font = "bold 16px 'Outfit', sans-serif";

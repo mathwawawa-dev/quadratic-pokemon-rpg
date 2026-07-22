@@ -95,7 +95,7 @@ const TERRAINS = {
 
                     if (Math.random() > 0.3) {
                         const rxSub = 2.0 + Math.random() * 1.5;
-                        const rySub = 1.8 + Math.random() * 1.2;
+                        const rySub = 0.8 + Math.random() * 2.0; // 랜덤으로 얇게
                         this.islands[layer].push({
                             type: 'ellipse',
                             cx: x + (Math.random() - 0.5) * 1.5,
@@ -112,19 +112,19 @@ const TERRAINS = {
             const rnd = (min, max) => Math.random() * (max - min) + min;
 
             // Top Layer (3층) - 딱 1개 구름만 배치 (가장 우측)
-            addIslandCluster(0, rnd(18, 20), rnd(30, 33), rnd(11, 13));
+            addIslandCluster(0, rnd(18, 20), rnd(30, 33), rnd(14, 16));
 
             // Middle Layer (2층) - 오른쪽으로 이동 (중앙 -5~5 부근에 섬이 위치하도록)
-            addIslandCluster(1, rnd(-30, -28), rnd(-18, -16), rnd(-1, 1));
-            addIslandCluster(1, rnd(-10, -8), rnd(2, 4), rnd(-3.5, -1.5));
-            addIslandCluster(1, rnd(12, 14), rnd(23, 25), rnd(-1, 1));
-            addIslandCluster(1, rnd(32, 34), rnd(40, 42), rnd(-3.5, -1.5));
+            addIslandCluster(1, rnd(-30, -28), rnd(-18, -16), rnd(2, 4));
+            addIslandCluster(1, rnd(-10, -8), rnd(2, 4), rnd(-0.5, 1.5));
+            addIslandCluster(1, rnd(12, 14), rnd(23, 25), rnd(2, 4));
+            addIslandCluster(1, rnd(32, 34), rnd(40, 42), rnd(-0.5, 1.5));
 
             // Bottom Layer (1층) - 위치와 높낮이를 판마다 조금씩 흔듦
-            addIslandCluster(2, rnd(-36, -34), rnd(-25, -23), rnd(-14.5, -12.5));
-            addIslandCluster(2, rnd(-14, -12), rnd(-2, 0), rnd(-17.5, -15.5));
-            addIslandCluster(2, rnd(10, 12), rnd(20, 22), rnd(-14.5, -12.5));
-            addIslandCluster(2, rnd(29, 31), rnd(35, 36), rnd(-17.5, -15.5));
+            addIslandCluster(2, rnd(-36, -34), rnd(-25, -23), rnd(-11.5, -9.5));
+            addIslandCluster(2, rnd(-14, -12), rnd(-2, 0), rnd(-14.5, -12.5));
+            addIslandCluster(2, rnd(10, 12), rnd(20, 22), rnd(-11.5, -9.5));
+            addIslandCluster(2, rnd(29, 31), rnd(35, 36), rnd(-14.5, -12.5));
         },
         layers: [
             (x) => {
