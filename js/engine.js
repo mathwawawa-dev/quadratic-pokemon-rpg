@@ -1313,7 +1313,7 @@ function updateGame() {
             if (ent.y > groundY + 0.1) { ent.vy -= 0.02; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
-        const deathZoneY = LEVELS[currentStage % LEVELS.length].terrain === 'garden' ? -20 : -8;
+        const deathZoneY = LEVELS[currentStage % LEVELS.length].terrain === 'garden' ? -30 : -8;
         if (ent.y < deathZoneY && ent.hp > 0) {
             ent.hp = 0;
             createExplosion(ent.x, -8, '#ffffff');
@@ -1567,25 +1567,45 @@ function updateGame() {
             const isFloatingMapLocal = tData.isFloating;
             
             if (tData.islands) {
-                let insideEllipse = false;
-                for (let l = 0; l < tData.islands.length; l++) {
-                    for (const s of tData.islands[l]) {
-                        const dx = missile.x - s.cx;
-                        const dy = missile.y - s.cy;
-                        if ((dx*dx)/(s.rx*s.rx) + (dy*dy)/(s.ry*s.ry) <= 1.0) {
-                            insideEllipse = true; break;
+                const oldX = missile.x - missile.vx;
+                const oldY = missile.y - missile.vy;
+                const dist = Math.hypot(missile.vx, missile.vy);
+                const steps = Math.max(1, Math.ceil(dist / 0.3));
+                
+                let hitPoint = null;
+                for (let step = 1; step <= steps; step++) {
+                    const tx = oldX + (missile.vx * step) / steps;
+                    const ty = oldY + (missile.vy * step) / steps;
+                    let insideEllipse = false;
+                    for (let l = 0; l < tData.islands.length; l++) {
+                        for (const s of tData.islands[l]) {
+                            const dx0 = tx - s.cx;
+                            const dy0 = ty - s.cy;
+                            const rot = s.rot || 0;
+                            const cosR = Math.cos(-rot);
+                            const sinR = Math.sin(-rot);
+                            const dx = dx0 * cosR - dy0 * sinR;
+                            const dy = dx0 * sinR + dy0 * cosR;
+                            if ((dx*dx)/(s.rx*s.rx) + (dy*dy)/(s.ry*s.ry) <= 1.0) {
+                                insideEllipse = true; break;
+                            }
                         }
+                        if (insideEllipse) break;
                     }
-                    if (insideEllipse) break;
+                    if (insideEllipse) {
+                        let insideCrater = false;
+                        for (const c of craters) {
+                            if (Math.hypot(tx - c.x, ty - c.y) <= c.r) {
+                                insideCrater = true; break;
+                            }
+                        }
+                        if (!insideCrater) { hitPoint = {x: tx, y: ty}; break; }
+                    }
                 }
-                if (insideEllipse) {
-                    let insideCrater = false;
-                    for (const c of craters) {
-                        if (Math.hypot(missile.x - c.x, missile.y - c.y) <= c.r) {
-                            insideCrater = true; break;
-                        }
-                    }
-                    if (!insideCrater) hitY = missile.y;
+                if (hitPoint) {
+                    missile.x = hitPoint.x;
+                    missile.y = hitPoint.y;
+                    hitY = hitPoint.y;
                 }
             } else {
                 for (let i = 0; i < ys.length; i++) {
@@ -2313,7 +2333,7 @@ function render() {
 
     // Death Zone
     const isGardenMap = LEVELS[currentStage % LEVELS.length].terrain === 'garden';
-    const dzValue = isGardenMap ? -20 : -8;
+    const dzValue = isGardenMap ? -30 : -8;
     const dTop = gridToScreen(0, dzValue);
     if (Y_MIN < dzValue) {
         ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, dTop.y, canvas.width, canvas.height - dTop.y);
