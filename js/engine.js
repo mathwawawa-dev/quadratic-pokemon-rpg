@@ -51,7 +51,7 @@ let missile = { active: false, x: 0, y: 0, trail: [], maxY: 0, func: null, dx: 0
 let effects = [];
 let screenShake = 0;
 let terrainHeights = {};
-let explosionRadius = 0.5; // let으로 변경 — 파워업 풍선으로 일시 증가 가능
+let explosionRadius = 0.6; // let으로 변경 — 파워업 풍선으로 일시 증가 가능
 let playerGold = 0;
 let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
 let balloons = [];          // 공중 풍선 목록
@@ -218,17 +218,21 @@ window.addEventListener('touchend', () => { pointerTooltip.active = false; isDra
 // ---------- Terrain ----------
 let terrainSpikes = []; // 스테이지마다 랜덤으로 생성되는 뾰족한 언덕 목록
 
-function getTerrainY(x) {
+function getTerrainYAll(x) {
     const key = (Math.round(x * 10) / 10).toFixed(1);
-    if (terrainHeights[key] !== undefined) return terrainHeights[key];
+    return terrainHeights[key] || [-100];
+}
 
-    const stage = LEVELS[currentStage % LEVELS.length];
-    let y = TERRAINS[stage.terrain].func(x);
-    if (!TERRAINS[stage.terrain].isFloating) {
-        if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
-        else if (x >  20) { const dx =  x - 20; y += dx * dx * 5; }
+function getTerrainY(x, currentY) {
+    const ys = getTerrainYAll(x);
+    if (currentY !== undefined) {
+        let bestY = -100;
+        for (const y of ys) {
+            if (y !== -100 && y > bestY && y <= currentY + 1.5) bestY = y;
+        }
+        if (bestY !== -100) return bestY;
     }
-    return y;
+    return Math.max(...ys);
 }
 function createCrater(cx, cy, radius) {
     const stage = LEVELS[currentStage % LEVELS.length];
@@ -236,19 +240,20 @@ function createCrater(cx, cy, radius) {
 
     for (let x = cx - radius; x <= cx + radius; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
-        if (terrainHeights[key] === undefined) continue;
+        if (!terrainHeights[key]) continue;
         const dx = x - cx;
         const craterY = cy - Math.sqrt(radius * radius - dx * dx);
         
-        if (craterY < terrainHeights[key]) {
-            terrainHeights[key] = craterY;
-            
-            if (isFloating) {
-                const originalY = TERRAINS[stage.terrain].func(x);
-                const islandThickness = TERRAINS[stage.terrain].getThickness ? TERRAINS[stage.terrain].getThickness(x) : 4.0;
-                // 원래 지형 높이보다 두께 이상 파였으면 완전히 뚫림
-                if (originalY !== -100 && terrainHeights[key] < originalY - islandThickness) {
-                    terrainHeights[key] = -100;
+        for (let i = 0; i < terrainHeights[key].length; i++) {
+            if (terrainHeights[key][i] !== -100 && craterY < terrainHeights[key][i]) {
+                terrainHeights[key][i] = craterY;
+                if (isFloating) {
+                    const tData = TERRAINS[stage.terrain];
+                    const orig = tData.layers ? tData.layers[i](x) : tData.func(x);
+                    const thick = tData.getThickness ? tData.getThickness(x) : 4.0;
+                    if (terrainHeights[key][i] < orig - thick) {
+                        terrainHeights[key][i] = -100;
+                    }
                 }
             }
         }
@@ -349,18 +354,23 @@ function initStage() {
     }
 
     const isFloatingMap = TERRAINS[stage.terrain].isFloating;
+    const tData = TERRAINS[stage.terrain];
     for (let x = -35; x <= 35; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
-        let y = tFunc(x);
-        if (!isFloatingMap) {
-            if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
-            else if (x > 20) { const dx = x - 20; y += dx * dx * 5; }
-            for (const sp of terrainSpikes) {
-                const d = x - sp.cx;
-                y += sp.height * Math.exp(-(d * d) / (2 * sp.width * sp.width));
+        if (tData.layers) {
+            terrainHeights[key] = tData.layers.map(l => l(x));
+        } else {
+            let y = tData.func(x);
+            if (!isFloatingMap) {
+                if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
+                else if (x > 20) { const dx = x - 20; y += dx * dx * 5; }
+                for (const sp of terrainSpikes) {
+                    const d = x - sp.cx;
+                    y += sp.height * Math.exp(-(d * d) / (2 * sp.width * sp.width));
+                }
             }
+            terrainHeights[key] = [y];
         }
-        terrainHeights[key] = y;
     }
 
     // 플레이어의 x 위치 설정 (스파이크 언덕 정상이거나 지나치게 높은 곳은 피하도록 검증 루프 적용)
@@ -374,7 +384,7 @@ function initStage() {
 
         // 해당 위치의 지형 높이가 3 이상 솟아오른 스파이크 영향권인지 체크
         const key = (Math.round(px * 10) / 10).toFixed(1);
-        const yVal = terrainHeights[key] !== undefined ? terrainHeights[key] : tFunc(px);
+        const yVal = terrainHeights[key] ? Math.max(...terrainHeights[key]) : (tData.layers ? Math.max(...tData.layers.map(l=>l(px))) : tData.func(px));
         const isSpikePeak = terrainSpikes.some(sp => Math.abs(px - sp.cx) < sp.width * 1.5 && sp.height >= 5);
 
         if (yVal !== -100 && yVal < 5.0 && !isSpikePeak) {
@@ -392,7 +402,7 @@ function initStage() {
     }
 
     player.x = px;
-    player.facing        = player.x >= 0 ? -1 : 1;
+    player.facing = player.x >= 0 ? -1 : 1;
     player.y = getTerrainY(player.x) + 0.75;
     if (window.updateDirectionUI) window.updateDirectionUI();
 
@@ -417,7 +427,8 @@ function initStage() {
         .sort(() => Math.random() - 0.5);
 
     const isSkyMap = (stage.terrain === 'sky');
-    let flyingYPool = isSkyMap 
+    const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
+    let flyingYPool = (isSkyMap || isFloatingMapLocal)
         ? [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5)
         : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
     let flyingYIdx = 0;
@@ -427,73 +438,99 @@ function initStage() {
     // 배치된 포켓몬들의 좌표(플레이어 포함)
     const placedPos = [{ x: player.x, y: player.y }];
     
-    const checkValidPos = (rx, ry) => {
+    const checkValidPos = (rx, ry, isFlyingCheck = false, strictIslandCheck = true) => {
+        const isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
+        let leftBound = rx, rightBound = rx;
+        if (isFloating) {
+            while (leftBound > -35 && Math.max(...getTerrainYAll(leftBound)) > -50) leftBound -= 0.5;
+            while (rightBound < 35 && Math.max(...getTerrainYAll(rightBound)) > -50) rightBound += 0.5;
+        }
+
         for (const p of placedPos) {
             const dx = Math.abs(rx - p.x);
             const dy = Math.abs(ry - p.y);
-            // 1. 유클리드 거리 5 이상
-            if (Math.hypot(dx, dy) < 5.0) return false;
+            // 1. 유클리드 거리 6 이상
+            if (Math.hypot(dx, dy) < 6.0) return false;
             // 2. x좌표 동일 방지 (오차 0.1)
             if (dx < 0.1) return false;
             // 3. y좌표 동일 방지 (오차 0.1)
             if (dy < 0.1) return false;
+            
+            // 공중정원 맵에서는 한 땅(island)에 한 마리만 (플레이어 포함)
+            // 비행 포켓몬이거나 strict 모드가 꺼져있으면 이 규칙을 무시합니다.
+            if (strictIslandCheck && isFloating && !isFlyingCheck && !p.isFlying) {
+                if (p.x >= leftBound && p.x <= rightBound) return false;
+            }
         }
         return true;
     };
 
     enemies = stageEnemies.map((e, idx) => {
         const side = sideAssignments[idx]; // 'L': 플레이어보다 왼쪽, 'R': 오른쪽
-        let rx, ry, valid, attempts = 0;
-
-        if (e.isFlying || isSkyMap) {
-            do {
-                rx = side === 'L'
-                    ? player.x - 5 - Math.random() * 12
-                    : player.x + 5 + Math.random() * 12;
-                rx = Math.max(-8, Math.min(18, rx));
-                ry = flyingYPool[flyingYIdx % flyingYPool.length];
-                
-                valid = checkValidPos(rx, ry);
-                if (!valid) {
-                    // 유효하지 않으면 y좌표를 조금씩 바꿔가며 시도
-                    ry += (Math.random() - 0.5) * 3;
-                }
-                attempts++;
-            } while (!valid && attempts < 300);
-            
-            if (!valid) {
-                rx = side === 'L' ? player.x - 6 - Math.random()*2 : player.x + 6 + Math.random()*2;
-                ry = flyingYPool[flyingYIdx % flyingYPool.length] + Math.random()*2;
-            }
-            flyingYIdx++;
-        } else {
+        let rx, ry, valid = false, attempts = 0;
+        
+        const tryPlacement = (isFlying) => {
+            valid = false;
+            attempts = 0;
+            const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
             const isGroundType = e.type === 'ground';
-            const yOffset = isGroundType ? -1.3 : 0.75; // 땅포켓몬은 언덕선보다 더 깊게(-1.3) 생성
-            do {
-                rx = side === 'L'
-                    ? player.x - 5 - Math.random() * 12
-                    : player.x + 5 + Math.random() * 12;
-                rx = Math.max(-8, Math.min(18, rx));
-                ry = getTerrainY(rx) + yOffset;
-                
-                valid = checkValidPos(rx, ry);
-                if (ry < -50) valid = false; // 빈 공간(구멍)에는 생성하지 않음
-                attempts++;
-            } while (!valid && attempts < 400);
+            const yOffset = (isGroundType && !isFloatingMapLocal) ? -1.3 : 0.75;
             
-            if (!valid) {
-                rx = side === 'L' ? player.x - 6 - Math.random()*2 : player.x + 6 + Math.random()*2;
-                ry = getTerrainY(rx) + yOffset;
-                // 강제 배치 시 허공이면 가장 가까운 섬 찾기
-                if (ry < -50) {
-                    for (let step = 0.5; step < 10; step += 0.5) {
-                        if (getTerrainY(rx + step) !== -100) { rx += step; ry = getTerrainY(rx) + yOffset; break; }
-                        if (getTerrainY(rx - step) !== -100) { rx -= step; ry = getTerrainY(rx) + yOffset; break; }
-                    }
+            do {
+                const spread = 12 + (attempts / 20); 
+                rx = side === 'L'
+                    ? player.x - 5 - Math.random() * spread
+                    : player.x + 5 + Math.random() * spread;
+                rx = Math.max(-25, Math.min(35, rx));
+                
+                if (isFlying || isSkyMap) {
+                    ry = flyingYPool[flyingYIdx % flyingYPool.length] + (Math.random()-0.5)*4;
+                } else {
+                    ry = getTerrainY(rx) + yOffset;
+                    if (ry < -50) { attempts++; continue; }
                 }
+                
+                // 300번 이상 실패하면 한 섬에 한 마리 규칙을 완화하여 무조건 지상에 배치되게 유도
+                const strictIsland = attempts < 300;
+                valid = checkValidPos(rx, ry, (isFlying || isSkyMap), strictIsland);
+                
+                if (isFloatingMapLocal && (isFlying || isSkyMap) && getTerrainY(rx) <= -50) {
+                    valid = false;
+                }
+                
+                if (isFlying && !valid) {
+                    ry += (Math.random() - 0.5) * 5;
+                    valid = checkValidPos(rx, ry, true, strictIsland);
+                }
+                attempts++;
+            } while (!valid && attempts < 500);
+        };
+
+        tryPlacement(e.isFlying);
+
+        // 1차 실패 시: 지상 몬스터였다면 공중 몬스터로 변환하여 재시도!
+        if (!valid && !e.isFlying && !isSkyMap) {
+            e.isFlying = true;
+            e.hasCloud = true;
+            tryPlacement(true);
+            if (valid) flyingYIdx++; 
+        }
+        
+        // 2차 실패 시 (혹은 처음부터 공중이었는데 실패): 최후의 수단으로 겹치지 않게 강제 분산 배치
+        if (!valid) {
+            rx = side === 'L' ? player.x - 10 - idx*6 : player.x + 10 + idx*6;
+            ry = 15 + idx * 4; 
+            if (!e.isFlying) {
+                ry = getTerrainY(rx) + 0.75;
+                if (ry < -50) { e.isFlying = true; e.hasCloud = true; ry = 15 + idx * 4; }
             }
         }
-        placedPos.push({ x: rx, y: ry });
+        
+        if (e.isFlying || isSkyMap) {
+            flyingYIdx++;
+        }
+
+        placedPos.push({ x: rx, y: ry, isFlying: (e.isFlying || isSkyMap) });
 
         const isPsychic = (stage.terrain === 'psychic');
         const barrierType = isPsychic ? barrierTypes[idx % barrierTypes.length] : null;
@@ -507,7 +544,7 @@ function initStage() {
             shake: 0, vx: 0, vy: 0,
             rotation: 0, angularVelocity: 0, isKnockedBack: false,
             name: e.name, type: e.type,
-            isSurfaced: false,
+            isSurfaced: TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating ? true : false,
             barrierType: barrierType,
             barrierStartTime: Date.now() + (isPsychic ? 3000 : 0) + idx * 2500
         };
@@ -539,7 +576,7 @@ function initStage() {
     updateHPUI();
     missile.active = false; missile.trail = []; effects = [];
     baseDamageBoost = 1.0;  // 스테이지마다 파워 부스트 초기화
-    explosionRadius = 0.5;  // 폭발 반경 초기화
+    explosionRadius = 0.6;  // 폭발 반경 초기화
 
     // 포켓볼 생성 (필드당 1개, y≥13 공중, 플레이어와 적 사이의 x좌표 보장)
     balloons = [];
@@ -608,7 +645,7 @@ window.movePlayer = function (dir) {
     const maxBound = isFloating ? 32 : 20;
     if (player.movePoints < 0.5) { showMessage('이동 불가', '행동력을 모두 소모했습니다.', false); return; }
     player.x = Math.max(-maxBound, Math.min(maxBound, player.x + dir * 0.5));
-    player.y = getTerrainY(player.x) + 0.75;
+    player.y = getTerrainY(player.x, player.y) + 0.75;
     player.movePoints -= 0.5;
     updateHPUI();
 };
@@ -1083,8 +1120,8 @@ function applyDamageAndEffects(target, mx, my) {
     target.hp -= totalDamage;
     target.shake = 20; screenShake = 15;
     const kbDir = target.x > player.x ? 1 : -1;
-    Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.015+0.02), vy: 0.05+Math.random()*0.04, angularVelocity: kbDir*(Math.random()*0.01+0.01) });
-    createCrater(target.x, target.y - 0.75, explosionRadius + 0.5);
+    Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.03+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
+    createCrater(target.x, target.y - 0.75, explosionRadius);
     createExplosion(target.x, target.y, getMissileColor());
     effects.push({ type: 'text', x: target.x, y: target.y+1.2, text: `-${totalDamage}`, color: '#ff4444', life: 180 });
     if (enemies.includes(target))
@@ -1198,7 +1235,7 @@ function updateGame() {
             // 다음 x 위치의 지형 높이를 미리 확인 — 급경사(언덕/스파이크 벽)에 올라타는 순간 점프 방지
             const nextX   = ent.x + ent.vx;
             const nextGY  = getTerrainY(nextX) + 0.75;
-            const currGY  = getTerrainY(ent.x)  + 0.75;
+            const currGY  = getTerrainY(ent.x, ent.y)  + 0.75;
             // 다음 위치의 지형이 현재 y보다 0.3 이상 높으면 "벽"으로 간주 → vx 반사, x는 유지
             if (nextGY > ent.y + 0.3) {
                 ent.vx *= -0.55;
@@ -1210,7 +1247,7 @@ function updateGame() {
             ent.vy -= 0.02;
             if (ent.x - ent.w/2 < -20) { ent.x = -20 + ent.w/2; ent.vx *= -0.8; }
             if (ent.x + ent.w/2 >  20) { ent.x =  20 - ent.w/2; ent.vx *= -0.8; }
-            const groundY = getTerrainY(ent.x) + 0.75;
+            const groundY = getTerrainY(ent.x, ent.y) + 0.75;
             if (ent.y < groundY) {
                 // 지형 경사도 계산 (현재 x 기준 좌우 0.1의 높이차)
                 const slope = (getTerrainY(ent.x + 0.1) - getTerrainY(ent.x - 0.1)) / 0.2;
@@ -1228,11 +1265,12 @@ function updateGame() {
             }
         } else if (!ent.isFlying) {
             const isGroundType = ent.type === 'ground' && !ent.isSurfaced;
-            const groundY = getTerrainY(ent.x) + (isGroundType ? -1.3 : 0.75);
+            const groundY = getTerrainY(ent.x, ent.y) + (isGroundType ? -1.3 : 0.75);
             if (ent.y > groundY + 0.1) { ent.vy -= 0.02; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
-        if (ent.y < -8 && ent.hp > 0) {
+        const deathZoneY = LEVELS[currentStage % LEVELS.length].terrain === 'garden' ? -12 : -8;
+        if (ent.y < deathZoneY && ent.hp > 0) {
             ent.hp = 0;
             createExplosion(ent.x, -8, '#ffffff');
             effects.push({ type: 'text', x: ent.x, y: -6, text: 'FALL!', color: '#ef4444', life: 60 });
@@ -1413,7 +1451,7 @@ function updateGame() {
                                 createCrater(targetX, targetY - 0.75, explosionRadius);
                                 const targets = [player, ...enemies];
                                 targets.forEach(ent => {
-                                    if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius + 0.5) {
+                                    if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius) {
                                         applyDamageAndEffects(ent, targetX, targetY);
                                     }
                                 });
@@ -1463,13 +1501,13 @@ function updateGame() {
                         }, 400);
                     } else {
                         createExplosion(targetX, targetY, getMissileColor());
-                        createCrater(targetX, targetY - 0.75, explosionRadius + 0.5);
+                        createCrater(targetX, targetY - 0.75, explosionRadius);
 
                         const targets = [player, ...enemies];
                         targets.forEach(ent => {
                             if (ent.hp <= 0) return;
                             const edx = ent.x - targetX, edy = ent.y - targetY;
-                            if (ent === directHit || Math.sqrt(edx*edx + edy*edy) <= explosionRadius + 0.5) {
+                            if (ent === directHit || Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
                                 applyDamageAndEffects(ent, targetX, targetY);
                             }
                         });
@@ -1478,7 +1516,23 @@ function updateGame() {
                 }
             }
 
-            if (missile.y < getTerrainY(missile.x) && !missile.isCheat) {
+            let hitY = -100;
+            const ys = getTerrainYAll(missile.x);
+            const stage = LEVELS[currentStage % LEVELS.length];
+            const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
+            for (let i = 0; i < ys.length; i++) {
+                const y = ys[i];
+                if (y !== -100 && missile.y < y) {
+                    if (isFloatingMapLocal) {
+                        const tData = TERRAINS[stage.terrain];
+                        const origY = tData.layers ? tData.layers[i](missile.x) : tData.func(missile.x);
+                        // 섬의 바닥 두께(기본 4.0 + wave 여유분 1.0 = 5.0)를 빼서 실제 바닥보다 더 아래(공중)인지 확인
+                        if (missile.y < origY - 5.0) continue; 
+                    }
+                    hitY = y; break;
+                }
+            }
+            if (hitY !== -100 && !missile.isCheat) {
                 if (missile.type === 'pierce') {
                     // 관통 미사일은 지형을 무시하고 지나감
                 } else if (missile.type === 'satellite') {
@@ -1494,7 +1548,7 @@ function updateGame() {
                             createCrater(targetX, targetY, explosionRadius);
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
-                                if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius + 0.5) {
+                                if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius) {
                                     applyDamageAndEffects(ent, targetX, targetY);
                                 }
                             });
@@ -1552,7 +1606,7 @@ function updateGame() {
                     targets.forEach(ent => {
                         if (ent.hp <= 0) return;
                         const edx = ent.x - targetX, edy = ent.y - targetY;
-                        if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius + 0.5) {
+                        if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
                             applyDamageAndEffects(ent, targetX, targetY); hitSomeone = true;
                         }
                     });
@@ -1668,8 +1722,9 @@ function drawEntity(ent) {
         // 마우스 호버 여부 확인 (스크린 좌표 기준)
         let isHovered = false;
         if (window.gameMouseX !== -1000) {
+            const actualBarY = sc.y + yOff + animY + (typeof bobY !== 'undefined' ? bobY : 0) + barY;
             if (window.gameMouseX >= sc.x + barX - 10 && window.gameMouseX <= sc.x + barX + barW + 10 &&
-                window.gameMouseY >= sc.y + barY - 15 && window.gameMouseY <= sc.y + barY + barH + 15) {
+                window.gameMouseY >= actualBarY - 15 && window.gameMouseY <= actualBarY + barH + 15) {
                 isHovered = true;
             }
         }
@@ -2020,39 +2075,59 @@ function render() {
                 ctx.lineTo(p.x, p.y);
             }
             const n = pts.length;
+            const R = 2.5; // 가장자리 둥글기 반경 (절대 길이)
             for (let i = n - 1; i >= 0; i--) {
-                const pct = i / Math.max(1, n - 1);
-                const taper = Math.sin(pct * Math.PI);
+                const distToEdge = Math.min(pts[i].x - pts[0].x, pts[n-1].x - pts[i].x);
+                let taper = 1;
+                if (distToEdge < R) {
+                    // 가장자리 R 범위 내에서만 원의 방정식을 이용해 둥글게 마감
+                    taper = Math.sqrt(Math.max(0, 1 - Math.pow(1 - distToEdge / R, 2)));
+                }
                 const wave = Math.sin(pts[i].x * 1.8) * 0.4 + Math.cos(pts[i].x * 3.2) * 0.2;
-                const actualThickness = thickness * (0.35 + 0.65 * taper) + wave * taper;
-                p = gridToScreen(pts[i].x, pts[i].y - Math.max(0.6, actualThickness));
+                // taper가 1인 중간 부분은 절대 좌표(x) 기반의 wave만 적용되어 파괴 시에도 모양이 변하지 않음
+                const actualThickness = thickness * taper + wave * taper;
+                let bottomY = pts[i].origY - Math.max(0, actualThickness);
+                // 파편화 방지: 크레이터로 깎여나간 윗면(y)이 원래 바닥면보다 낮아지면, 바닥면도 그 윗면 이하로 내려가야 다각형이 안 꼬임
+                bottomY = Math.min(bottomY, pts[i].y);
+                p = gridToScreen(pts[i].x, bottomY);
                 ctx.lineTo(p.x, p.y);
             }
             ctx.closePath();
+            ctx.lineJoin = 'round';
             ctx.fill();
             ctx.lineWidth = 2;
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.stroke();
         };
 
-        for (let x = X_MIN; x <= X_MAX + 0.2; x += 0.2) {
-            let cx = Math.min(x, X_MAX);
-            let y = getTerrainY(cx);
-            if (y > -50) {
-                if (!inIsland) { 
-                    inIsland = true; 
-                    islandPoints = []; 
-                    islandThickness = tData.getThickness ? tData.getThickness(cx) : 4.0;
-                }
-                islandPoints.push({x: cx, y: y});
-            } else {
-                if (inIsland) {
-                    drawIslandPoly(islandPoints, islandThickness);
-                    inIsland = false;
+        const numLayers = tData.layers ? tData.layers.length : 1;
+        for (let l = 0; l < numLayers; l++) {
+            let inIsland = false;
+            let islandPoints = [];
+            let islandThickness = 4.0;
+            for (let x = -35; x <= 35.2; x += 0.2) {
+                let cx = Math.min(x, 35);
+                let y = getTerrainYAll(cx)[l];
+                let origY = tData.layers ? tData.layers[l](cx) : (tData.func ? tData.func(cx) : y);
+                // 부동소수점 오차로 origY가 -100이 되거나 y보다 심하게 낮아지는 현상 방어
+                if (origY !== undefined && y !== undefined) origY = Math.max(origY, y);
+                
+                if (y !== undefined && y > -50) {
+                    if (!inIsland) { 
+                        inIsland = true; 
+                        islandPoints = []; 
+                        islandThickness = tData.getThickness ? tData.getThickness(cx) : 4.0;
+                    }
+                    islandPoints.push({x: cx, y: y, origY: origY});
+                } else {
+                    if (inIsland) {
+                        drawIslandPoly(islandPoints, islandThickness);
+                        inIsland = false;
+                    }
                 }
             }
+            if (inIsland) drawIslandPoly(islandPoints, islandThickness);
         }
-        if (inIsland) drawIslandPoly(islandPoints, islandThickness);
     } else {
         ctx.beginPath();
         const startP = gridToScreen(X_MIN, getTerrainY(X_MIN));
@@ -2414,7 +2489,25 @@ function render() {
     ctx.restore();
 }
 
-function gameLoop() {
+let lastGameLoopTime = 0;
+function gameLoop(timestamp) {
+    if (!lastGameLoopTime) lastGameLoopTime = timestamp;
+    const dt = timestamp - lastGameLoopTime;
+    
+    // 60FPS Capping (16.6ms) - 고주사율 모니터에서 미사일이 너무 빨라져 끊겨보이는 현상 방지
+    if (dt < 16) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    
+    // 프레임 누적 보정 (창 최소화 등으로 dt가 너무 커진 경우 방지)
+    if (dt > 100) {
+        lastGameLoopTime = timestamp - 16;
+    } else {
+        // 완벽한 60fps 주기를 맞추기 위해 16ms씩 더함 (단일 프레임 드랍 보정)
+        lastGameLoopTime += 16; 
+    }
+
     try { updateGame(); render(); } catch (err) { console.error('Game loop error:', err); }
     requestAnimationFrame(gameLoop);
 }
