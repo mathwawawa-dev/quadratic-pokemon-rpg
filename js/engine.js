@@ -885,6 +885,9 @@ window.fireMissile = function (isCheat = false) {
         hitTargets: new Set(),
         powerBoosted: false,
         isReflected: false,
+        isHoming: false,
+        homingTarget: null,
+        hasClimbed: false,
         launchBoost: launchBoost
     });
     
