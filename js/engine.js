@@ -120,19 +120,24 @@ function resetView() {
         if (e.y < minY) minY = e.y; if (e.y > maxY) maxY = e.y;
     });
 
-    // y축(x=0)을 중앙에 두기 위해 원점 기준 가장 먼 포켓몬과의 거리로 범위 설정
+    const stage = LEVELS[currentStage % LEVELS.length];
+    const isGardenMap = stage && stage.terrain === 'garden';
+
     let maxAbsX = Math.max(Math.abs(minX), Math.abs(maxX));
     let reqXSpan = 2 * (maxAbsX + 4); 
     let reqYSpan = reqXSpan / aspect;
-    const neededYSpan = (maxY - minY + 4) / 0.5;
+
+    // y축 높이차 반영 비율 완화 및 줌아웃 한계선 제한
+    const neededYSpan = Math.min((maxY - minY + 4) / (isGardenMap ? 0.8 : 0.5), 32);
     if (reqYSpan < neededYSpan) { reqYSpan = neededYSpan; reqXSpan = reqYSpan * aspect; }
     if (reqYSpan < 25) { reqYSpan = 25; reqXSpan = reqYSpan * aspect; }
 
-    // 한 단계 더 높은 확대 배율 적용 (스팬을 0.65배로 축소하여 더 크게 보이게 설정)
+    // 한 단계 더 높은 확대 배율 적용
     reqXSpan *= 0.65;
     reqYSpan *= 0.65;
 
-    Y_MIN = minY - reqYSpan * 0.35;
+    // 카메라 시점을 위로 1만큼 상향 조정
+    Y_MIN = minY - reqYSpan * 0.35 + 1.0;
     Y_MAX = Y_MIN + reqYSpan;
     X_MIN = -reqXSpan / 2;
     X_MAX = reqXSpan / 2;
