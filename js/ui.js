@@ -181,61 +181,39 @@ function setupMathInput() {
     // MathLive 자동변환 방지 (xx 가 곱하기로 변하는 것 방지)
     try { mf.inlineShortcuts = Object.assign({}, mf.inlineShortcuts || {}, { 'xx': 'xx' }); } catch(e) {}
 
-    // 한글 IME 차단 및 영문 자동 변환 (ShadowRoot 캡처 이벤트 세밀 제어)
-    // 핵심 원리: MathLive 내부 textarea의 이벤트 수신부보다 먼저 capture 단계에서 이벤트를 가로채
-    // stopImmediatePropagation()으로 중복 입력 및 IME 찌꺼기를 원천 차단합니다.
-    const attachImeBlocker = () => {
-        const sr = mf.shadowRoot;
-        const ta = sr && sr.querySelector('textarea');
-
-        const handleKeyDown = (e) => {
-            // 1. Backspace / Delete 지우기 단축키 가로채기
-            if (e.code === 'Backspace' || e.key === 'Backspace') {
+    // 한글 IME 차단 및 자동 영문 변환
+    const blockKorean = (e) => {
+        if (e.type === 'keydown' && (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key))) {
+            
+            // 1. 영문자 입력 (KeyA ~ KeyZ)
+            if (e.code && e.code.startsWith('Key')) {
                 e.preventDefault(); e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-                mf.executeCommand('deleteBackward');
+                // 사용자가 입력한 키보드 물리 키(e.code)를 바탕으로 해당 영문자를 강제 삽입
+                const engChar = e.code.replace('Key', '').toLowerCase();
+                mf.executeCommand(['insert', engChar]);
+                
+                // 문자(Letter)인 경우에만 포커스를 완전히 풀어서 IME 조합 상태를 파괴합니다.
+                mf.blur();
+                setTimeout(() => {
+                    mf.focus();
+                }, 10);
                 return;
             }
-            if (e.code === 'Delete' || e.key === 'Delete') {
-                e.preventDefault(); e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-                mf.executeCommand('deleteForward');
-                return;
-            }
+            
+            // 2. 영문자가 아닌 숫자, 기호 등은 브라우저 및 MathLive의 기본 동작에 완전히 맡깁니다.
+            // 이렇게 해야 x^23 처럼 지수에 연속으로 숫자를 쓸 때 커서가 지수를 빠져나오는 문제가 발생하지 않습니다.
+            return;
+        }
 
-            // 2. 한글 IME 입력 가로채기 및 영문자 자동 전환
-            if (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key)) {
-                if (e.code && e.code.startsWith('Key')) {
-                    e.preventDefault(); e.stopPropagation();
-                    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-
-                    const engChar = e.code.replace('Key', '').toLowerCase();
-                    mf.executeCommand(['insert', engChar]);
-                    return;
-                }
-            }
-        };
-
-        const blockEvent = (e) => {
-            if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data || '') || e.type === 'compositionstart' || e.type === 'compositionupdate') {
-                e.preventDefault(); e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-            }
-        };
-
-        // mf(Host), shadowRoot, inner textarea 모두에 최우선 capture 이벤트 등록
-        [mf, sr, ta].filter(Boolean).forEach(target => {
-            target.addEventListener('keydown',           handleKeyDown, { capture: true });
-            target.addEventListener('beforeinput',       blockEvent,    { capture: true });
-            target.addEventListener('compositionstart',  blockEvent,    { capture: true });
-            target.addEventListener('compositionupdate', blockEvent,    { capture: true });
-        });
+        if (e.type === 'beforeinput' && /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
+            e.preventDefault(); e.stopPropagation();
+        }
     };
-
-    // MathLive 요소 준비 완료 시 즉시 억제기 부착
-    attachImeBlocker();
-    setTimeout(attachImeBlocker, 100);
-
+    mf.addEventListener('keydown',     blockKorean, { capture: true });
+    // 수식입력창 포커스 상태에서 발생할 수 있는 찌꺼기 방지 이벤트
+    mf.addEventListener('beforeinput', blockKorean, { capture: true });
+    mf.addEventListener('compositionstart',  e => { e.preventDefault(); e.stopPropagation(); }, { capture: true });
+    mf.addEventListener('compositionupdate', e => { e.preventDefault(); e.stopPropagation(); }, { capture: true });
     mf.addEventListener('input', () => {
         const val = mf.getValue();
         if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(val)) mf.setValue(val.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, ''));
