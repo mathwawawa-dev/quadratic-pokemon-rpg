@@ -128,9 +128,9 @@ function resetView() {
     if (reqYSpan < neededYSpan) { reqYSpan = neededYSpan; reqXSpan = reqYSpan * aspect; }
     if (reqYSpan < 25) { reqYSpan = 25; reqXSpan = reqYSpan * aspect; }
 
-    // 한 단계 안으로 확대된 배율 적용 (스팬을 0.8배로 축소하여 더 크게 보이게 설정)
-    reqXSpan *= 0.8;
-    reqYSpan *= 0.8;
+    // 한 단계 더 높은 확대 배율 적용 (스팬을 0.65배로 축소하여 더 크게 보이게 설정)
+    reqXSpan *= 0.65;
+    reqYSpan *= 0.65;
 
     Y_MIN = minY - reqYSpan * 0.35;
     Y_MAX = Y_MIN + reqYSpan;
