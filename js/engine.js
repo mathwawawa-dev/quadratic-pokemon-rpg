@@ -397,7 +397,7 @@ function initStage() {
     }
 
     const isFloatingMap = TERRAINS[stage.terrain].isFloating;
-    for (let x = -35; x <= 35; x += 0.1) {
+    for (let x = -60; x <= 60; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
         if (tData.layers) {
             terrainHeights[key] = tData.layers.map(l => l(x));
@@ -1724,7 +1724,10 @@ function updateGame() {
             }
 
             // 화면을 벗어나면 (관통 미사일 포함) 비활성화
-            if (missile.x < -30 || missile.x > 30 || missile.y < -20) {
+            const isGardenMap = tData && tData.isFloating;
+            const limitX = isGardenMap ? 60 : 30;
+            const limitMinY = isGardenMap ? -30 : -20;
+            if (Math.abs(missile.x) > limitX || missile.y < limitMinY) {
                 missile.active = false; GAME_STATE = 'IDLE';
                 if (enemies.filter(e => e.hp <= 0).length >= 2) {
                     GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
