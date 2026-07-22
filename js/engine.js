@@ -1533,17 +1533,44 @@ function updateGame() {
             let hitY = -100;
             const ys = getTerrainYAll(missile.x);
             const stage = LEVELS[currentStage % LEVELS.length];
-            const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
-            for (let i = 0; i < ys.length; i++) {
-                const y = ys[i];
-                if (y !== -100 && missile.y < y) {
-                    if (isFloatingMapLocal) {
-                        const tData = TERRAINS[stage.terrain];
-                        const origY = tData.layers ? tData.layers[i](missile.x) : tData.func(missile.x);
-                        // 섬의 바닥 두께(기본 4.0 + wave 여유분 1.0 = 5.0)를 빼서 실제 바닥보다 더 아래(공중)인지 확인
-                        if (missile.y < origY - 5.0) continue; 
+            const tData = TERRAINS[stage.terrain];
+            const isFloatingMapLocal = tData.isFloating;
+            
+            if (tData.islands) {
+                let insideEllipse = false;
+                for (let l = 0; l < tData.islands.length; l++) {
+                    for (const s of tData.islands[l]) {
+                        const dx = missile.x - s.cx;
+                        const dy = missile.y - s.cy;
+                        if ((dx*dx)/(s.rx*s.rx) + (dy*dy)/(s.ry*s.ry) <= 1.0) {
+                            insideEllipse = true; break;
+                        }
                     }
-                    hitY = y; break;
+                    if (insideEllipse) break;
+                }
+                if (insideEllipse) {
+                    let insideCrater = false;
+                    for (const c of craters) {
+                        if (Math.hypot(missile.x - c.x, missile.y - c.y) <= c.r) {
+                            insideCrater = true; break;
+                        }
+                    }
+                    if (!insideCrater) hitY = missile.y;
+                }
+            } else {
+                for (let i = 0; i < ys.length; i++) {
+                    const y = ys[i];
+                    if (y !== -100 && missile.y < y) {
+                        if (isFloatingMapLocal) {
+                            const origY = tData.layers ? tData.layers[i](missile.x) : tData.func(missile.x);
+                            // 섬의 바닥 두께(기본 4.0 + wave 여유분 1.0 = 5.0)를 빼서 실제 바닥보다 더 아래(공중)인지 확인
+                            if (missile.y < origY - 5.0) continue; 
+                            hitY = (missile.y > origY - 2.5) ? y : origY - 5.0;
+                        } else {
+                            hitY = y; 
+                        }
+                        break;
+                    }
                 }
             }
             if (hitY !== -100 && !missile.isCheat) {
