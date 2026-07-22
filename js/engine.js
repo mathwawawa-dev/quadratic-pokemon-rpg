@@ -1180,7 +1180,7 @@ function applyDamageAndEffects(target, mx, my) {
     if (target.hp <= 0) {
         createExplosion(target.x, target.y, '#ffffff');
         if (player.hp <= 0) { GAME_STATE = 'OVER'; showMessage('GAME OVER', '자폭했습니다...'); }
-        else if (deadEnemies >= 2) { GAME_STATE = 'OVER'; showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false); }
+        else if (deadEnemies >= 2) { GAME_STATE = 'OVER'; showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false); }
         else { GAME_STATE = 'IDLE'; document.getElementById('fire-btn').disabled = false; }
     } else {
         GAME_STATE = 'IDLE';
@@ -1320,7 +1320,7 @@ function updateGame() {
             effects.push({ type: 'text', x: ent.x, y: -6, text: 'FALL!', color: '#ef4444', life: 60 });
             updateHPUI();
             if (ent === player) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('GAME OVER', '플레이어가 추락했습니다!'), 1500); }
-            else if (enemies.filter(e => e.hp <= 0).length >= 2) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500); }
+            else if (enemies.filter(e => e.hp <= 0).length >= 2) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500); }
         }
     });
 
@@ -1504,7 +1504,7 @@ function updateGame() {
                                 });
                                 if (i === 3) {
                                     if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                                        GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                                        GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                                     } else {
                                         setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                                     }
@@ -1541,7 +1541,7 @@ function updateGame() {
                             createExplosion(targetX, targetY, '#2dd4bf');
                             createCrater(targetX, targetY - 0.5, explosionRadius);
                             if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                                GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                                GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                             } else {
                                 setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                             }
@@ -1648,7 +1648,7 @@ function updateGame() {
                             });
                             if (i === 3) {
                                 if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                                 } else {
                                     setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                                 }
@@ -1683,7 +1683,7 @@ function updateGame() {
                         createExplosion(targetX, targetY, '#2dd4bf');
                         createCrater(targetX, targetY - 0.5, explosionRadius);
                         if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                            GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                            GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                         } else {
                             setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                         }
@@ -1709,7 +1709,7 @@ function updateGame() {
                         screenShake = 10;
                     }
                     if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                        GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                        GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                     } else {
                         setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 1000);
                     }
@@ -1721,7 +1721,7 @@ function updateGame() {
             if (missile.x < -30 || missile.x > 30 || missile.y < -20) {
                 missile.active = false; GAME_STATE = 'IDLE';
                 if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR', '적을 처치했습니다! (+200G)', false), 1500);
+                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                 } else {
                     document.getElementById('fire-btn').disabled = false;
                 }
