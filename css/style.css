@@ -155,7 +155,6 @@ body {
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     image-rendering: pixelated; 
-    transition: transform 0.2s ease;
     /* 이전 아바타 이미지 백업 (v1.0.15):
     width: 38px; height: 38px;
     */
