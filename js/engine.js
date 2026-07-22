@@ -1488,6 +1488,24 @@ function updateGame() {
                         if (!missile.hitTargets.has(e)) {
                             missile.hitTargets.add(e);
                             applyDamageAndEffects(e, missile.x, missile.y);
+                            
+                            // 관통(PIERCE) 전용 시각 이펙트 & 텍스트 팝업 & 검기 연출
+                            effects.push({ type: 'text', x: e.x, y: e.y + 1.8, text: 'PIERCE!', color: '#00e5ff', life: 120 });
+                            effects.push({ type: 'ring', x: e.x, y: e.y, color: '#00e5ff', life: 25, maxLife: 25 });
+                            for (let pi = 0; pi < 15; pi++) {
+                                const ang = (pi / 15) * Math.PI * 2;
+                                const spd = 0.25 + Math.random() * 0.45;
+                                effects.push({
+                                    type: 'particle',
+                                    x: e.x,
+                                    y: e.y,
+                                    vx: Math.cos(ang) * spd,
+                                    vy: Math.sin(ang) * spd,
+                                    life: 30,
+                                    color: pi % 2 === 0 ? '#00e5ff' : '#ffffff'
+                                });
+                            }
+                            screenShake = 12;
                         }
                     }
                 }
