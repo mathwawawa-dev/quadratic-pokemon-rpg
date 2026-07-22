@@ -1179,8 +1179,10 @@ function applyDamageAndEffects(target, mx, my) {
     target.shake = 20; screenShake = 15;
     const kbDir = target.x > player.x ? 1 : -1;
     Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.01+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
-    createCrater(target.x, target.y - 0.75, explosionRadius);
-    createExplosion(target.x, target.y, getMissileColor());
+    if (missile.type !== 'pierce') {
+        createCrater(target.x, target.y - 0.75, explosionRadius);
+        createExplosion(target.x, target.y, getMissileColor());
+    }
     effects.push({ type: 'text', x: target.x, y: target.y+1.2, text: `-${totalDamage}`, color: '#ff4444', life: 180 });
     if (enemies.includes(target))
         effects.push({ type: 'text', x: target.x, y: target.y+2.8, text: `${hitQuality}! +${hitGold}G`, color: '#fbbf24', life: 180 });
@@ -1191,12 +1193,13 @@ function applyDamageAndEffects(target, mx, my) {
     updateHPUI();
 
     const deadEnemies = enemies.filter(e => e.hp <= 0).length;
-    if (target.hp <= 0) {
-        createExplosion(target.x, target.y, '#ffffff');
-        if (player.hp <= 0) { GAME_STATE = 'OVER'; showMessage('GAME OVER', '자폭했습니다...'); }
-        else if (deadEnemies >= 2) { GAME_STATE = 'OVER'; showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false); }
-        else { GAME_STATE = 'IDLE'; document.getElementById('fire-btn').disabled = false; }
-    } else {
+    if (player.hp <= 0) {
+        GAME_STATE = 'OVER';
+        showMessage('GAME OVER', '자폭했습니다...');
+    } else if (deadEnemies >= 2) {
+        GAME_STATE = 'OVER';
+        showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false);
+    } else if (missile.type !== 'pierce' && !missile.active) {
         GAME_STATE = 'IDLE';
         document.getElementById('fire-btn').disabled = false;
     }
