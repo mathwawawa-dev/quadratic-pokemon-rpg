@@ -263,18 +263,29 @@ function createCrater(cx, cy, radius) {
                 if (isFloating) {
                     const tData = TERRAINS[stage.terrain];
                     const orig = tData.layers ? tData.layers[i](x) : tData.func(x);
-                    let thick = 4.0;
+                    
+                    let minBottom = 1000;
+                    let found = false;
                     if (tData.islands && tData.islands[i]) {
                         for (const s of tData.islands[i]) {
                             if (x >= s.cx - s.rx && x <= s.cx + s.rx) {
                                 const dx = x - s.cx;
-                                thick = 2 * s.ry * Math.sqrt(1 - (dx * dx) / (s.rx * s.rx));
-                                break;
+                                const bY = s.cy - s.ry * Math.sqrt(1 - (dx * dx) / (s.rx * s.rx));
+                                if (bY < minBottom) {
+                                    minBottom = bY;
+                                    found = true;
+                                }
                             }
                         }
+                    }
+                    
+                    let thick = 4.0;
+                    if (found) {
+                        thick = orig - minBottom;
                     } else if (tData.getThickness) {
                         thick = tData.getThickness(x);
                     }
+                    
                     if (terrainHeights[key][i] < orig - thick) {
                         terrainHeights[key][i] = -100;
                     }
