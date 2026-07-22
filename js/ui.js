@@ -95,7 +95,14 @@ function setupGlobalShortcuts() {
                     window.isCheatUnlocked = true;
                     const tip = document.querySelector('.intro-tip');
                     if (tip) {
-                        tip.innerHTML = '✨ <b style="color:#fbbf24">치트 모드 해금!</b> (특수 미사일 99개 + Ctrl+Shift+A/Q 활성화) ✨';
+                        tip.innerHTML = '포켓몬을 클릭하여 모험을 시작하세요 <span id="cheat-sparkle" style="display:inline-block; transition: transform 0.2s, filter 0.2s; transform: scale(1.8); filter: drop-shadow(0 0 8px #fbbf24);">✨</span>';
+                        setTimeout(() => {
+                            const sparkle = document.getElementById('cheat-sparkle');
+                            if (sparkle) {
+                                sparkle.style.transform = 'scale(1)';
+                                sparkle.style.filter = 'none';
+                            }
+                        }, 400);
                     }
                 }
             }
