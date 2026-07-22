@@ -2051,7 +2051,8 @@ function drawEntity(ent) {
             
             ctx.font = 'bold 12px Arial'; // 크기 1단계 확대
             const tw = ctx.measureText(info.name).width;
-            const textY = scaleLength(1.38) + 14; // y좌표 0.3 상향 조정하여 이미지와 더 가깝게 밀착
+            const textYOffset = (ent.barrierType === 'absorb') ? 1.48 : 1.68;
+            const textY = scaleLength(textYOffset) + 14;
             
             // 검은색 텍스트 상자 배경 (상/하 여백 균형 잡힌 둥근 사각형)
             const boxPaddingX = 6;
