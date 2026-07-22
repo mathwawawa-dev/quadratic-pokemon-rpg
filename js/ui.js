@@ -187,6 +187,18 @@ function setupMathInput() {
     let imeFlushTimer = null;
 
     const blockKorean = (e) => {
+        // Backspace / Delete 키 입력 시 한글 IME 조합 상태로 인해 1번째 백스페이스가 무시되는 현성 완전 차단
+        if (e.type === 'keydown' && (e.code === 'Backspace' || e.key === 'Backspace')) {
+            e.preventDefault(); e.stopPropagation();
+            mf.executeCommand('deleteBackward');
+            return;
+        }
+        if (e.type === 'keydown' && (e.code === 'Delete' || e.key === 'Delete')) {
+            e.preventDefault(); e.stopPropagation();
+            mf.executeCommand('deleteForward');
+            return;
+        }
+
         if (e.type === 'keydown' && (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key))) {
 
             // 1. 영문자 입력 (KeyA ~ KeyZ)
@@ -196,21 +208,15 @@ function setupMathInput() {
                 const engChar = e.code.replace('Key', '').toLowerCase();
                 mf.executeCommand(['insert', engChar]);
 
-                // IME 조합 상태 파괴: blur/focus 대신 MathLive의 nativeEvents 채널을 즉시 flush
-                // (타이머 중복 방지: 이전 flush 예약이 있으면 취소 후 재예약)
-                if (imeFlushTimer) clearTimeout(imeFlushTimer);
-                imeFlushTimer = setTimeout(() => {
-                    imeFlushTimer = null;
-                    // shadowRoot 내부의 textarea에 직접 compositionend 이벤트를 발사해
-                    // IME 조합 버퍼만 파괴하고, 포커스는 절대 빼앗지 않음
-                    try {
-                        const sr = mf.shadowRoot;
-                        const ta = sr && sr.querySelector('textarea');
-                        if (ta) {
-                            ta.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }));
-                        }
-                    } catch (_) {}
-                }, 0); // 0ms: 현재 이벤트 큐가 모두 처리된 직후 실행 (마이크로태스크 이후)
+                // IME 조합 상태 파괴 및 네이티브 textarea 버퍼 완전 비우기
+                try {
+                    const sr = mf.shadowRoot;
+                    const ta = sr && sr.querySelector('textarea');
+                    if (ta) {
+                        ta.value = '';
+                        ta.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }));
+                    }
+                } catch (_) {}
                 return;
             }
 
