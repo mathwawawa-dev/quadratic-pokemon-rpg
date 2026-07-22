@@ -86,23 +86,23 @@ function setupGlobalShortcuts() {
     // 글로벌 단축키 (Q,W,E,R,T 미사일 / A,D 이동 / [, ] 방향 / Enter 발사)
     // 수식입력창에 포커스가 있어도 우선적으로 단축키가 작동하도록 capture 단계에서 처리합니다.
     document.addEventListener('keydown', (e) => {
-        // 스타팅 포켓몬 선택 화면에서 Q키 3회 누르면 치트모드 해금
+        // 스타팅 포켓몬 선택 화면에서 Q/ㅂ 키 3회 누르면 치트모드 해금
         const introScreen = document.getElementById('intro-screen');
         if (introScreen && !introScreen.classList.contains('hidden')) {
-            if (e.key === 'q' || e.key === 'Q' || e.code === 'KeyQ') {
+            const keyLower = e.key ? e.key.toLowerCase() : '';
+            if (keyLower === 'q' || keyLower === 'ㅂ' || keyLower === 'ㅃ' || e.code === 'KeyQ') {
                 introQCount++;
                 if (introQCount >= 3) {
                     window.isCheatUnlocked = true;
                     const tip = document.querySelector('.intro-tip');
                     if (tip) {
-                        tip.innerHTML = '포켓몬을 클릭하여 모험을 시작하세요 <span id="cheat-sparkle" style="display:inline-block; transition: transform 0.2s, filter 0.2s; transform: scale(1.8); filter: drop-shadow(0 0 8px #fbbf24);">✨</span>';
+                        tip.innerHTML = '포켓몬을 클릭하여 모험을 시작하세요 <span id="cheat-sparkle" style="display:inline-block; transition: opacity 0.2s ease-in-out; opacity: 0.1;">✨</span>';
                         setTimeout(() => {
                             const sparkle = document.getElementById('cheat-sparkle');
                             if (sparkle) {
-                                sparkle.style.transform = 'scale(1)';
-                                sparkle.style.filter = 'none';
+                                sparkle.style.opacity = '1';
                             }
-                        }, 400);
+                        }, 250);
                     }
                 }
             }
