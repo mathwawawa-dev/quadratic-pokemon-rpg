@@ -1570,7 +1570,7 @@ function updateGame() {
                 const oldX = missile.x - missile.vx;
                 const oldY = missile.y - missile.vy;
                 const dist = Math.hypot(missile.vx, missile.vy);
-                const steps = Math.max(1, Math.ceil(dist / 0.3));
+                const steps = Math.max(1, Math.ceil(dist / 0.05));
                 
                 let hitPoint = null;
                 for (let step = 1; step <= steps; step++) {
