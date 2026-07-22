@@ -391,10 +391,18 @@ function initStage() {
     let px = 0;
     let attempts = 0;
     do {
-        const pxRoll = Math.random();
-        if (pxRoll < 0.45)       px =  (2 + Math.random() * 4);  // 45% x>0
-        else if (pxRoll < 0.93)  px = -(2 + Math.random() * 4);  // 48% x<0
-        else                     px = 0;                          //  7% x=0
+        if (stage.terrain === 'garden') {
+            const midIslands = TERRAINS.garden.islands[1];
+            // 중앙부(-15 ~ 15)에 가까운 2층 섬을 우선 선택하여 2층에 확정 스폰
+            const centerIslands = midIslands.filter(s => s.cx >= -15 && s.cx <= 15);
+            const targetIsland = centerIslands.length > 0 ? centerIslands[Math.floor(Math.random() * centerIslands.length)] : midIslands[0];
+            px = targetIsland.cx + (Math.random() - 0.5) * (targetIsland.rx * 0.8);
+        } else {
+            const pxRoll = Math.random();
+            if (pxRoll < 0.45)       px =  (2 + Math.random() * 4);
+            else if (pxRoll < 0.93)  px = -(2 + Math.random() * 4);
+            else                     px = 0;
+        }
 
         // 해당 위치의 지형 높이가 3 이상 솟아오른 스파이크 영향권인지 체크
         const key = (Math.round(px * 10) / 10).toFixed(1);
