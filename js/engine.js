@@ -1373,8 +1373,16 @@ function updateGame() {
                     const prevY = missile.y;
                     stepParabolaMissile();
                     
-                    // 최고점 도달 후 하강 시작 시점 (꼭짓점)
-                    if (missile.y < prevY) {
+                    if (missile.y > missile.startY + 0.3) {
+                        missile.hasClimbed = true;
+                    }
+                    
+                    // 최고점(꼭짓점) 도달 검증:
+                    // 상승 후 하강을 시작했거나, 최소 3.0 거리 이상 날아간 후 하강 시작 시점
+                    const isApexReached = (missile.hasClimbed && missile.y < prevY) ||
+                                          (Math.abs(missile.x - missile.startX) >= 3.0 && missile.y < prevY);
+
+                    if (isApexReached) {
                         let nearest = null;
                         let minDist = Infinity;
                         enemies.forEach(e => {
@@ -1386,9 +1394,10 @@ function updateGame() {
                         if (nearest) {
                             missile.isHoming = true;
                             missile.homingTarget = nearest;
-                            // 꼭짓점에서 꺾이는 순간 파티클 방출
-                            for(let pi=0; pi<10; pi++) {
-                                effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6, life: 35, color: '#a855f7' });
+                            // 꼭짓점에서 가장 가까운 적을 향해 직진 전환 시 파티클 연출
+                            effects.push({ type: 'text', x: missile.x, y: missile.y + 1.2, text: 'TARGET LOCK!', color: '#c084fc', life: 60 });
+                            for (let pi = 0; pi < 15; pi++) {
+                                effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6, life: 35, color: '#c084fc' });
                             }
                         }
                     }
