@@ -51,7 +51,7 @@ let missile = { active: false, x: 0, y: 0, trail: [], maxY: 0, func: null, dx: 0
 let effects = [];
 let screenShake = 0;
 let terrainHeights = {};
-let explosionRadius = 1.2; // 폭발 반경 (0.6 -> 1.2로 2단계 증가)
+let explosionRadius = 1.2; // 폭발 반경 (1.2로 복구)
 let playerGold = 0;
 let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
 let balloons = [];          // 공중 풍선 목록
@@ -257,8 +257,8 @@ function createCrater(cx, cy, radius) {
         
         for (let i = 0; i < terrainHeights[key].length; i++) {
             const y = terrainHeights[key][i];
-            // 폭발 범위(craterTopY ~ craterBottomY) 영역에 포함된 지형 레이어만 깎이도록 정밀 검증
-            if (y !== -100 && y <= craterTopY + 0.5 && y >= craterBottomY - 1.0) {
+            // 폭발 범위(craterTopY ~ craterBottomY) 영역에 포함된 지형 레이어만 깎이도록 정밀 검증 (상하 반경 엄격 적용)
+            if (y !== -100 && y <= cy + radius && y >= cy - radius) {
                 terrainHeights[key][i] = craterBottomY;
                 if (isFloating) {
                     const tData = TERRAINS[stage.terrain];
@@ -443,7 +443,7 @@ function initStage() {
     const isSkyMap = (stage.terrain === 'sky');
     const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
     let flyingYPool = (isSkyMap || isFloatingMapLocal)
-        ? [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5)
+        ? [9, 11, 12, 22, 24].sort(() => Math.random() - 0.5)
         : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
     let flyingYIdx = 0;
 
@@ -590,7 +590,7 @@ function initStage() {
     updateHPUI();
     missile.active = false; missile.trail = []; effects = [];
     baseDamageBoost = 1.0;  // 스테이지마다 파워 부스트 초기화
-    explosionRadius = 0.6;  // 폭발 반경 초기화
+    explosionRadius = 1.2;  // 폭발 반경 초기화
 
     // 포켓볼 생성 (필드당 1개, y≥13 공중, 플레이어와 적 사이의 x좌표 보장)
     balloons = [];
@@ -2131,8 +2131,8 @@ function render() {
                 for (let l = 0; l < tData.islands.length; l++) {
                     for (const s of tData.islands[l]) {
                         const p = gridToScreen(s.cx, s.cy);
-                        const prx = (s.rx + 0.15) * scaleX;
-                        const pry = (s.ry + 0.15) * scaleY;
+                        const prx = (s.rx + 0.06) * scaleX;
+                        const pry = (s.ry + 0.06) * scaleY;
                         ictx.beginPath();
                         if (s.type === 'ellipse' || s.rx !== s.ry) {
                             ictx.ellipse(p.x, p.y, prx, pry, s.rot || 0, 0, Math.PI * 2);

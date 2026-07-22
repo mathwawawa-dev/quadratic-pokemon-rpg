@@ -108,23 +108,20 @@ const TERRAINS = {
                 }
             };
 
-            // Top Layer (y ≈ 15) - 2 islands
-            addIslandCluster(0, 4, 14, 15);
-            addIslandCluster(0, 20, 32, 15);
+            // Top Layer (3층) - 딱 1개 구름만 배치 (y ≈ 20)
+            addIslandCluster(0, -5, 9, 20);
 
-            // Middle Layer (y ≈ 5) - 5 islands
-            addIslandCluster(1, -32, -22, 5);
-            addIslandCluster(1, -14, -4, 5);
-            addIslandCluster(1, 0, 8, 5);       // Overlaps Top 1 left
-            addIslandCluster(1, 12, 22, 5);     // Overlaps Top 1 right & Top 2 left
-            addIslandCluster(1, 28, 35, 5);     // Overlaps Top 2 right
+            // Middle Layer (2층) - 가로 간격을 넓히고 높낮이(y)에 변화를 주어 덜 나란하게 배치
+            addIslandCluster(1, -34, -22, 8);
+            addIslandCluster(1, -14, -2, 5);
+            addIslandCluster(1, 8, 19, 7);
+            addIslandCluster(1, 28, 36, 6);
 
-            // Bottom Layer (y ≈ -5) - 5 islands
-            addIslandCluster(2, -35, -28, -5);
-            addIslandCluster(2, -24, -12, -5);
-            addIslandCluster(2, -6, 2, -5);     // Overlaps Mid 3 left
-            addIslandCluster(2, 6, 14, -5);     // Overlaps Mid 3 right & Mid 4 left
-            addIslandCluster(2, 20, 28, -5);    // Overlaps Mid 4 right
+            // Bottom Layer (1층) - 가로 간격을 넓히고 높낮이(y)에 변화를 주어 덜 나란하게 배치
+            addIslandCluster(2, -35, -24, -6);
+            addIslandCluster(2, -13, -1, -9);
+            addIslandCluster(2, 11, 21, -5);
+            addIslandCluster(2, 30, 36, -8);
         },
         layers: [
             (x) => {
