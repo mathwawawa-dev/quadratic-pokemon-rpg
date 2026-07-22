@@ -284,36 +284,42 @@ const TERRAINS = {
     garden: {
         name: "공중정원",
         bg: ["#0ea5e9", "#7dd3fc", "#e0f2fe"],
-        color: "#10b981", outColor: "#059669",
+        color: "#22c55e", outColor: "#15803d",
         isFloating: true,
         getThickness: (x) => {
-            const period = 10.5;
-            const islandIdx = Math.floor((x + terrainSeed) / period);
-            const rng = Math.sin(islandIdx * 4567.89);
-            return 3.0 + (rng + 1) * 2.5; // 3.0 ~ 8.0 두께 (다양한 두께)
+            if (x >= -34 && x <= -16) return 4.5;
+            if (x >= -13 && x <= 6) return 5.8;
+            if (x >= 8 && x <= 20) return 4.0;
+            if (x >= 22 && x <= 34) return 4.5;
+            return 4.0;
         },
         func: (x) => {
-            // 섬(Island) 맵: 섬마다 높낮이, 너비, 배치가 다름
-            const period = 10.5;
-            const phase = (x + terrainSeed) % period;
-            const normX = phase >= 0 ? phase : phase + period;
-            const islandIdx = Math.floor((x + terrainSeed) / period);
-            
-            // 섬 고유의 해시값들로 속성 결정
-            const h1 = Math.sin(islandIdx * 1234.56);
-            const h2 = Math.sin(islandIdx * 2345.67);
-            const h3 = Math.sin(islandIdx * 3456.78);
-            
-            const heightOffset = h1 * 4.5;         // -4.5 ~ +4.5 다양한 높낮이
-            const width = 5.0 + (h2 + 1) * 1.5;    // 5.0 ~ 8.0 너비 다양화
-            const center = period / 2 + h3 * 1.0;  // 중심축 약간의 편향
-            
-            if (Math.abs(normX - center) < width / 2) {
-                // 섬 윗부분 굴곡 + 고유 높이
-                return Math.sin((x + terrainSeed) / 2) * 1.0 + heightOffset - 1;
-            } else {
-                return -100; // 빈 공간(구멍)
+            // 레퍼런스 이미지 기반 4개의 공중섬 레이아웃 (벽 없음, 다양화된 위치)
+            const seed = terrainSeed || 0;
+            const s1 = Math.sin(seed * 1.1) * 0.8;
+            const s2 = Math.cos(seed * 1.3) * 0.8;
+            const s3 = Math.sin(seed * 1.7) * 0.8;
+            const s4 = Math.cos(seed * 1.9) * 0.8;
+
+            // 1. 좌측 섬 (Middle Left) - x: -34 ~ -16 (y ≈ 3.8)
+            if (x >= -34 && x <= -16) {
+                return 3.8 + s1 + Math.sin(x * 0.6) * 0.7 + Math.cos(x * 1.2) * 0.4;
             }
+            // 2. 하단 중앙 섬 (Bottom Center) - x: -13 ~ 6 (y ≈ -1.2)
+            if (x >= -13 && x <= 6) {
+                return -1.2 + s2 + Math.sin(x * 0.5) * 0.8 + Math.cos(x * 1.1) * 0.3;
+            }
+            // 3. 상단 우측 섬 (Top Right) - x: 8 ~ 20 (y ≈ 8.2)
+            if (x >= 8 && x <= 20) {
+                return 8.2 + s3 + Math.sin(x * 0.7) * 0.6 + Math.cos(x * 1.4) * 0.3;
+            }
+            // 4. 우측 섬 (Middle Right) - x: 22 ~ 34 (y ≈ 3.2)
+            if (x >= 22 && x <= 34) {
+                return 3.2 + s4 + Math.sin(x * 0.6) * 0.7 + Math.cos(x * 1.3) * 0.4;
+            }
+
+            // 섬 사이 틈새 (추락사구역)
+            return -100;
         }
     }
 };

@@ -224,8 +224,10 @@ function getTerrainY(x) {
 
     const stage = LEVELS[currentStage % LEVELS.length];
     let y = TERRAINS[stage.terrain].func(x);
-    if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
-    else if (x >  20) { const dx =  x - 20; y += dx * dx * 5; }
+    if (!TERRAINS[stage.terrain].isFloating) {
+        if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
+        else if (x >  20) { const dx =  x - 20; y += dx * dx * 5; }
+    }
     return y;
 }
 function createCrater(cx, cy, radius) {
@@ -346,15 +348,17 @@ function initStage() {
         });
     }
 
+    const isFloatingMap = TERRAINS[stage.terrain].isFloating;
     for (let x = -35; x <= 35; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
         let y = tFunc(x);
-        if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
-        else if (x > 20) { const dx = x - 20; y += dx * dx * 5; }
-        // 스파이크 적용: 가우시안 형태로 솟아오르는 언덕
-        for (const sp of terrainSpikes) {
-            const d = x - sp.cx;
-            y += sp.height * Math.exp(-(d * d) / (2 * sp.width * sp.width));
+        if (!isFloatingMap) {
+            if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
+            else if (x > 20) { const dx = x - 20; y += dx * dx * 5; }
+            for (const sp of terrainSpikes) {
+                const d = x - sp.cx;
+                y += sp.height * Math.exp(-(d * d) / (2 * sp.width * sp.width));
+            }
         }
         terrainHeights[key] = y;
     }
@@ -599,8 +603,11 @@ function initStage() {
 // ---------- Player Movement ----------
 window.movePlayer = function (dir) {
     if (GAME_STATE !== 'IDLE' || player.isKnockedBack) return;
+    const stage = LEVELS[currentStage % LEVELS.length];
+    const isFloating = TERRAINS[stage.terrain].isFloating;
+    const maxBound = isFloating ? 32 : 20;
     if (player.movePoints < 0.5) { showMessage('이동 불가', '행동력을 모두 소모했습니다.', false); return; }
-    player.x = Math.max(-20, Math.min(20, player.x + dir * 0.5));
+    player.x = Math.max(-maxBound, Math.min(maxBound, player.x + dir * 0.5));
     player.y = getTerrainY(player.x) + 0.75;
     player.movePoints -= 0.5;
     updateHPUI();
@@ -2001,12 +2008,20 @@ function render() {
                 p = gridToScreen(pts[i].x, pts[i].y);
                 ctx.lineTo(p.x, p.y);
             }
-            for (let i = pts.length - 1; i >= 0; i--) {
-                p = gridToScreen(pts[i].x, pts[i].y - thickness);
+            const n = pts.length;
+            for (let i = n - 1; i >= 0; i--) {
+                const pct = i / Math.max(1, n - 1);
+                const taper = Math.sin(pct * Math.PI);
+                const wave = Math.sin(pts[i].x * 1.8) * 0.4 + Math.cos(pts[i].x * 3.2) * 0.2;
+                const actualThickness = thickness * (0.35 + 0.65 * taper) + wave * taper;
+                p = gridToScreen(pts[i].x, pts[i].y - Math.max(0.6, actualThickness));
                 ctx.lineTo(p.x, p.y);
             }
             ctx.closePath();
-            ctx.fill(); ctx.stroke();
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.stroke();
         };
 
         for (let x = X_MIN; x <= X_MAX + 0.2; x += 0.2) {
