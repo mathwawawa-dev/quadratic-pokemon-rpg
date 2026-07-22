@@ -51,7 +51,7 @@ let missile = { active: false, x: 0, y: 0, trail: [], maxY: 0, func: null, dx: 0
 let effects = [];
 let screenShake = 0;
 let terrainHeights = {};
-let explosionRadius = 0.6; // let으로 변경 — 파워업 풍선으로 일시 증가 가능
+let explosionRadius = 1.2; // 폭발 반경 (0.6 -> 1.2로 2단계 증가)
 let playerGold = 0;
 let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
 let balloons = [];          // 공중 풍선 목록
@@ -236,6 +236,7 @@ function getTerrainY(x, currentY) {
     }
     return Math.max(...ys);
 }
+
 function createCrater(cx, cy, radius) {
     const stage = LEVELS[currentStage % LEVELS.length];
     const isFloating = TERRAINS[stage.terrain].isFloating;
@@ -248,11 +249,17 @@ function createCrater(cx, cy, radius) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
         if (!terrainHeights[key]) continue;
         const dx = x - cx;
-        const craterY = cy - Math.sqrt(radius * radius - dx * dx);
+        const rSq = radius * radius - dx * dx;
+        if (rSq < 0) continue;
+        const halfHeight = Math.sqrt(rSq);
+        const craterTopY = cy + halfHeight;
+        const craterBottomY = cy - halfHeight;
         
         for (let i = 0; i < terrainHeights[key].length; i++) {
-            if (terrainHeights[key][i] !== -100 && craterY < terrainHeights[key][i]) {
-                terrainHeights[key][i] = craterY;
+            const y = terrainHeights[key][i];
+            // 폭발 범위(craterTopY ~ craterBottomY) 영역에 포함된 지형 레이어만 깎이도록 정밀 검증
+            if (y !== -100 && y <= craterTopY + 0.5 && y >= craterBottomY - 1.0) {
+                terrainHeights[key][i] = craterBottomY;
                 if (isFloating) {
                     const tData = TERRAINS[stage.terrain];
                     const orig = tData.layers ? tData.layers[i](x) : tData.func(x);
@@ -1546,7 +1553,7 @@ function updateGame() {
                     missile.active = false; GAME_STATE = 'IDLE';
                     document.getElementById('fire-btn').disabled = true;
                     const targetX = missile.x;
-                    const targetY = getTerrainY(missile.x);
+                    const targetY = hitY !== -100 ? hitY : missile.y;
                     for (let i = 0; i < 4; i++) {
                         setTimeout(() => {
                             if (GAME_STATE === 'OVER') return;
@@ -1574,7 +1581,7 @@ function updateGame() {
                     missile.active = false; GAME_STATE = 'IDLE';
                     document.getElementById('fire-btn').disabled = true;
                     const netRadius = 3;
-                    const targetX = missile.x, targetY = getTerrainY(missile.x);
+                    const targetX = missile.x, targetY = hitY !== -100 ? hitY : missile.y;
                     effects.push({ type: 'netPull', x: targetX, y: targetY, life: 40, maxLife: 40 });
                     screenShake = 8;
                     let pulled = [];
@@ -1605,7 +1612,7 @@ function updateGame() {
                 } else {
                     missile.active = false; GAME_STATE = 'IDLE';
                     const targetX = missile.x;
-                    const targetY = getTerrainY(missile.x);
+                    const targetY = hitY !== -100 ? hitY : missile.y;
                     createExplosion(targetX, targetY, getMissileColor());
                     createCrater(targetX, targetY, explosionRadius);
                     let hitSomeone = false;
