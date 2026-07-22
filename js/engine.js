@@ -263,7 +263,18 @@ function createCrater(cx, cy, radius) {
                 if (isFloating) {
                     const tData = TERRAINS[stage.terrain];
                     const orig = tData.layers ? tData.layers[i](x) : tData.func(x);
-                    const thick = tData.getThickness ? tData.getThickness(x) : 4.0;
+                    let thick = 4.0;
+                    if (tData.islands && tData.islands[i]) {
+                        for (const s of tData.islands[i]) {
+                            if (x >= s.cx - s.rx && x <= s.cx + s.rx) {
+                                const dx = x - s.cx;
+                                thick = 2 * s.ry * Math.sqrt(1 - (dx * dx) / (s.rx * s.rx));
+                                break;
+                            }
+                        }
+                    } else if (tData.getThickness) {
+                        thick = tData.getThickness(x);
+                    }
                     if (terrainHeights[key][i] < orig - thick) {
                         terrainHeights[key][i] = -100;
                     }
@@ -1291,7 +1302,7 @@ function updateGame() {
             if (ent.y > groundY + 0.1) { ent.vy -= 0.02; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
-        const deathZoneY = LEVELS[currentStage % LEVELS.length].terrain === 'garden' ? -12 : -8;
+        const deathZoneY = LEVELS[currentStage % LEVELS.length].terrain === 'garden' ? -20 : -8;
         if (ent.y < deathZoneY && ent.hp > 0) {
             ent.hp = 0;
             createExplosion(ent.x, -8, '#ffffff');
