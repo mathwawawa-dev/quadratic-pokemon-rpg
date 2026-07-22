@@ -1331,6 +1331,9 @@ function updateGame() {
                 missile.hasLeftPlayer = true;
             }
 
+            const prevStepX = missile.x;
+            const prevStepY = missile.y;
+
 // ...
             if (missile.type === 'homing') {
                 if (missile.isHoming) {
@@ -1567,15 +1570,15 @@ function updateGame() {
             const isFloatingMapLocal = tData.isFloating;
             
             if (tData.islands) {
-                const oldX = missile.x - missile.vx;
-                const oldY = missile.y - missile.vy;
-                const dist = Math.hypot(missile.vx, missile.vy);
+                const stepVx = missile.x - prevStepX;
+                const stepVy = missile.y - prevStepY;
+                const dist = Math.hypot(stepVx, stepVy);
                 const steps = Math.max(1, Math.ceil(dist / 0.05));
                 
                 let hitPoint = null;
                 for (let step = 1; step <= steps; step++) {
-                    const tx = oldX + (missile.vx * step) / steps;
-                    const ty = oldY + (missile.vy * step) / steps;
+                    const tx = prevStepX + (stepVx * step) / steps;
+                    const ty = prevStepY + (stepVy * step) / steps;
                     let insideEllipse = false;
                     for (let l = 0; l < tData.islands.length; l++) {
                         for (const s of tData.islands[l]) {
