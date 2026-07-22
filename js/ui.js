@@ -159,7 +159,22 @@ function setupGlobalShortcuts() {
             return;
         }
 
-        // Ctrl, Alt, Meta 등 보조키가 눌린 상태면 무시 (Ctrl+A 등 방해 방지)
+        // 이동 단축키 (Ctrl + Left/Right) - 최우선 처리 (수식창 포커스 무시)
+        if (e.ctrlKey && !e.metaKey && !e.altKey && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
+            e.preventDefault(); e.stopPropagation();
+            if (e.code === 'ArrowLeft') movePlayer(-1);
+            if (e.code === 'ArrowRight') movePlayer(1);
+            return;
+        }
+
+        // 화면 복구 단축키 (Ctrl)
+        if (e.key === 'Control') {
+            e.preventDefault(); e.stopPropagation();
+            resetView();
+            return;
+        }
+
+        // 그 외 보조키가 눌린 상태면 무시 (Ctrl+C, Ctrl+V 등 방해 방지)
         if (e.ctrlKey || e.metaKey || e.altKey) return;
 
         // 물리적 키보드 코드를 기반으로 한글 모드(ㅂ,ㅈ,ㄷ,ㄱ,ㅅ,ㅁ,ㅇ)에서도 동일하게 작동하도록 함
@@ -185,25 +200,9 @@ function setupGlobalShortcuts() {
             return;
         }
 
-        // 이동 단축키 (A, D)
-        if (code === 'KeyA') {
-            e.preventDefault(); e.stopPropagation();
-            movePlayer(-1);
-            return;
-        }
-        if (code === 'KeyD') {
-            e.preventDefault(); e.stopPropagation();
-            movePlayer(1);
-            return;
-        }
+        // 이동 단축키 (A, D)는 삭제되어 수식 입력(ax^2 등)에 자유롭게 사용 가능합니다.
 
-        // 화면 복구 단축키 (Ctrl)
-        if (e.key === 'Control') {
-            e.preventDefault();
-            e.stopPropagation();
-            resetView();
-            return;
-        }
+
     }, { capture: true });
 }
 
