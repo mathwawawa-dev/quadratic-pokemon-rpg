@@ -394,7 +394,7 @@ function initStage() {
         const yVal = terrainHeights[key] ? Math.max(...terrainHeights[key]) : (tData.layers ? Math.max(...tData.layers.map(l=>l(px))) : tData.func(px));
         const isSpikePeak = terrainSpikes.some(sp => Math.abs(px - sp.cx) < sp.width * 1.5 && sp.height >= 5);
 
-        if (yVal !== -100 && yVal < 5.0 && !isSpikePeak) {
+        if (yVal !== -100 && (isFloatingMap || yVal < 5.0) && !isSpikePeak) {
             break; // 낮고 평탄한 곳에만 배치 (빈 공간 및 과도하게 높은 언덕 제외)
         }
         attempts++;
@@ -2109,28 +2109,57 @@ function render() {
 
         const numLayers = tData.layers ? tData.layers.length : 1;
         if (tData.islands) {
-            // 원형(도형) 기반 렌더링 + 크레이터 지우기 (구름 방식)
+            // 원형/타원(도형) 기반 렌더링 + 크레이터 지우기 (구름 방식)
             const islandCanvas = document.createElement('canvas');
             islandCanvas.width = canvas.width;
             islandCanvas.height = canvas.height;
             const ictx = islandCanvas.getContext('2d');
             
-            ictx.fillStyle = tData.color;
+            const scaleX = canvas.width / (X_MAX - X_MIN);
+            const scaleY = canvas.height / (Y_MAX - Y_MIN);
+
+            // 1. 테두리/아웃라인 (outColor)
+            if (tData.outColor) {
+                ictx.fillStyle = tData.outColor;
+                for (let l = 0; l < tData.islands.length; l++) {
+                    for (const s of tData.islands[l]) {
+                        const p = gridToScreen(s.cx, s.cy);
+                        const prx = (s.rx + 0.15) * scaleX;
+                        const pry = (s.ry + 0.15) * scaleY;
+                        ictx.beginPath();
+                        if (s.type === 'ellipse' || s.rx !== s.ry) {
+                            ictx.ellipse(p.x, p.y, prx, pry, s.rot || 0, 0, Math.PI * 2);
+                        } else {
+                            ictx.arc(p.x, p.y, prx, 0, Math.PI * 2);
+                        }
+                        ictx.fill();
+                    }
+                }
+            }
+
+            // 2. 본체 도형 색상 (color)
+            ictx.fillStyle = tData.color || '#22c55e';
             for (let l = 0; l < tData.islands.length; l++) {
-                for (const c of tData.islands[l]) {
-                    const p = gridToScreen(c.x, c.y);
-                    const pr = c.r * (canvas.width / 70);
+                for (const s of tData.islands[l]) {
+                    const p = gridToScreen(s.cx, s.cy);
+                    const prx = s.rx * scaleX;
+                    const pry = s.ry * scaleY;
                     ictx.beginPath();
-                    ictx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                    if (s.type === 'ellipse' || s.rx !== s.ry) {
+                        ictx.ellipse(p.x, p.y, prx, pry, s.rot || 0, 0, Math.PI * 2);
+                    } else {
+                        ictx.arc(p.x, p.y, prx, 0, Math.PI * 2);
+                    }
                     ictx.fill();
                 }
             }
-            // 크레이터 지우기
-            if (typeof craters !== 'undefined') {
+
+            // 3. 크레이터 지우기
+            if (typeof craters !== 'undefined' && craters.length > 0) {
                 ictx.globalCompositeOperation = 'destination-out';
                 for (const crater of craters) {
                     const p = gridToScreen(crater.x, crater.y);
-                    const pr = crater.r * (canvas.width / 70);
+                    const pr = crater.r * scaleX;
                     ictx.beginPath();
                     ictx.arc(p.x, p.y, pr, 0, Math.PI * 2);
                     ictx.fill();

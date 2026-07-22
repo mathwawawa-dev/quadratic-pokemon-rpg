@@ -57,71 +57,109 @@ const TERRAINS = {
     garden: {
         name: "공중정원",
         bg: ["#0ea5e9", "#7dd3fc", "#e0f2fe"],
+        color: "#22c55e", outColor: "#15803d",
+        isFloating: true,
+        deathZoneY: -12,
         init: function(seed) {
             this.islands = [[], [], []];
             
-            const addIsland = (layer, startX, endX, baseY) => {
-                for (let x = startX; x <= endX; x += 1.5) {
-                    let yOff = Math.sin(x * 1.3 + seed) * 0.8;
-                    let r = 2.5 + Math.abs(Math.cos(x * 0.8 + seed)) * 1.5;
-                    // 가장자리를 약간 둥글고 작게 처리
-                    if (x - startX < 2 || endX - x < 2) r *= 0.8;
-                    this.islands[layer].push({ x: x, y: baseY + yOff, r: r });
+            const addIslandCluster = (layer, startX, endX, baseY) => {
+                const width = endX - startX;
+                const midX = (startX + endX) / 2;
+                
+                // 1. Central main ellipse
+                this.islands[layer].push({
+                    type: 'ellipse',
+                    cx: midX,
+                    cy: baseY,
+                    rx: width / 2 + 0.6,
+                    ry: 2.2 + (Math.abs(Math.sin(midX * 0.7 + seed)) * 0.6),
+                    rot: 0
+                });
+                
+                // 2. Overlapping circles & ellipses along the island body
+                for (let x = startX; x <= endX; x += 1.8) {
+                    const progress = (x - startX) / Math.max(1, width);
+                    const edgeFactor = Math.sin(progress * Math.PI);
                     
-                    // 구름의 풍성함을 위해 서브 원 추가
-                    if (Math.random() > 0.5) {
+                    const rTop = 1.8 + edgeFactor * 1.5 + (Math.cos(x * 1.5 + seed) * 0.5);
+                    const yOff = Math.sin(x * 1.1 + seed) * 0.5;
+                    this.islands[layer].push({
+                        type: 'circle',
+                        cx: x,
+                        cy: baseY + yOff,
+                        rx: rTop,
+                        ry: rTop,
+                        rot: 0
+                    });
+
+                    if (Math.random() > 0.3) {
+                        const rxSub = 2.0 + Math.random() * 1.5;
+                        const rySub = 1.8 + Math.random() * 1.2;
                         this.islands[layer].push({
-                            x: x + (Math.random() - 0.5) * 2,
-                            y: baseY + yOff + (Math.random() - 0.5) * 2,
-                            r: r * 0.7
+                            type: 'ellipse',
+                            cx: x + (Math.random() - 0.5) * 1.5,
+                            cy: baseY - 0.8 + (Math.random() - 0.5) * 1.0,
+                            rx: rxSub,
+                            ry: rySub,
+                            rot: (Math.random() - 0.5) * 0.2
                         });
                     }
                 }
             };
 
-            // Top Layer (y ≈ 15)
-            addIsland(0, 4, 14, 15);
-            addIsland(0, 20, 32, 15);
+            // Top Layer (y ≈ 15) - 2 islands
+            addIslandCluster(0, 4, 14, 15);
+            addIslandCluster(0, 20, 32, 15);
 
-            // Middle Layer (y ≈ 5)
-            addIsland(1, -32, -22, 5);
-            addIsland(1, -14, -4, 5);
-            addIsland(1, 0, 8, 5);       // Overlaps Top 1 left
-            addIsland(1, 12, 22, 5);     // Overlaps Top 1 right & Top 2 left
-            addIsland(1, 28, 35, 5);     // Overlaps Top 2 right
+            // Middle Layer (y ≈ 5) - 5 islands
+            addIslandCluster(1, -32, -22, 5);
+            addIslandCluster(1, -14, -4, 5);
+            addIslandCluster(1, 0, 8, 5);       // Overlaps Top 1 left
+            addIslandCluster(1, 12, 22, 5);     // Overlaps Top 1 right & Top 2 left
+            addIslandCluster(1, 28, 35, 5);     // Overlaps Top 2 right
 
-            // Bottom Layer (y ≈ -5)
-            addIsland(2, -35, -28, -5);
-            addIsland(2, -24, -12, -5);
-            addIsland(2, -6, 2, -5);     // Overlaps Mid 3 left
-            addIsland(2, 6, 14, -5);     // Overlaps Mid 3 right & Mid 4 left
-            addIsland(2, 20, 28, -5);    // Overlaps Mid 4 right
+            // Bottom Layer (y ≈ -5) - 5 islands
+            addIslandCluster(2, -35, -28, -5);
+            addIslandCluster(2, -24, -12, -5);
+            addIslandCluster(2, -6, 2, -5);     // Overlaps Mid 3 left
+            addIslandCluster(2, 6, 14, -5);     // Overlaps Mid 3 right & Mid 4 left
+            addIslandCluster(2, 20, 28, -5);    // Overlaps Mid 4 right
         },
         layers: [
             (x) => {
                 let maxY = -100;
-                if (!TERRAINS.garden.islands) return maxY;
-                for (let c of TERRAINS.garden.islands[0]) {
-                    const dx = Math.abs(x - c.x);
-                    if (dx <= c.r) maxY = Math.max(maxY, c.y + Math.sqrt(c.r*c.r - dx*dx));
+                if (!TERRAINS.garden.islands || !TERRAINS.garden.islands[0]) return maxY;
+                for (let s of TERRAINS.garden.islands[0]) {
+                    const dx = Math.abs(x - s.cx);
+                    if (dx <= s.rx) {
+                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
+                        if (topY > maxY) maxY = topY;
+                    }
                 }
                 return maxY;
             },
             (x) => {
                 let maxY = -100;
-                if (!TERRAINS.garden.islands) return maxY;
-                for (let c of TERRAINS.garden.islands[1]) {
-                    const dx = Math.abs(x - c.x);
-                    if (dx <= c.r) maxY = Math.max(maxY, c.y + Math.sqrt(c.r*c.r - dx*dx));
+                if (!TERRAINS.garden.islands || !TERRAINS.garden.islands[1]) return maxY;
+                for (let s of TERRAINS.garden.islands[1]) {
+                    const dx = Math.abs(x - s.cx);
+                    if (dx <= s.rx) {
+                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
+                        if (topY > maxY) maxY = topY;
+                    }
                 }
                 return maxY;
             },
             (x) => {
                 let maxY = -100;
-                if (!TERRAINS.garden.islands) return maxY;
-                for (let c of TERRAINS.garden.islands[2]) {
-                    const dx = Math.abs(x - c.x);
-                    if (dx <= c.r) maxY = Math.max(maxY, c.y + Math.sqrt(c.r*c.r - dx*dx));
+                if (!TERRAINS.garden.islands || !TERRAINS.garden.islands[2]) return maxY;
+                for (let s of TERRAINS.garden.islands[2]) {
+                    const dx = Math.abs(x - s.cx);
+                    if (dx <= s.rx) {
+                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
+                        if (topY > maxY) maxY = topY;
+                    }
                 }
                 return maxY;
             }
