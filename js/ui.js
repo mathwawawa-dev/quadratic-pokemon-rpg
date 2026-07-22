@@ -138,10 +138,20 @@ window.startGame = startGame;
 // ---------- Math Input Event Setup (Separated to js/mathInput.js) ----------
 // 수식입력창 로직은 js/mathInput.js 파일로 완전히 격리 분리되었습니다.
 
+let isCtrlAlone = false;
+
 function setupGlobalShortcuts() {
     // 글로벌 단축키 (Q,W,E,R,T 미사일 / A,D 이동 / [, ] 방향 / Enter 발사)
     // 수식입력창에 포커스가 있어도 우선적으로 단축키가 작동하도록 capture 단계에서 처리합니다.
     document.addEventListener('keydown', (e) => {
+        if (e.key === 'Control') {
+            if (!e.repeat) {
+                isCtrlAlone = true;
+            }
+        } else {
+            isCtrlAlone = false;
+        }
+
         const overlay = document.getElementById('message-overlay');
         if (overlay && overlay.classList.contains('show')) {
             if (e.key === 'Enter') {
@@ -167,10 +177,8 @@ function setupGlobalShortcuts() {
             return;
         }
 
-        // 화면 복구 단축키 (Ctrl)
+        // 화면 복구 단축키 (Ctrl 누르는 순간은 대기)
         if (e.key === 'Control') {
-            e.preventDefault(); e.stopPropagation();
-            resetView();
             return;
         }
 
@@ -200,9 +208,15 @@ function setupGlobalShortcuts() {
             return;
         }
 
-        // 이동 단축키 (A, D)는 삭제되어 수식 입력(ax^2 등)에 자유롭게 사용 가능합니다.
+    }, { capture: true });
 
-
+    document.addEventListener('keyup', (e) => {
+        if (e.key === 'Control') {
+            if (isCtrlAlone && !e.shiftKey && !e.altKey && !e.metaKey) {
+                resetView();
+            }
+            isCtrlAlone = false;
+        }
     }, { capture: true });
 }
 

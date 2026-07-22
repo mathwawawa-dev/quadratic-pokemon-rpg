@@ -1164,7 +1164,7 @@ function applyDamageAndEffects(target, mx, my) {
     target.hp -= totalDamage;
     target.shake = 20; screenShake = 15;
     const kbDir = target.x > player.x ? 1 : -1;
-    Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.03+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
+    Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.01+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
     createCrater(target.x, target.y - 0.75, explosionRadius);
     createExplosion(target.x, target.y, getMissileColor());
     effects.push({ type: 'text', x: target.x, y: target.y+1.2, text: `-${totalDamage}`, color: '#ff4444', life: 180 });
