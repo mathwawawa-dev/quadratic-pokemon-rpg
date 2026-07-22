@@ -740,8 +740,9 @@ window.updateDirectionUI = function() {
 
 // ---------- Cheat Keys & UI Shortcuts ----------
 window.addEventListener('keydown', (e) => {
-    // Ctrl+Shift+A: 스테이지 스킵 (탭 검색 방지, 수식입력창 숫자로 특정 스테이지 이동)
+    // Ctrl+Shift+A: 스테이지 스킵 (스타팅 화면 Q 3회 연타 치트 해금 시만 작동)
     if (e.ctrlKey && e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+        if (!window.isCheatUnlocked) return;
         e.preventDefault();
         e.stopPropagation();
         
@@ -763,7 +764,9 @@ window.addEventListener('keydown', (e) => {
         if (mathInput) mathInput.value = '';
         return;
     }
+    // Ctrl+Shift+Q: 정답 함수 자동 계산 & 즉시 발사 (스타팅 화면 Q 3회 연타 치트 해금 시만 작동)
     if (e.ctrlKey && e.shiftKey && (e.key === 'q' || e.key === 'Q')) {
+        if (!window.isCheatUnlocked) return;
         if (GAME_STATE !== 'IDLE' || enemies.length < 2) return;
         const p1 = { x: player.x, y: player.y };
         const p2 = { x: enemies[0].x, y: enemies[0].y };

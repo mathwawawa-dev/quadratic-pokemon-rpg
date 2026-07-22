@@ -29,12 +29,18 @@ window.addEventListener('beforeunload', (e) => {
     e.returnValue = '';
 });
 
+window.isCheatUnlocked = false;
+let introQCount = 0;
+
 // ---------- Intro Screen ----------
 function showIntro() {
     const intro = document.getElementById('intro-screen');
     const game  = document.getElementById('game-screen');
     intro.classList.remove('hidden');
     game.classList.add('hidden');
+
+    introQCount = 0;
+    window.isCheatUnlocked = false;
 
     // 스타팅 포켓몬 이미지를 로컬 파일에서 우선 로딩하여 0ms 인스턴트 표시
     document.querySelectorAll('.starter-card').forEach(card => {
@@ -47,83 +53,18 @@ function showIntro() {
     });
 }
 
-// 로딩 화면 연출 상태 옵션: 'overlay' | 'fade' | 'none'
-let loadingOption = 'overlay';
-
-function setLoadingOption(opt) {
-    loadingOption = opt;
-    document.querySelectorAll('.btn-option').forEach(btn => btn.classList.remove('active'));
-    const map = { overlay: 'opt-load-overlay', fade: 'opt-load-fade', mosaic: 'opt-load-mosaic', none: 'opt-load-none' };
-    if (map[opt]) document.getElementById(map[opt]).classList.add('active');
-}
-window.setLoadingOption = setLoadingOption;
-
-// 시계방향 모자이크 전환 효과
-function playMosaicTransition(onPeakCallback) {
-    const COLS = 12, ROWS = 8;
-    const container = document.getElementById('mosaic-overlay');
-    container.style.display = 'grid';
-    container.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
-    container.style.gridTemplateRows = `repeat(${ROWS}, 1fr)`;
-    container.innerHTML = '';
-
-    // 타일 생성
-    const tiles = [];
-    for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-            const tile = document.createElement('div');
-            tile.className = 'mosaic-tile';
-            container.appendChild(tile);
-            tiles.push({ el: tile, r, c });
-        }
-    }
-
-    // 중심에서 각 타일까지 시계방향 각도 계산
-    const cx = (COLS - 1) / 2, cy = (ROWS - 1) / 2;
-    tiles.forEach(t => {
-        let angle = Math.atan2(t.r - cy, t.c - cx); // -π ~ π
-        if (angle < -Math.PI / 2) angle += 2 * Math.PI; // 12시(위)를 기준으로 시계방향
-        const startAngle = -Math.PI / 2;
-        let cw = angle - startAngle;
-        if (cw < 0) cw += 2 * Math.PI;
-        t.cwAngle = cw;
-    });
-    tiles.sort((a, b) => a.cwAngle - b.cwAngle);
-
-    const STAGGER = 15; // ms per tile
-    const HOLD = 300;   // 완전히 덮힌 후 대기 (ms)
-
-    container.classList.remove('hidden');
-
-    // Phase 1: 시계방향으로 타일을 어둡게 채우기
-    tiles.forEach((t, i) => {
-        setTimeout(() => t.el.classList.add('show'), i * STAGGER);
-    });
-
-    const totalIn = tiles.length * STAGGER + HOLD;
-
-    // Phase 2: 화면이 완전히 가려진 시점에 콜백 (여기서 스테이지 IDLE 전환 등)
-    setTimeout(() => {
-        if (onPeakCallback) onPeakCallback();
-        // Phase 3: 타일을 역순으로 제거 (반시계방향으로 열기)
-        [...tiles].reverse().forEach((t, i) => {
-            setTimeout(() => t.el.classList.remove('show'), i * STAGGER);
-        });
-        // Phase 4: 완전히 제거 후 컨테이너 숨김
-        setTimeout(() => {
-            container.classList.add('hidden');
-            container.innerHTML = '';
-        }, tiles.length * STAGGER + 200);
-    }, totalIn);
-}
-window.playMosaicTransition = playMosaicTransition;
-
-
 function startGame(starterKey) {
     selectedStarter = STARTERS[starterKey];
 
     document.getElementById('intro-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
+
+    // 치트모드 해금 시 99개 지급, 기본은 1개 지급
+    if (window.isCheatUnlocked) {
+        window.missileInventory = { pierce: 99, homing: 99, satellite: 99, net: 99 };
+    } else {
+        window.missileInventory = { pierce: 1, homing: 1, satellite: 1, net: 1 };
+    }
 
     // 게임 초기화
     currentStage = 0;
@@ -131,6 +72,7 @@ function startGame(starterKey) {
     document.getElementById('ui-player-gold').innerText = '0';
 
     initStage();
+    if (window.updateInventoryUI) window.updateInventoryUI();
     gameLoop();
 }
 window.startGame = startGame;
@@ -144,6 +86,22 @@ function setupGlobalShortcuts() {
     // 글로벌 단축키 (Q,W,E,R,T 미사일 / A,D 이동 / [, ] 방향 / Enter 발사)
     // 수식입력창에 포커스가 있어도 우선적으로 단축키가 작동하도록 capture 단계에서 처리합니다.
     document.addEventListener('keydown', (e) => {
+        // 스타팅 포켓몬 선택 화면에서 Q키 3회 누르면 치트모드 해금
+        const introScreen = document.getElementById('intro-screen');
+        if (introScreen && !introScreen.classList.contains('hidden')) {
+            if (e.key === 'q' || e.key === 'Q' || e.code === 'KeyQ') {
+                introQCount++;
+                if (introQCount >= 3) {
+                    window.isCheatUnlocked = true;
+                    const tip = document.querySelector('.intro-tip');
+                    if (tip) {
+                        tip.innerHTML = '✨ <b style="color:#fbbf24">치트 모드 해금!</b> (특수 미사일 99개 + Ctrl+Shift+A/Q 활성화) ✨';
+                    }
+                }
+            }
+            return;
+        }
+
         if (e.key === 'Control') {
             if (!e.repeat) {
                 isCtrlAlone = true;
