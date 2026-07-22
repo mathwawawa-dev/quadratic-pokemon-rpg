@@ -57,41 +57,73 @@ const TERRAINS = {
     garden: {
         name: "공중정원",
         bg: ["#0ea5e9", "#7dd3fc", "#e0f2fe"],
-        color: "#22c55e", outColor: "#15803d",
-        isFloating: true,
-        deathZoneY: -12,
+        init: function(seed) {
+            this.islands = [[], [], []];
+            
+            const addIsland = (layer, startX, endX, baseY) => {
+                for (let x = startX; x <= endX; x += 1.5) {
+                    let yOff = Math.sin(x * 1.3 + seed) * 0.8;
+                    let r = 2.5 + Math.abs(Math.cos(x * 0.8 + seed)) * 1.5;
+                    // 가장자리를 약간 둥글고 작게 처리
+                    if (x - startX < 2 || endX - x < 2) r *= 0.8;
+                    this.islands[layer].push({ x: x, y: baseY + yOff, r: r });
+                    
+                    // 구름의 풍성함을 위해 서브 원 추가
+                    if (Math.random() > 0.5) {
+                        this.islands[layer].push({
+                            x: x + (Math.random() - 0.5) * 2,
+                            y: baseY + yOff + (Math.random() - 0.5) * 2,
+                            r: r * 0.7
+                        });
+                    }
+                }
+            };
+
+            // Top Layer (y ≈ 15)
+            addIsland(0, 4, 14, 15);
+            addIsland(0, 20, 32, 15);
+
+            // Middle Layer (y ≈ 5)
+            addIsland(1, -32, -22, 5);
+            addIsland(1, -14, -4, 5);
+            addIsland(1, 0, 8, 5);       // Overlaps Top 1 left
+            addIsland(1, 12, 22, 5);     // Overlaps Top 1 right & Top 2 left
+            addIsland(1, 28, 35, 5);     // Overlaps Top 2 right
+
+            // Bottom Layer (y ≈ -5)
+            addIsland(2, -35, -28, -5);
+            addIsland(2, -24, -12, -5);
+            addIsland(2, -6, 2, -5);     // Overlaps Mid 3 left
+            addIsland(2, 6, 14, -5);     // Overlaps Mid 3 right & Mid 4 left
+            addIsland(2, 20, 28, -5);    // Overlaps Mid 4 right
+        },
         layers: [
-            // Top Layer (y ≈ 16) - x > 0 구간에만 주로 생성 (3단 레이어)
             (x) => {
-                if (x < 0.01) return -100;
-                const seed = terrainSeed;
-                const pattern = Math.sin(x * 0.15 + seed) + Math.cos(x * 0.25 + seed * 1.3);
-                // 넓은 섬 생성 (임계값을 0.0으로 낮춰 섬 면적 약 50% 확보)
-                if (pattern > 0.0) {
-                    return 16 + Math.sin(x * 0.5) * 1.5;
+                let maxY = -100;
+                if (!TERRAINS.garden.islands) return maxY;
+                for (let c of TERRAINS.garden.islands[0]) {
+                    const dx = Math.abs(x - c.x);
+                    if (dx <= c.r) maxY = Math.max(maxY, c.y + Math.sqrt(c.r*c.r - dx*dx));
                 }
-                return -100;
+                return maxY;
             },
-            // Middle Layer (y ≈ 6)
             (x) => {
-                const seed = terrainSeed + 100;
-                const pattern = Math.cos(x * 0.2 + seed * 0.8) + Math.sin(x * 0.3 - seed * 1.1);
-                const centerBoost = Math.max(0, 1.5 - Math.abs(x) * 0.15); 
-                // 위 아래 층과 약 40~50% 겹치도록 임계값 완화
-                if (pattern + centerBoost > 0.0) {
-                    return 6 + Math.cos(x * 0.7) * 1.2;
+                let maxY = -100;
+                if (!TERRAINS.garden.islands) return maxY;
+                for (let c of TERRAINS.garden.islands[1]) {
+                    const dx = Math.abs(x - c.x);
+                    if (dx <= c.r) maxY = Math.max(maxY, c.y + Math.sqrt(c.r*c.r - dx*dx));
                 }
-                return -100;
+                return maxY;
             },
-            // Bottom Layer (y ≈ -4)
             (x) => {
-                const seed = terrainSeed + 200;
-                const pattern = Math.sin(x * 0.18 + seed * 1.5) + Math.cos(x * 0.22 - seed * 0.9);
-                // 넓게 깔리는 바닥 섬 생성 (임계값 -0.1)
-                if (pattern > -0.1) {
-                    return -4 + Math.sin(x * 0.6) * 1.0;
+                let maxY = -100;
+                if (!TERRAINS.garden.islands) return maxY;
+                for (let c of TERRAINS.garden.islands[2]) {
+                    const dx = Math.abs(x - c.x);
+                    if (dx <= c.r) maxY = Math.max(maxY, c.y + Math.sqrt(c.r*c.r - dx*dx));
                 }
-                return -100;
+                return maxY;
             }
         ],
         func: (x) => -100

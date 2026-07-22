@@ -62,6 +62,8 @@ let cloudParams = [
 
 // 구름 구멍 데이터 (미사일 관통 시 생성)
 let cloudHoles = []; // { x, y, radius, maxRadius, life, maxLife }
+// 크레이터 데이터 (도형 기반 지형을 지우기 위해 유지)
+let craters = [];
 
 // ---------- 포켓볼 이미지 프리로드 ----------
 const pokeballImg = new Image();
@@ -237,6 +239,10 @@ function getTerrainY(x, currentY) {
 function createCrater(cx, cy, radius) {
     const stage = LEVELS[currentStage % LEVELS.length];
     const isFloating = TERRAINS[stage.terrain].isFloating;
+    
+    if (typeof craters !== 'undefined') {
+        craters.push({x: cx, y: cy, r: radius});
+    }
 
     for (let x = cx - radius; x <= cx + radius; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -338,8 +344,10 @@ function initStage() {
     player.name          = starterData.name;
 
     // 지형 높이맵 + 랜덤 스파이크 언덕 생성
-    const tFunc = TERRAINS[stage.terrain].func;
+    const tData = TERRAINS[stage.terrain];
+    if (tData.init) tData.init(terrainSeed);
     terrainHeights = {};
+    craters = [];
 
     // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 1~3개의 뾰족한 언덕 배치
     terrainSpikes = [];
@@ -354,7 +362,6 @@ function initStage() {
     }
 
     const isFloatingMap = TERRAINS[stage.terrain].isFloating;
-    const tData = TERRAINS[stage.terrain];
     for (let x = -35; x <= 35; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
         if (tData.layers) {
@@ -2101,32 +2108,64 @@ function render() {
         };
 
         const numLayers = tData.layers ? tData.layers.length : 1;
-        for (let l = 0; l < numLayers; l++) {
-            let inIsland = false;
-            let islandPoints = [];
-            let islandThickness = 4.0;
-            for (let x = -35; x <= 35.2; x += 0.2) {
-                let cx = Math.min(x, 35);
-                let y = getTerrainYAll(cx)[l];
-                let origY = tData.layers ? tData.layers[l](cx) : (tData.func ? tData.func(cx) : y);
-                // 부동소수점 오차로 origY가 -100이 되거나 y보다 심하게 낮아지는 현상 방어
-                if (origY !== undefined && y !== undefined) origY = Math.max(origY, y);
-                
-                if (y !== undefined && y > -50) {
-                    if (!inIsland) { 
-                        inIsland = true; 
-                        islandPoints = []; 
-                        islandThickness = tData.getThickness ? tData.getThickness(cx) : 4.0;
-                    }
-                    islandPoints.push({x: cx, y: y, origY: origY});
-                } else {
-                    if (inIsland) {
-                        drawIslandPoly(islandPoints, islandThickness);
-                        inIsland = false;
-                    }
+        if (tData.islands) {
+            // 원형(도형) 기반 렌더링 + 크레이터 지우기 (구름 방식)
+            const islandCanvas = document.createElement('canvas');
+            islandCanvas.width = canvas.width;
+            islandCanvas.height = canvas.height;
+            const ictx = islandCanvas.getContext('2d');
+            
+            ictx.fillStyle = tData.color;
+            for (let l = 0; l < tData.islands.length; l++) {
+                for (const c of tData.islands[l]) {
+                    const p = gridToScreen(c.x, c.y);
+                    const pr = c.r * (canvas.width / 70);
+                    ictx.beginPath();
+                    ictx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                    ictx.fill();
                 }
             }
-            if (inIsland) drawIslandPoly(islandPoints, islandThickness);
+            // 크레이터 지우기
+            if (typeof craters !== 'undefined') {
+                ictx.globalCompositeOperation = 'destination-out';
+                for (const crater of craters) {
+                    const p = gridToScreen(crater.x, crater.y);
+                    const pr = crater.r * (canvas.width / 70);
+                    ictx.beginPath();
+                    ictx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                    ictx.fill();
+                }
+                ictx.globalCompositeOperation = 'source-over';
+            }
+            ctx.drawImage(islandCanvas, 0, 0);
+        } else {
+            for (let l = 0; l < numLayers; l++) {
+                let inIsland = false;
+                let islandPoints = [];
+                let islandThickness = 4.0;
+                for (let x = -35; x <= 35.2; x += 0.2) {
+                    let cx = Math.min(x, 35);
+                    let y = getTerrainYAll(cx)[l];
+                    let origY = tData.layers ? tData.layers[l](cx) : (tData.func ? tData.func(cx) : y);
+                    // 부동소수점 오차로 origY가 -100이 되거나 y보다 심하게 낮아지는 현상 방어
+                    if (origY !== undefined && y !== undefined) origY = Math.max(origY, y);
+                    
+                    if (y !== undefined && y > -50) {
+                        if (!inIsland) { 
+                            inIsland = true; 
+                            islandPoints = []; 
+                            islandThickness = tData.getThickness ? tData.getThickness(cx) : 4.0;
+                        }
+                        islandPoints.push({x: cx, y: y, origY: origY});
+                    } else {
+                        if (inIsland) {
+                            drawIslandPoly(islandPoints, islandThickness);
+                            inIsland = false;
+                        }
+                    }
+                }
+                if (inIsland) drawIslandPoly(islandPoints, islandThickness);
+            }
         }
     } else {
         ctx.beginPath();
