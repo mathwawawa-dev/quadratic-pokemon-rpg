@@ -2285,9 +2285,9 @@ function render() {
         for (let i = 0; i < 35; i++) {
             // 각 눈송이마다 고유 시드로 속도/위치 분산
             const seed = i * 7919;
-            const fallSpeed = 0.0008 + (seed % 7) * 0.00015; // 개별 낙하 속도 (느린 것~빠른 것 분산)
-            const swayAmp = 1.2 + (seed % 5) * 0.4;          // 좌우 흔들림 폭
-            const swayFreq = 0.0015 + (seed % 3) * 0.0005;   // 좌우 흔들림 주기
+            const fallSpeed = 0.0004 + (seed % 7) * 0.00008; // 개별 낙하 속도 (절반 감속)
+            const swayAmp = 1.0 + (seed % 5) * 0.3;          // 좌우 흔들림 폭 (약간 축소)
+            const swayFreq = 0.0008 + (seed % 3) * 0.00025;  // 좌우 흔들림 주기 (절반 감속)
 
             // gx: 좌우로 살랑살랑 흔들리며 수평 이동
             const baseGx = -25.0 + (seed % 500) * 0.11;
