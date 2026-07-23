@@ -373,6 +373,7 @@ function initStage() {
     terrainBottoms = {};
     terrainSpikes = [];
     craters = [];
+    window.lastElectricLightningTime = Date.now();
 
     // 플레이어 스폰 위치 사전 산출 (스파이크가 플레이어 주변 8.0 이내에 생기는 것 방지)
     let approxPx = 0;
@@ -1317,6 +1318,38 @@ function updateGame() {
     if (screenShake > 0) screenShake--;
     enemies.forEach(e => { if (e.shake > 0) e.shake--; });
     if (player.shake > 0) player.shake--;
+
+    // 발전소('electric') 맵: 20초마다 번개가 내리쳐 내 포켓몬 가격 (넉백 없음)
+    const currentTerrainKey = LEVELS[currentStage % LEVELS.length].terrain;
+    if (currentTerrainKey === 'electric' && player.hp > 0 && GAME_STATE !== 'OVER') {
+        const now = Date.now();
+        if (!window.lastElectricLightningTime) window.lastElectricLightningTime = now;
+        if (now - window.lastElectricLightningTime >= 20000) { // 20초마다 (20000ms)
+            window.lastElectricLightningTime = now;
+            
+            // 번개 내리치기 이펙트 (수직 광선)
+            effects.push({
+                type: 'laser',
+                x: player.x,
+                y: player.y,
+                life: 25,
+                maxLife: 25
+            });
+            // 텍스트 & 화면 흔들림 & 데미지 (넉백은 없음)
+            effects.push({
+                type: 'text',
+                x: player.x,
+                y: player.y + 2.8,
+                text: '⚡ 번개 강타! -5HP',
+                color: '#fbbf24',
+                life: 180
+            });
+            player.hp = Math.max(1, player.hp - 5); // 5 데미지 (사망 최소 1 유지)
+            player.shake = 15;
+            screenShake = 12;
+            updateHPUI();
+        }
+    }
 
     // 플레이어 발사 모션 (점프 + 한바퀴 회전)
     if (player.animFrame > 0) {
