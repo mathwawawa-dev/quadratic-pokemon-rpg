@@ -534,7 +534,11 @@ function initStage() {
                 rx = side === 'L'
                     ? player.x - 5 - Math.random() * spread
                     : player.x + 5 + Math.random() * spread;
-                rx = Math.max(-25, Math.min(35, rx));
+                if (!isFloatingMapLocal) {
+                    rx = Math.max(-19, Math.min(19, rx));
+                } else {
+                    rx = Math.max(-25, Math.min(35, rx));
+                }
                 
                 if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
