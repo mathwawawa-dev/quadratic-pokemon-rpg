@@ -1333,9 +1333,14 @@ function updateGame() {
             const groundY = getTerrainY(ent.x, ent.y) + 0.75;
             if (ent.y < groundY) {
                 // 지형 경사도 계산 (현재 x 기준 좌우 0.1의 높이차)
-                const slope = (getTerrainY(ent.x + 0.1) - getTerrainY(ent.x - 0.1)) / 0.2;
-                // 경사에 따라 미끄러지는 힘 추가 (내리막 방향으로 가속 - 과도하지 않게 수치 대폭 하향)
-                ent.vx += -slope * 0.015;
+                const yRight = getTerrainY(ent.x + 0.1, ent.y);
+                const yLeft = getTerrainY(ent.x - 0.1, ent.y);
+                if (yRight > -50 && yLeft > -50) {
+                    let slope = (yRight - yLeft) / 0.2;
+                    slope = Math.max(-10, Math.min(10, slope)); // 극단적인 절벽 튕김 방지를 위해 경사도 제한
+                    // 경사에 따라 미끄러지는 힘 추가 (내리막 방향으로 가속 - 과도하지 않게 수치 대폭 하향)
+                    ent.vx += -slope * 0.015;
+                }
 
                 ent.y = groundY; 
                 ent.vy *= -0.5; 
