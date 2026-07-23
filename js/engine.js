@@ -374,7 +374,7 @@ function initStage() {
     terrainSpikes = [];
     craters = [];
 
-    // 플레이어 스폰 위치 사전 산출 (스파이크가 플레이어 주변 5.0 이내에 생기는 것 방지)
+    // 플레이어 스폰 위치 사전 산출 (스파이크가 플레이어 주변 8.0 이내에 생기는 것 방지)
     let approxPx = 0;
     if (stage.terrain === 'garden') {
         approxPx = 0;
@@ -386,7 +386,7 @@ function initStage() {
     }
 
     // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 1~3개의 뾰족한 언덕 배치
-    // 내 포켓몬(approxPx) 주변 반경 5.0 이내에는 스파이크가 절대 생성되지 않도록 제한 (자폭 방지)
+    // 내 포켓몬(approxPx) 주변 반경 8.0 이내에는 스파이크가 절대 생성되지 않도록 제한 (자폭 방지)
     terrainSpikes = [];
     const spikeProb = stage.terrain === 'ice' ? 0.5 : 0.3;
     const spikeCount = Math.random() < spikeProb ? Math.floor(Math.random() * 3) + 1 : 0;
@@ -396,7 +396,7 @@ function initStage() {
         do {
             scx = -15 + Math.random() * 30;
             tryCount++;
-        } while (Math.abs(scx - approxPx) < 5.0 && tryCount < 30);
+        } while (Math.abs(scx - approxPx) < 8.0 && tryCount < 40);
 
         terrainSpikes.push({
             cx: scx,
@@ -472,7 +472,7 @@ function initStage() {
         // 해당 위치의 지형 높이가 3 이상 솟아오른 스파이크 영향권인지 체크
         const key = (Math.round(px * 10) / 10).toFixed(1);
         const yVal = terrainHeights[key] ? Math.max(...terrainHeights[key]) : (tData.layers ? Math.max(...tData.layers.map(l=>l(px))) : tData.func(px));
-        const isSpikePeak = terrainSpikes.some(sp => Math.abs(px - sp.cx) < sp.width * 1.5 && sp.height >= 5);
+        const isSpikePeak = terrainSpikes.some(sp => Math.abs(px - sp.cx) < 8.0);
 
         if (yVal !== -100 && (isFloatingMap || yVal < 5.0) && !isSpikePeak) {
             break; // 낮고 평탄한 곳에만 배치 (빈 공간 및 과도하게 높은 언덕 제외)
