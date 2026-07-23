@@ -2408,7 +2408,8 @@ function render() {
         // 16개의 공기방울 (한 주기가 끝나면 무작위 해저 지형 위치로 새로 이동하여 분출)
         for (let i = 0; i < 16; i++) {
             const seed = i * 4951;
-            const riseSpeed = 0.00018 + (seed % 4) * 0.00004; // 50% 감속된 느리고 은은한 상승 속도
+            // 상승 속도를 이전 대비 1/3 수준으로 대폭 감속 (1회 풀 상승 시 약 16~18초 소요되는 극도로 차분한 속도)
+            const riseSpeed = 0.000055 + (seed % 4) * 0.000012;
             const timeOffset = (seed % 1000) * 0.001;
             
             // 현재 사이클 번호 (상승 완료 후 소멸 시 1씩 증가)
@@ -2427,8 +2428,8 @@ function render() {
             const heightRange = 25.0;
             const gy = startY + progress * heightRange;
 
-            // 물살(Ocean Current) S자 파동 흔들림 (상승하면서 부드럽게 물살에 휩쓸림)
-            const currentWave = Math.sin(now * 0.0007 + gy * 0.2) * (0.8 + progress * 0.8) + Math.sin(now * 0.0013 + i) * 0.4;
+            // 느린 상승에 맞춰 물살 S자 파동 주기도 함께 슬로우 차분화 (0.0007 -> 0.0003)
+            const currentWave = Math.sin(now * 0.0003 + gy * 0.2) * (0.8 + progress * 0.8) + Math.sin(now * 0.0006 + i) * 0.4;
             const gx = spawnGx + currentWave;
 
             // 올라갈수록 기압 감퇴로 은은하게 팽창 (1.0배 -> 1.6배)
