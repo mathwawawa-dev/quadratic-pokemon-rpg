@@ -111,20 +111,20 @@ const TERRAINS = {
             // 매 게임마다 조금씩 변화(랜덤성)를 주어 덜 단조롭게 구성
             const rnd = (min, max) => Math.random() * (max - min) + min;
 
-            // Top Layer (3층) - 딱 1개 구름만 배치 (가장 우측)
-            addIslandCluster(0, rnd(18, 20), rnd(30, 33), rnd(14, 16));
+            // Top Layer (3층) - 딱 1개 구름만 배치 (가장 우측) (모든 섬 4.5 Y단위 하향 조정)
+            addIslandCluster(0, rnd(18, 20), rnd(30, 33), rnd(9.5, 11.5));
 
             // Middle Layer (2층) - 오른쪽으로 이동 (중앙 -5~5 부근에 섬이 위치하도록)
-            addIslandCluster(1, rnd(-30, -28), rnd(-18, -16), rnd(2, 4));
-            addIslandCluster(1, rnd(-10, -8), rnd(2, 4), rnd(-0.5, 1.5));
-            addIslandCluster(1, rnd(12, 14), rnd(23, 25), rnd(2, 4));
-            addIslandCluster(1, rnd(32, 34), rnd(40, 42), rnd(-0.5, 1.5));
+            addIslandCluster(1, rnd(-30, -28), rnd(-18, -16), rnd(-2.5, -0.5));
+            addIslandCluster(1, rnd(-10, -8), rnd(2, 4), rnd(-5.0, -3.0));
+            addIslandCluster(1, rnd(12, 14), rnd(23, 25), rnd(-2.5, -0.5));
+            addIslandCluster(1, rnd(32, 34), rnd(40, 42), rnd(-5.0, -3.0));
 
-            // Bottom Layer (1층) - 위치와 높낮이를 판마다 조금씩 흔듦
-            addIslandCluster(2, rnd(-36, -34), rnd(-25, -23), rnd(-11.5, -9.5));
-            addIslandCluster(2, rnd(-14, -12), rnd(-2, 0), rnd(-14.5, -12.5));
-            addIslandCluster(2, rnd(10, 12), rnd(20, 22), rnd(-11.5, -9.5));
-            addIslandCluster(2, rnd(29, 31), rnd(35, 36), rnd(-14.5, -12.5));
+            // Bottom Layer (1층) - 위치와 높낮이를 판마다 조금씩 흔듦 (왼쪽 3번째 섬은 왼쪽으로 5만큼 연장)
+            addIslandCluster(2, rnd(-36, -34), rnd(-25, -23), rnd(-16.0, -14.0));
+            addIslandCluster(2, rnd(-14, -12), rnd(-2, 0), rnd(-19.0, -17.0));
+            addIslandCluster(2, rnd(5, 7), rnd(20, 22), rnd(-16.0, -14.0)); // 시작 X 10~12 -> 5~7 (왼쪽 5 확장)
+            addIslandCluster(2, rnd(29, 31), rnd(35, 36), rnd(-19.0, -17.0));
         },
         layers: [
             (x) => {

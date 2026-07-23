@@ -603,9 +603,9 @@ function initStage() {
     // 구름 파라미터 리셋 (공중정원 맵은 섬 지형과 겹치지 않도록 허공 위치로 재조정)
     if (stage.terrain === 'garden') {
         cloudParams = [
-            { bx: 6,   by: 15.5, speed: 3000, radius: 2.2, alpha: 0.6 },
-            { bx: -18, by: 10.5, speed: 5000, radius: 1.6, alpha: 0.4 },
-            { bx: -2,  by: 9.5,  speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
+            { bx: 6,   by: 11.0, speed: 3000, radius: 2.2, alpha: 0.6 },
+            { bx: -18, by: 6.0,  speed: 5000, radius: 1.6, alpha: 0.4 },
+            { bx: -2,  by: 5.0,  speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
         ];
     } else {
         cloudParams = [
