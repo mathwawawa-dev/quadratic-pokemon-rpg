@@ -1327,14 +1327,47 @@ function updateGame() {
         if (now - window.lastElectricLightningTime >= 20000) { // 20초마다 (20000ms)
             window.lastElectricLightningTime = now;
             
-            // 번개 내리치기 이펙트 (수직 광선)
+            // 번개 지그재그 ⚡ 경로 사전 계산 (하늘 y=45에서 내 포켓몬 위치까지)
+            const segments = [];
+            const topY = 45;
+            const bottomY = player.y;
+            const stepY = (topY - bottomY) / 7;
+            segments.push({ x: player.x, y: topY });
+            for (let s = 1; s < 7; s++) {
+                const segY = topY - stepY * s;
+                const offsetX = player.x + (Math.random() - 0.5) * 2.2;
+                segments.push({ x: offsetX, y: segY });
+            }
+            segments.push({ x: player.x, y: player.y });
+
             effects.push({
-                type: 'laser',
+                type: 'lightning',
                 x: player.x,
                 y: player.y,
+                segments: segments,
                 life: 25,
                 maxLife: 25
             });
+
+            // 눈이 부시지 않도록 대단히 부드럽고 차분한 12% 투명도 스크린 플래시
+            effects.push({
+                type: 'softFlash',
+                life: 12,
+                maxLife: 12
+            });
+
+            // 포켓몬 발밑 튀어오르는 황금빛 전기 스파크 파티클
+            for (let pi = 0; pi < 12; pi++) {
+                effects.push({
+                    type: 'particle',
+                    x: player.x,
+                    y: player.y + 0.5,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: Math.random() * 0.4 + 0.1,
+                    life: 30,
+                    color: (pi % 2 === 0) ? '#fbbf24' : '#fef08a'
+                });
+            }
             // 텍스트 & 화면 흔들림 & 데미지 (넉백은 없음)
             effects.push({
                 type: 'text',
@@ -2700,6 +2733,44 @@ function render() {
             ctx.beginPath(); ctx.arc(scBottom.x, scBottom.y, 25 + Math.random()*10, 0, Math.PI*2); ctx.fill();
             
             ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+        } else if (e.type === 'lightning') {
+            // ⚡ 지그재그 번개 줄기 렌더링
+            const alpha = Math.max(0, e.life / e.maxLife);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.strokeStyle = '#fef08a'; // 따뜻한 황금빛 번개
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#fbbf24';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            e.segments.forEach((pt, idx) => {
+                const sc = gridToScreen(pt.x, pt.y);
+                if (idx === 0) ctx.moveTo(sc.x, sc.y);
+                else ctx.lineTo(sc.x, sc.y);
+            });
+            ctx.stroke();
+
+            // 내부 밝은 코어 중심선
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            e.segments.forEach((pt, idx) => {
+                const sc = gridToScreen(pt.x, pt.y);
+                if (idx === 0) ctx.moveTo(sc.x, sc.y);
+                else ctx.lineTo(sc.x, sc.y);
+            });
+            ctx.stroke();
+            ctx.restore();
+        } else if (e.type === 'softFlash') {
+            // 눈부심 방지: 12% 이하의 은은하고 차분한 스크린 플래시
+            const alpha = (e.life / e.maxLife) * 0.12;
+            ctx.save();
+            ctx.fillStyle = `rgba(251, 191, 36, ${alpha})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
         } else if (e.type === 'netPull') {
             // ---- 그물 당기기 이펙트: 수축하는 원 + 방사형 선 ----
             const sc = gridToScreen(e.x, e.y);
