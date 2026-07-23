@@ -2277,10 +2277,79 @@ function render() {
         ctx.restore();
     }
 
-    // 발전소('electric') 지형 분위기: 차분한 앰버/골드 스파크 & 간헐적 번개 방전 아크
+    // 발전소('electric') 지형 분위기: 배경 고전압 송전탑 & 송전선, 앰버/골드 스파크 & 간헐적 번개 방전 아크
     if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
         ctx.save();
         const now = Date.now();
+
+        // 0. 배경 고전압 송전탑 & 송전선 (High-Voltage Transmission Towers & Lines)
+        const towerXs = [canvas.width * 0.18, canvas.width * 0.52, canvas.width * 0.84];
+        const towerTopY = canvas.height * 0.28;
+        const towerBaseY = canvas.height * 0.78;
+
+        // 송전선 3줄 (Catenary Wires)
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+        for (let wire = 0; wire < 3; wire++) {
+            const yOff = wire * 14;
+            ctx.beginPath();
+            ctx.moveTo(0, towerTopY + yOff + 10);
+            ctx.quadraticCurveTo(towerXs[0] * 0.5, towerTopY + yOff + 22, towerXs[0], towerTopY + yOff);
+            ctx.quadraticCurveTo((towerXs[0] + towerXs[1]) * 0.5, towerTopY + yOff + 25, towerXs[1], towerTopY + yOff);
+            ctx.quadraticCurveTo((towerXs[1] + towerXs[2]) * 0.5, towerTopY + yOff + 25, towerXs[2], towerTopY + yOff);
+            ctx.quadraticCurveTo((towerXs[2] + canvas.width) * 0.5, towerTopY + yOff + 22, canvas.width, towerTopY + yOff + 10);
+            ctx.stroke();
+
+            // 송전선을 따라 이동하는 은은한 전류 파동
+            const flowX = (now * 0.08 + wire * 180) % canvas.width;
+            const flowY = towerTopY + yOff + Math.sin(flowX * 0.004) * 7 + 14;
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.65)';
+            ctx.beginPath();
+            ctx.arc(flowX, flowY, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // A자형 철탑 실루엣 (Power Pylons)
+        towerXs.forEach((tx, idx) => {
+            ctx.lineWidth = 1.6;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            
+            // 메인 A-프레임
+            ctx.beginPath();
+            ctx.moveTo(tx, towerTopY);
+            ctx.lineTo(tx - 26, towerBaseY);
+            ctx.moveTo(tx, towerTopY);
+            ctx.lineTo(tx + 26, towerBaseY);
+            
+            // 가로암 (3단 Crossarms)
+            for (let arm = 0; arm < 3; arm++) {
+                const ay = towerTopY + arm * 14;
+                const aw = 36 - arm * 5;
+                ctx.moveTo(tx - aw, ay);
+                ctx.lineTo(tx + aw, ay);
+            }
+            // X자 트러스 격자
+            for (let cx = 0; cx < 3; cx++) {
+                const cy1 = towerTopY + cx * 24 + 10;
+                const cy2 = cy1 + 24;
+                const w1 = 12 + cx * 4;
+                const w2 = 12 + (cx + 1) * 4;
+                ctx.moveTo(tx - w1, cy1); ctx.lineTo(tx + w2, cy2);
+                ctx.moveTo(tx + w1, cy1); ctx.lineTo(tx - w2, cy2);
+            }
+            ctx.stroke();
+
+            // 송전탑 상단 점등 항공경고등 (Beacon Light)
+            const beaconAlpha = 0.4 + Math.sin(now * 0.004 + idx * 2.5) * 0.4;
+            ctx.fillStyle = `rgba(239, 68, 68, ${beaconAlpha})`;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(tx, towerTopY - 4, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+
         // 1. 느리고 은은하게 떠다니는 따뜻한 앰버/골드 전기 스파크
         for (let i = 0; i < 13; i++) {
             const spkX = ((i * 150 + now * 0.02) % canvas.width);
