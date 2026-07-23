@@ -1204,10 +1204,8 @@ function createExplosion(x, y, color) {
     for (let i = 0; i < 15; i++)
         effects.push({ type: 'particle', x, y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 30, color });
     
-    // 발전소('electric') 맵 전용: 전력 과충전 착탄 이펙트 (확산 전기 파동 링 + 황금빛 방전 스파크)
+    // 발전소('electric') 맵 전용: 황금빛 방전 스파크 이펙트
     if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
-        effects.push({ type: 'ring', x, y, life: 25, maxLife: 25, color: '#fbbf24' });
-        effects.push({ type: 'ring', x, y, life: 35, maxLife: 35, color: '#f59e0b' });
         for (let sp = 0; sp < 14; sp++) {
             const angle = Math.random() * Math.PI * 2;
             const spd = 0.3 + Math.random() * 0.45;
