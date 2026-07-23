@@ -237,7 +237,7 @@ let guideInterval = null;
 const GUIDE_MESSAGES_STAGE1_ONLY = [
     { msg: "이차함수 식을 입력하여 미사일을 발사하세요!", blink: true },
     { msg: "<kbd>[</kbd> / <kbd>]</kbd> 키를 눌러 조준 방향을 전환합니다." },
-    { msg: "<kbd>Ctrl</kbd> + <kbd>◀</kbd> / <kbd>▶</kbd> 키를 눌러 좌우로 이동합니다." }
+    { msg: "<kbd>Ctrl</kbd> + <kbd>방향키</kbd> 키를 눌러 좌우로 이동합니다." }
 ];
 
 // 모든 스테이지 공통 문구 (무한 순환)
