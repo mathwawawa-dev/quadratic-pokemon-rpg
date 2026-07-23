@@ -56,6 +56,7 @@ let terrainBottoms = {};
 let explosionRadius = 0.7; // 폭발 반경 (0.7로 축소)
 let playerGold = 0;
 let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
+let isFirstTurn = true;    // 스테이지 첫 턴 여부 (초심자의 버프 2배 데미지용)
 let balloons = [];          // 공중 풍선 목록
 let cloudParams = [
     { bx: 5,  by: 18, speed: 3000, radius: 2.2, alpha: 0.6 },
@@ -708,6 +709,7 @@ function initStage() {
     missile.active = false; missile.trail = []; effects = [];
     baseDamageBoost = 1.0;  // 스테이지마다 파워 부스트 초기화
     explosionRadius = 0.7;  // 폭발 반경 초기화
+    isFirstTurn = true;     // 스테이지마다 첫 턴 초기화 (초심자의 버프 재활성화)
 
     // 포켓볼 생성 (필드당 1개, y≥13 공중, 플레이어와 적 사이의 x좌표 보장)
     balloons = [];
@@ -1266,7 +1268,14 @@ function applyDamageAndEffects(target, mx, my) {
     if (stage.terrain === 'lava' && (selectedStarter||{}).type === 'fire') mult = 1.2;
     if (stage.terrain === 'sky'  && (selectedStarter||{}).type === 'flying') mult = 1.2;
     const boostMult = missile.powerBoosted ? 1.5 : 1.0;
-    const totalDamage = Math.floor((30 + fallHeight * 1.7) * mult * baseDamageBoost * boostMult);
+    // 초심자의 버프: 스테이지 첫 턴에 적을 맞히면 2배 데미지
+    const firstTurnMult = (isFirstTurn && enemies.includes(target)) ? 2.0 : 1.0;
+    const totalDamage = Math.floor((30 + fallHeight * 1.7) * mult * baseDamageBoost * boostMult * firstTurnMult);
+    if (isFirstTurn && enemies.includes(target)) {
+        isFirstTurn = false;
+        effects.push({ type: 'text', x: target.x, y: target.y + 4.0, text: '✨ 초심자의 버프!', color: '#a78bfa', life: 240 });
+        effects.push({ type: 'text', x: target.x, y: target.y + 5.5, text: 'x2 데미지!', color: '#f0abfc', life: 200 });
+    }
 
     target.hp -= totalDamage;
     target.shake = 20; screenShake = 15;
