@@ -2400,31 +2400,58 @@ function render() {
         ctx.restore();
     }
 
-    // 깊은 바닷속('ocean') 지형 분위기: 공중 상승 해저 물방울(Bubbles) 렌더링 (월드 그리드 좌표 동기화)
+    // 깊은 바닷속('ocean') 지형 분위기: 해저 지형 바닥 둥지에서 보글보글 올라오는 공기방울 (월드 그리드 좌표 동기화)
     if (LEVELS[currentStage % LEVELS.length].terrain === 'ocean') {
         ctx.save();
         const now = Date.now();
-        for (let i = 0; i < 28; i++) {
-            // 월드 그리드 좌표 상에서 물방울이 천천히 떠오르도록 (맵 드래그 시 연동)
-            const gx = -24.0 + ((i * 3.8 + Math.sin(now * 0.002 + i) * 2.0) % 52.0);
-            const gy = 1.0 + ((i * 2.5 + now * 0.0008) % 28.0);
-            const sc = gridToScreen(gx, gy);
-            const r = scaleLength(0.12 + (i % 4) * 0.06);
-            
-            ctx.strokeStyle = 'rgba(186, 230, 253, 0.65)';
-            ctx.fillStyle = 'rgba(186, 230, 253, 0.15)';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.arc(sc.x, sc.y, Math.max(1, r), 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            
-            // 물방울 반사 하이라이트 점
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.beginPath();
-            ctx.arc(sc.x - r * 0.3, sc.y - r * 0.3, Math.max(0.5, r * 0.3), 0, Math.PI * 2);
-            ctx.fill();
-        }
+        // 해저 지형 바닥 4곳의 공기방울 분출 둥지 위치 (gx 좌표)
+        const nestXPositions = [-18.0, -6.0, 7.0, 19.0];
+
+        nestXPositions.forEach((nestGx, nestIdx) => {
+            const terrainBaseY = getTerrainY(nestGx);
+            const startY = terrainBaseY !== -100 ? terrainBaseY + 0.3 : 0.0; // 해저 지형 바로 위 표면
+
+            // 각 둥지당 4개의 공기방울 (2~3개씩 짝지어 시차 분출)
+            for (let b = 0; b < 4; b++) {
+                const seed = nestIdx * 100 + b * 27;
+                const speed = 0.00045 + (seed % 3) * 0.0001; // 천천히 표류하며 상승
+                
+                // 0 ~ 1 진행률 (해저 바닥에서 공중 상층부까지)
+                const heightRange = 24.0;
+                const progress = ((now * speed + b * 0.22) % 1.0);
+                const gy = startY + progress * heightRange;
+
+                // 상승할수록 유기적으로 지그재그 흔들림 (수압 감소로 흔들림 증가)
+                const wobble = Math.sin(now * 0.0012 + b * 1.8 + nestIdx) * (0.2 + progress * 0.6);
+                const gx = nestGx + (b % 2 === 0 ? 0.3 : -0.3) + wobble;
+
+                // 물속에서 위로 올라갈수록 기압/수압 감소로 공기방울 팽창 (최대 1.7배 확산)
+                const baseR = scaleLength(0.09 + (b % 3) * 0.04);
+                const currentR = baseR * (1.0 + progress * 0.7);
+
+                // 수면 상층부에 도달하면 팡 터지듯 투명하게 소멸
+                const alpha = progress < 0.82 ? 0.7 : Math.max(0, 0.7 * (1.0 - (progress - 0.82) / 0.18));
+
+                const sc = gridToScreen(gx, gy);
+
+                // 공기방울 본체 (맑은 아쿠아 블루 외곽선 + 투명 내부)
+                ctx.strokeStyle = `rgba(186, 230, 253, ${alpha})`;
+                ctx.fillStyle = `rgba(186, 230, 253, ${alpha * 0.25})`;
+                ctx.lineWidth = 1.4;
+                ctx.beginPath();
+                ctx.arc(sc.x, sc.y, Math.max(1, currentR), 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 입체감을 더해주는 물방울 햇빛 반사 하이라이트
+                if (alpha > 0.15) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.85})`;
+                    ctx.beginPath();
+                    ctx.arc(sc.x - currentR * 0.3, sc.y - currentR * 0.3, Math.max(0.5, currentR * 0.25), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        });
         ctx.restore();
     }
 
