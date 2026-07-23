@@ -453,7 +453,8 @@ function initStage() {
                 }
             }
             if (stage.terrain === 'sky') {
-                if (x < -30 || x > 30) {
+                const roundedX = Math.round(x * 10) / 10;
+                if (roundedX < -30 || roundedX > 30) {
                     y = -100;
                     terrainHeights[key] = [-100];
                     terrainBottoms[key] = [-100];
