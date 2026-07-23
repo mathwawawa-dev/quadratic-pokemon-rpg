@@ -2405,20 +2405,21 @@ function render() {
         ctx.save();
         const now = Date.now();
 
-        // 동시에 단 2곳에서만 약 6.5초 간격으로 어쩌다 한 번씩 뽀르륵... 폭! 하고 깔끔하게 연출
+        // 동시에 단 2곳에서만 약 9.5초 간격으로 어쩌다 한 번씩 뽀르륵... 폭! 하고 은은하게 연출
         for (let k = 0; k < 2; k++) {
-            const burstPeriod = 6500; // 6.5초 주기 (아주 은은하고 깔끔함)
-            const rawTime = now + k * 3250; // 2곳이 약 3.2초 시차를 두고 번갈아 분출
+            const burstPeriod = 9500; // 9.5초 주기 (여유롭고 은은함)
+            const rawTime = now + k * 4750; // 2곳이 약 4.7초 시차를 두고 번갈아 분출
             const cycle = Math.floor(rawTime / burstPeriod);
             const cycleProgress = (rawTime % burstPeriod) / burstPeriod; // 0.0 ~ 1.0
 
-            // 해당 사이클의 해저 분출 위치 gx
+            // 해당 사이클의 해저 분출 위치 gx 및 무작위 방울 개수 (2~4개)
             const seed = (k * 7919 + cycle * 3571) % 1000;
             const spawnGx = -20.0 + (seed / 1000.0) * 40.0;
+            const bubbleCount = 2 + (seed % 3); // 2, 3, 또는 4개의 방울이 무작위로 분출!
             const startGy = 0.5; // 해저 지형 부근
 
-            // 1개의 둥지에서 3개의 방울이 '뽀-르-륵' 시차를 두고 피어오름
-            for (let b = 0; b < 3; b++) {
+            // 1개의 둥지에서 무작위 2~4개의 방울이 '뽀-르-륵' 시차를 두고 피어오름
+            for (let b = 0; b < bubbleCount; b++) {
                 const bDelay = b * 0.10; // 뽀글, 뽀글, 뽀글 시차
                 const bLifeProgress = (cycleProgress - bDelay) / 0.45; // 방울 수명 (0.0 ~ 1.0)
 
@@ -2427,7 +2428,7 @@ function render() {
                     const riseHeight = bLifeProgress * (2.4 + b * 0.3);
                     const gy = startGy + riseHeight;
                     const wobble = Math.sin(now * 0.002 + b * 2.0) * 0.2;
-                    const gx = spawnGx + (b - 1) * 0.3 + wobble;
+                    const gx = spawnGx + (b - (bubbleCount - 1) / 2) * 0.3 + wobble;
 
                     const sc = gridToScreen(gx, gy);
 
