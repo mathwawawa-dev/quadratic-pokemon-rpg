@@ -453,7 +453,7 @@ function initStage() {
                 }
             }
             if (stage.terrain === 'sky') {
-                if (x < -38 || x > 38) {
+                if (x < -30 || x > 30) {
                     y = -100;
                     terrainHeights[key] = [-100];
                     terrainBottoms[key] = [-100];
@@ -584,8 +584,10 @@ function initStage() {
                 rx = side === 'L'
                     ? player.x - 5 - Math.random() * spread
                     : player.x + 5 + Math.random() * spread;
-                if (!isFloatingMapLocal) {
+                if (!isFloatingMapLocal && !isSkyMap) {
                     rx = Math.max(-19, Math.min(19, rx));
+                } else if (isSkyMap) {
+                    rx = Math.max(-20, Math.min(20, rx));
                 } else {
                     rx = Math.max(-25, Math.min(35, rx));
                 }
@@ -2714,8 +2716,8 @@ function render() {
             }
         }
     } else if (stage.terrain === 'sky') {
-        const skyStartX = -38;
-        const skyEndX = 38;
+        const skyStartX = -30;
+        const skyEndX = 30;
         const thickness = 5.0;
 
         const offCanvasGround = document.createElement('canvas');
