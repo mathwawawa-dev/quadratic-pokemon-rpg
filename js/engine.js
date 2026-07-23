@@ -2400,50 +2400,80 @@ function render() {
         ctx.restore();
     }
 
-    // 깊은 바닷속('ocean') 지형 분위기: 60fps 무늘림 해저 물방울 렌더링 (월드 그리드 좌표 동기화)
+    // 깊은 바닷속('ocean') 지형 분위기: 해저 '뽀르륵' 공기방울 분출 & '폭!' 소멸 연출 (월드 그리드 좌표 동기화)
     if (LEVELS[currentStage % LEVELS.length].terrain === 'ocean') {
         ctx.save();
         const now = Date.now();
-        
-        // 14개의 해저 공기방울 (불연속 점프/끊김 없이 연속적인 S자 물살 곡선으로 60fps 부드럽게 표류)
-        for (let i = 0; i < 14; i++) {
-            // 개별 물방울의 연속적이고 은은한 상승 및 물살 파동
-            const seed = i * 3571;
-            const riseSpeed = 0.001 + (i % 3) * 0.0002; // 극도로 부드럽고 은은한 상승
-            
-            // gy: 연속적인 바닥 -> 상층부 상승 (0 ~ 25 그리드)
-            const gy = ((now * riseSpeed + i * 1.9) % 25.0);
-            const progress = gy / 25.0; // 0.0 ~ 1.0
 
-            // gx: 유기적인 해저 물살(S자 파동)을 따라 수평 위치가 매끄럽게 표류
-            const baseGx = -22.0 + (i * 3.4) % 44.0;
-            const currentSway = Math.sin(now * 0.0004 + i * 1.5) * 2.5 + Math.sin(now * 0.0008 + gy * 0.25) * 1.2;
-            const gx = baseGx + currentSway;
+        // 6개의 무작위 해저 분출 둥지 (각 둥지당 3개의 '뽀르륵' 방울이 짧게 떠오르다 '폭!' 소멸)
+        for (let k = 0; k < 6; k++) {
+            const burstPeriod = 3200; // 3.2초 주기
+            const rawTime = now + k * 530;
+            const cycle = Math.floor(rawTime / burstPeriod);
+            const cycleProgress = (rawTime % burstPeriod) / burstPeriod; // 0.0 ~ 1.0
 
-            // 상승하면서 수압 감퇴로 은은하게 팽창 (1.0배 -> 1.5배)
-            const baseR = scaleLength(0.08 + (i % 3) * 0.04);
-            const currentR = baseR * (1.0 + progress * 0.5);
+            // 해당 사이클의 해저 분출 위치 gx
+            const seed = (k * 7919 + cycle * 3571) % 1000;
+            const spawnGx = -22.0 + (seed / 1000.0) * 44.0;
+            const startGy = 0.5; // 해저 지형 부근
 
-            // 상층부 소멸 투명도 (0.83 이상에서 부드럽게 페이드아웃)
-            const alpha = progress < 0.83 ? 0.65 : Math.max(0, 0.65 * (1.0 - (progress - 0.83) / 0.17));
+            // 1개의 둥지에서 3개의 방울이 '뽀-르-륵' 시차를 두고 피어오름
+            for (let b = 0; b < 3; b++) {
+                const bDelay = b * 0.14; // 뽀글, 뽀글, 뽀글 시차
+                const bLifeProgress = (cycleProgress - bDelay) / 0.62; // 방울 수명 (0.0 ~ 1.0)
 
-            const sc = gridToScreen(gx, gy);
+                if (bLifeProgress >= 0 && bLifeProgress <= 1.0) {
+                    // 수명 진행률에 따라 0 ~ 3.2 격자만 짧게 상승 (화면 전체 떠다님 탈피!)
+                    const riseHeight = bLifeProgress * (2.6 + b * 0.4);
+                    const gy = startGy + riseHeight;
+                    const wobble = Math.sin(now * 0.003 + b * 2.0) * 0.25;
+                    const gx = spawnGx + (b - 1) * 0.35 + wobble;
 
-            // 공기방울 외곽선 및 투명 내부
-            ctx.strokeStyle = `rgba(186, 230, 253, ${alpha})`;
-            ctx.fillStyle = `rgba(186, 230, 253, ${alpha * 0.22})`;
-            ctx.lineWidth = 1.4;
-            ctx.beginPath();
-            ctx.arc(sc.x, sc.y, Math.max(1, currentR), 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+                    const sc = gridToScreen(gx, gy);
 
-            // 입체적인 햇빛 반사 하이라이트
-            if (alpha > 0.15) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.85})`;
-                ctx.beginPath();
-                ctx.arc(sc.x - currentR * 0.3, sc.y - currentR * 0.3, Math.max(0.5, currentR * 0.25), 0, Math.PI * 2);
-                ctx.fill();
+                    // 0.0 ~ 0.75: 상승 구간 (뽀르륵 피어오름)
+                    if (bLifeProgress < 0.75) {
+                        const r = scaleLength(0.08 + b * 0.03);
+                        ctx.strokeStyle = 'rgba(186, 230, 253, 0.8)';
+                        ctx.fillStyle = 'rgba(186, 230, 253, 0.28)';
+                        ctx.lineWidth = 1.4;
+                        ctx.beginPath();
+                        ctx.arc(sc.x, sc.y, Math.max(1, r), 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // 햇빛 반사 하이라이트 점
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                        ctx.beginPath();
+                        ctx.arc(sc.x - r * 0.3, sc.y - r * 0.3, Math.max(0.5, r * 0.25), 0, Math.PI * 2);
+                        ctx.fill();
+                    } 
+                    // 0.75 ~ 1.0: 소멸 구간 ('폭!' 하고 팡 터지는 연출)
+                    else {
+                        const popFactor = (bLifeProgress - 0.75) / 0.25; // 0.0 ~ 1.0
+                        const popR = scaleLength((0.08 + b * 0.03) * (1.0 + popFactor * 1.3));
+                        const popAlpha = Math.max(0, 0.75 * (1.0 - popFactor));
+
+                        // 팡 터지는 확장 링
+                        ctx.strokeStyle = `rgba(186, 230, 253, ${popAlpha})`;
+                        ctx.lineWidth = 1.2;
+                        ctx.beginPath();
+                        ctx.arc(sc.x, sc.y, Math.max(1, popR), 0, Math.PI * 2);
+                        ctx.stroke();
+
+                        // 4방향 튀는 물방울 입자 점
+                        for (let p = 0; p < 4; p++) {
+                            const pAngle = (p * Math.PI / 2) + b;
+                            const pDist = popR * (1.0 + popFactor * 1.4);
+                            const px = sc.x + Math.cos(pAngle) * pDist;
+                            const py = sc.y + Math.sin(pAngle) * pDist;
+                            ctx.fillStyle = `rgba(255, 255, 255, ${popAlpha})`;
+                            ctx.beginPath();
+                            ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
             }
         }
         ctx.restore();
