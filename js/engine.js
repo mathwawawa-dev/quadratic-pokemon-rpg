@@ -2278,18 +2278,19 @@ function render() {
     tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 얼음 설산('ice') 지형 분위기: 눈보라 입자(Snowflakes) 렌더링
+    // 얼음 설산('ice') 지형 분위기: 눈보라 입자(Snowflakes) 렌더링 (월드 그리드 좌표 동기화)
     if (LEVELS[currentStage % LEVELS.length].terrain === 'ice') {
         ctx.save();
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
         const now = Date.now();
         for (let i = 0; i < 35; i++) {
-            const snowX = ((i * 97 + now * 0.05) % canvas.width);
-            const snowY = ((i * 131 + now * 0.08) % canvas.height);
-            const r = 1.5 + (i % 3) * 1.2;
-            const osc = Math.sin(now * 0.002 + i) * 15;
+            // 월드 그리드 좌표 상에서 눈발이 천천히 내리도록 (맵 드래그 시 연동)
+            const gx = -25.0 + ((i * 3.2 + now * 0.001 + Math.sin(now * 0.002 + i) * 1.5) % 55.0);
+            const gy = 2.0 + ((i * 1.8 + now * 0.0015) % 30.0);
+            const sc = gridToScreen(gx, gy);
+            const r = scaleLength(0.08 + (i % 3) * 0.05);
             ctx.beginPath();
-            ctx.arc((snowX + osc + canvas.width) % canvas.width, snowY, r, 0, Math.PI * 2);
+            ctx.arc(sc.x, sc.y, Math.max(1, r), 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.restore();
@@ -2385,27 +2386,29 @@ function render() {
         ctx.restore();
     }
 
-    // 깊은 바닷속('ocean') 지형 분위기: 공중 상승 해저 물방울(Bubbles) 렌더링
+    // 깊은 바닷속('ocean') 지형 분위기: 공중 상승 해저 물방울(Bubbles) 렌더링 (월드 그리드 좌표 동기화)
     if (LEVELS[currentStage % LEVELS.length].terrain === 'ocean') {
         ctx.save();
         const now = Date.now();
         for (let i = 0; i < 28; i++) {
-            const bubX = ((i * 137 + Math.sin(now * 0.002 + i) * 25) % canvas.width);
-            const bubY = ((canvas.height - (i * 83 + now * 0.04) % canvas.height) + canvas.height) % canvas.height;
-            const r = 2.0 + (i % 4) * 1.5;
+            // 월드 그리드 좌표 상에서 물방울이 천천히 떠오르도록 (맵 드래그 시 연동)
+            const gx = -24.0 + ((i * 3.8 + Math.sin(now * 0.002 + i) * 2.0) % 52.0);
+            const gy = 1.0 + ((i * 2.5 + now * 0.0008) % 28.0);
+            const sc = gridToScreen(gx, gy);
+            const r = scaleLength(0.12 + (i % 4) * 0.06);
             
             ctx.strokeStyle = 'rgba(186, 230, 253, 0.65)';
             ctx.fillStyle = 'rgba(186, 230, 253, 0.15)';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.arc(bubX, bubY, r, 0, Math.PI * 2);
+            ctx.arc(sc.x, sc.y, Math.max(1, r), 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             
             // 물방울 반사 하이라이트 점
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.beginPath();
-            ctx.arc(bubX - r * 0.3, bubY - r * 0.3, r * 0.3, 0, Math.PI * 2);
+            ctx.arc(sc.x - r * 0.3, sc.y - r * 0.3, Math.max(0.5, r * 0.3), 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.restore();
