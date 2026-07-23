@@ -2300,13 +2300,18 @@ function render() {
         ctx.save();
         const now = Date.now();
 
-        // 0. 은은하게 공중을 떠다니며 이글거리는 플라즈마 에너지 구체 (8개로 축소, 속도 감속)
+        // 0. 은은하게 공중을 떠다니며 이글거리는 플라즈마 에너지 구체 (8개, 월드 그리드 좌표 동기화)
         const plasmaPositions = [];
         for (let i = 0; i < 8; i++) {
-            const orbX = ((i * 240 + Math.sin(now * 0.0004 + i) * 30) % canvas.width);
-            const orbY = ((i * 120 + Math.cos(now * 0.0005 + i * 2) * 20 + canvas.height * 0.4) % (canvas.height * 0.8));
-            const baseR = 4.0 + (i % 3) * 3.0;
-            const pulseR = baseR + Math.sin(now * 0.0015 + i) * 1.5;
+            // 월드 그리드 좌표 (gx, gy) 상에서 표류하도록 지정하여 맵 드래그 시 축/포켓몬과 함께 연동 이동
+            const gx = -22.0 + (i * 6.5 + Math.sin(now * 0.0004 + i) * 3.0);
+            const gy = 3.0 + ((i * 3.2 + Math.cos(now * 0.0005 + i * 2) * 2.0) % 22.0);
+            const sc = gridToScreen(gx, gy);
+            const orbX = sc.x;
+            const orbY = sc.y;
+
+            const baseR = scaleLength(0.28 + (i % 3) * 0.12); // 화면 해상도에 비례하는 반지름
+            const pulseR = baseR + Math.sin(now * 0.0015 + i) * scaleLength(0.06);
             
             plasmaPositions.push({ x: orbX, y: orbY });
 
@@ -2315,14 +2320,14 @@ function render() {
             ctx.shadowColor = (i % 2 === 0) ? 'rgba(251, 146, 60, 0.8)' : 'rgba(245, 158, 11, 0.8)';
 
             // 코어 그라데이션 구체
-            const orbGrad = ctx.createRadialGradient(orbX, orbY, 0, orbX, orbY, pulseR);
+            const orbGrad = ctx.createRadialGradient(orbX, orbY, 0, orbX, orbY, Math.max(1, pulseR));
             orbGrad.addColorStop(0, 'rgba(254, 240, 138, 0.9)');   // 황금빛 중심 코어
             orbGrad.addColorStop(0.5, (i % 2 === 0) ? 'rgba(251, 146, 60, 0.45)' : 'rgba(245, 158, 11, 0.45)');
             orbGrad.addColorStop(1, 'rgba(127, 29, 29, 0)');      // 버건디 바깥 가장자리 투명 처리
 
             ctx.fillStyle = orbGrad;
             ctx.beginPath();
-            ctx.arc(orbX, orbY, pulseR, 0, Math.PI * 2);
+            ctx.arc(orbX, orbY, Math.max(1, pulseR), 0, Math.PI * 2);
             ctx.fill();
 
             // 구체 주변을 회전하는 자력선 마이크로 위성 입자
@@ -2332,7 +2337,7 @@ function render() {
             const satY = orbY + Math.sin(satAngle) * satDist;
             ctx.fillStyle = '#fef08a';
             ctx.beginPath();
-            ctx.arc(satX, satY, 1.2, 0, Math.PI * 2);
+            ctx.arc(satX, satY, 1.5, 0, Math.PI * 2);
             ctx.fill();
         }
 
