@@ -52,7 +52,6 @@ let effects = [];
 let screenShake = 0;
 let terrainHeights = {};
 let terrainBottoms = {};
-let terrainSpikes = [];
 let explosionRadius = 1.2; // 폭발 반경 (1.2로 복구)
 let playerGold = 0;
 let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
