@@ -239,7 +239,8 @@ function getTerrainY(x, currentY) {
     if (currentY !== undefined) {
         let bestY = -100;
         for (const y of ys) {
-            if (y !== -100 && y > bestY && y <= currentY + 1.5) bestY = y;
+            // 임계값을 4.0으로 늘려 땅속성 포켓몬(-1.3 깊이)이 경사면을 만났을 때 지형을 무시하고 추락하는 버그 방지
+            if (y !== -100 && y > bestY && y <= currentY + 4.0) bestY = y;
         }
         return bestY; // If falling off an island, return -100 so pokemon falls downward naturally
     }
