@@ -1325,9 +1325,11 @@ function updateGame() {
             }
             ent.y += ent.vy;
             ent.rotation += ent.angularVelocity;
-            ent.vy -= 0.02;
-            if (ent.x - ent.w/2 < -20) { ent.x = -20 + ent.w/2; ent.vx *= -0.8; }
-            if (ent.x + ent.w/2 >  20) { ent.x =  20 - ent.w/2; ent.vx *= -0.8; }
+            ent.vy -= 0.02; // 이 중력 코드가 삭제되지 않도록 주의
+            const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
+            const limitX = isFloatingMapLocal ? 60 : 20;
+            if (ent.x - ent.w/2 < -limitX) { ent.x = -limitX + ent.w/2; ent.vx *= -0.8; }
+            if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
             const groundY = getTerrainY(ent.x, ent.y) + 0.75;
             if (ent.y < groundY) {
                 // 지형 경사도 계산 (현재 x 기준 좌우 0.1의 높이차)
@@ -1353,8 +1355,8 @@ function updateGame() {
         const deathZoneY = LEVELS[currentStage % LEVELS.length].terrain === 'garden' ? -30 : -8;
         if (ent.y < deathZoneY && ent.hp > 0) {
             ent.hp = 0;
-            createExplosion(ent.x, -8, '#ffffff');
-            effects.push({ type: 'text', x: ent.x, y: -6, text: 'FALL!', color: '#ef4444', life: 60 });
+            createExplosion(ent.x, deathZoneY, '#ffffff');
+            effects.push({ type: 'text', x: ent.x, y: deathZoneY + 2, text: 'FALL!', color: '#ef4444', life: 60 });
             updateHPUI();
             if (ent === player) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('GAME OVER', '플레이어가 추락했습니다!'), 1500); }
             else if (enemies.filter(e => e.hp <= 0).length >= 2) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500); }
