@@ -2400,58 +2400,63 @@ function render() {
         ctx.restore();
     }
 
-    // 깊은 바닷속('ocean') 지형 분위기: 해저 지형 바닥 둥지에서 보글보글 올라오는 공기방울 (월드 그리드 좌표 동기화)
+    // 깊은 바닷속('ocean') 지형 분위기: 해저 바닥 무작위 위치에서 번갈아 발생하는 공기방울 (월드 그리드 좌표 동기화)
     if (LEVELS[currentStage % LEVELS.length].terrain === 'ocean') {
         ctx.save();
         const now = Date.now();
-        // 해저 지형 바닥 4곳의 공기방울 분출 둥지 위치 (gx 좌표)
-        const nestXPositions = [-18.0, -6.0, 7.0, 19.0];
+        
+        // 16개의 공기방울 (한 주기가 끝나면 무작위 해저 지형 위치로 새로 이동하여 분출)
+        for (let i = 0; i < 16; i++) {
+            const seed = i * 4951;
+            const riseSpeed = 0.00018 + (seed % 4) * 0.00004; // 50% 감속된 느리고 은은한 상승 속도
+            const timeOffset = (seed % 1000) * 0.001;
+            
+            // 현재 사이클 번호 (상승 완료 후 소멸 시 1씩 증가)
+            const rawProgress = (now * riseSpeed + timeOffset);
+            const cycle = Math.floor(rawProgress);
+            const progress = rawProgress - cycle; // 0.0 ~ 1.0 (바닥 -> 상층부 진행률)
 
-        nestXPositions.forEach((nestGx, nestIdx) => {
-            const terrainBaseY = getTerrainY(nestGx);
-            const startY = terrainBaseY !== -100 ? terrainBaseY + 0.3 : 0.0; // 해저 지형 바로 위 표면
+            // 사이클마다 고유한 해저 바닥 무작위 gx 위치 결정 (고정 위치 탈피!)
+            const cycleHash = (i * 7919 + cycle * 3571) % 1000;
+            const spawnGx = -22.0 + (cycleHash / 1000.0) * 44.0;
+            
+            // 해당 gx의 해저 지형 높이 감지
+            const terrainY = getTerrainY(spawnGx);
+            const startY = terrainY !== -100 ? terrainY + 0.3 : 0.0;
 
-            // 각 둥지당 4개의 공기방울 (2~3개씩 짝지어 시차 분출)
-            for (let b = 0; b < 4; b++) {
-                const seed = nestIdx * 100 + b * 27;
-                const speed = 0.00045 + (seed % 3) * 0.0001; // 천천히 표류하며 상승
-                
-                // 0 ~ 1 진행률 (해저 바닥에서 공중 상층부까지)
-                const heightRange = 24.0;
-                const progress = ((now * speed + b * 0.22) % 1.0);
-                const gy = startY + progress * heightRange;
+            const heightRange = 25.0;
+            const gy = startY + progress * heightRange;
 
-                // 상승할수록 유기적으로 지그재그 흔들림 (수압 감소로 흔들림 증가)
-                const wobble = Math.sin(now * 0.0012 + b * 1.8 + nestIdx) * (0.2 + progress * 0.6);
-                const gx = nestGx + (b % 2 === 0 ? 0.3 : -0.3) + wobble;
+            // 물살(Ocean Current) S자 파동 흔들림 (상승하면서 부드럽게 물살에 휩쓸림)
+            const currentWave = Math.sin(now * 0.0007 + gy * 0.2) * (0.8 + progress * 0.8) + Math.sin(now * 0.0013 + i) * 0.4;
+            const gx = spawnGx + currentWave;
 
-                // 물속에서 위로 올라갈수록 기압/수압 감소로 공기방울 팽창 (최대 1.7배 확산)
-                const baseR = scaleLength(0.09 + (b % 3) * 0.04);
-                const currentR = baseR * (1.0 + progress * 0.7);
+            // 올라갈수록 기압 감퇴로 은은하게 팽창 (1.0배 -> 1.6배)
+            const baseR = scaleLength(0.08 + (i % 3) * 0.04);
+            const currentR = baseR * (1.0 + progress * 0.6);
 
-                // 수면 상층부에 도달하면 팡 터지듯 투명하게 소멸
-                const alpha = progress < 0.82 ? 0.7 : Math.max(0, 0.7 * (1.0 - (progress - 0.82) / 0.18));
+            // 상층부 소멸 투명도
+            const alpha = progress < 0.83 ? 0.68 : Math.max(0, 0.68 * (1.0 - (progress - 0.83) / 0.17));
 
-                const sc = gridToScreen(gx, gy);
+            const sc = gridToScreen(gx, gy);
 
-                // 공기방울 본체 (맑은 아쿠아 블루 외곽선 + 투명 내부)
-                ctx.strokeStyle = `rgba(186, 230, 253, ${alpha})`;
-                ctx.fillStyle = `rgba(186, 230, 253, ${alpha * 0.25})`;
-                ctx.lineWidth = 1.4;
+            // 공기방울 외곽선 & 내부
+            ctx.strokeStyle = `rgba(186, 230, 253, ${alpha})`;
+            ctx.fillStyle = `rgba(186, 230, 253, ${alpha * 0.22})`;
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, Math.max(1, currentR), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 물방울 반사 하이라이트
+            if (alpha > 0.15) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.85})`;
                 ctx.beginPath();
-                ctx.arc(sc.x, sc.y, Math.max(1, currentR), 0, Math.PI * 2);
+                ctx.arc(sc.x - currentR * 0.3, sc.y - currentR * 0.3, Math.max(0.5, currentR * 0.25), 0, Math.PI * 2);
                 ctx.fill();
-                ctx.stroke();
-
-                // 입체감을 더해주는 물방울 햇빛 반사 하이라이트
-                if (alpha > 0.15) {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.85})`;
-                    ctx.beginPath();
-                    ctx.arc(sc.x - currentR * 0.3, sc.y - currentR * 0.3, Math.max(0.5, currentR * 0.25), 0, Math.PI * 2);
-                    ctx.fill();
-                }
             }
-        });
+        }
         ctx.restore();
     }
 
