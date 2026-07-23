@@ -55,11 +55,10 @@ const TERRAINS = {
         color: "#2e1065", outColor: "#0f0728",
         func: (x) => {
             const seed = terrainSeed || 0;
-            // 계단식 고전압 변전소 구조물 + 과충전 전기 파형
-            const stepPlatform = Math.floor(Math.sin((x + seed) / 4) * 3) * 1.2;
-            const surgePeak = Math.abs(Math.sin((x * 0.8 + seed))) * 4.0;
-            const zigZag = (Math.floor(x * 2) % 2 === 0 ? 0.3 : -0.3);
-            return -2.5 + stepPlatform + surgePeak + zigZag;
+            // 완만하고 쾌적한 발전소 지형: 자폭 위험이 없도록 경사를 완화하고 부드러운 1~2개의 넓은 플랫폼만 배치
+            const baseWave = Math.sin((x + seed) / 3.5) * 1.8;
+            const lowStep = Math.floor(Math.sin((x + seed) / 6) * 2) * 0.8;
+            return -2.0 + baseWave + lowStep;
         }
     },
     psychic: {

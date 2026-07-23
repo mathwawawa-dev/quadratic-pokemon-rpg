@@ -2211,34 +2211,34 @@ function render() {
         ctx.restore();
     }
 
-    // 발전소('electric') 지형 분위기: 네온 전기 스파크 & 번개 방전 파티클 렌더링
+    // 발전소('electric') 지형 분위기: 차분하고 은은한 네온 스파크 & 간헐적 번개 방전 아크
     if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
         ctx.save();
         const now = Date.now();
-        // 1. 공중 및 지면 전기 스파크 파티클
-        for (let i = 0; i < 25; i++) {
-            const spkX = ((i * 113 + now * 0.12) % canvas.width);
-            const spkY = ((i * 73 + Math.sin(now * 0.01 + i) * 40 + canvas.height * 0.6) % canvas.height);
-            const size = 1.5 + (i % 3) * 1.5;
-            ctx.fillStyle = (i % 2 === 0) ? '#fbbf24' : '#22d3ee';
-            ctx.shadowBlur = 10;
+        // 1. 느리고 은은하게 떠다니는 네온 전기 스파크 (12개로 축소, 속도 80% 감속)
+        for (let i = 0; i < 12; i++) {
+            const spkX = ((i * 150 + now * 0.02) % canvas.width);
+            const spkY = ((i * 90 + Math.sin(now * 0.0015 + i) * 20 + canvas.height * 0.5) % canvas.height);
+            const size = 1.5 + (i % 2) * 1.0;
+            ctx.fillStyle = (i % 2 === 0) ? 'rgba(251, 191, 36, 0.7)' : 'rgba(34, 211, 238, 0.7)';
+            ctx.shadowBlur = 6;
             ctx.shadowColor = ctx.fillStyle;
-            ctx.fillRect(spkX, spkY, size, size * 1.8);
+            ctx.fillRect(spkX, spkY, size, size * 1.5);
         }
-        // 2. 간발의 차로 튀어오르는 번개 방전 스파크 아크
-        if (Math.random() < 0.35) {
-            const sparkGridX = -30 + Math.random() * 60;
+        // 2. 가끔씩 은은하게 튀어오르는 단일 번개 아크 (확률 0.035로 대폭 축소, 한 번에 단 1개만)
+        if (Math.random() < 0.035) {
+            const sparkGridX = -25 + Math.random() * 50;
             const sparkGridY = getTerrainY(sparkGridX);
             if (sparkGridY !== -100) {
                 const p = gridToScreen(sparkGridX, sparkGridY);
-                ctx.strokeStyle = Math.random() > 0.5 ? '#fef08a' : '#67e8f9';
-                ctx.lineWidth = 2 + Math.random() * 2;
-                ctx.shadowBlur = 15;
+                ctx.strokeStyle = Math.random() > 0.5 ? 'rgba(254, 240, 138, 0.8)' : 'rgba(103, 232, 249, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 10;
                 ctx.shadowColor = ctx.strokeStyle;
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p.x + (Math.random() - 0.5) * 20, p.y - 10 - Math.random() * 25);
-                ctx.lineTo(p.x + (Math.random() - 0.5) * 30, p.y - 25 - Math.random() * 25);
+                ctx.lineTo(p.x + (Math.random() - 0.5) * 12, p.y - 8 - Math.random() * 12);
+                ctx.lineTo(p.x + (Math.random() - 0.5) * 18, p.y - 18 - Math.random() * 15);
                 ctx.stroke();
             }
         }
