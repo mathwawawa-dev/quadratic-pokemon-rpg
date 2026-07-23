@@ -241,7 +241,7 @@ function getTerrainY(x, currentY) {
         for (const y of ys) {
             if (y !== -100 && y > bestY && y <= currentY + 1.5) bestY = y;
         }
-        return bestY; // 허공으로 떨어질 때 상위 섬으로 튀지 않고 자연스럽게 낙하
+        return bestY; // If falling off an island, return -100 so pokemon falls downward naturally
     }
     return Math.max(...ys);
 }
@@ -1317,7 +1317,7 @@ function updateGame() {
         if (ent.isKnockedBack) {
             // 다음 x 위치의 지형 높이를 미리 확인 — 급경사(언덕/스파이크 벽)에 올라타는 순간 점프 방지
             const nextX   = ent.x + ent.vx;
-            const nextGY  = getTerrainY(nextX) + 0.75;
+            const nextGY  = getTerrainY(nextX, ent.y) + 0.75;
             const currGY  = getTerrainY(ent.x, ent.y)  + 0.75;
             // 다음 위치의 지형이 현재 y보다 0.3 이상 높으면 "벽"으로 간주 → vx 반사, x는 유지
             if (nextGY > ent.y + 0.3) {
@@ -1327,10 +1327,9 @@ function updateGame() {
             }
             ent.y += ent.vy;
             ent.rotation += ent.angularVelocity;
-            const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-            const limitX = isFloatingMapLocal ? 60 : 20;
-            if (ent.x - ent.w/2 < -limitX) { ent.x = -limitX + ent.w/2; ent.vx *= -0.8; }
-            if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
+            ent.vy -= 0.02;
+            if (ent.x - ent.w/2 < -20) { ent.x = -20 + ent.w/2; ent.vx *= -0.8; }
+            if (ent.x + ent.w/2 >  20) { ent.x =  20 - ent.w/2; ent.vx *= -0.8; }
             const groundY = getTerrainY(ent.x, ent.y) + 0.75;
             if (ent.y < groundY) {
                 // 지형 경사도 계산 (현재 x 기준 좌우 0.1의 높이차)
