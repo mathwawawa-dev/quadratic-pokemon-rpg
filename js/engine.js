@@ -2400,30 +2400,59 @@ function render() {
         ctx.restore();
     }
 
-    // 깊은 바닷속('ocean') 지형 분위기: 공중 상승 해저 물방울(Bubbles) 렌더링 (월드 그리드 좌표 동기화)
+    // 깊은 바닷속('ocean') 지형 분위기: 바닥에서 위로 올라오는 공기방울 (월드 그리드 좌표 동기화)
     if (LEVELS[currentStage % LEVELS.length].terrain === 'ocean') {
         ctx.save();
         const now = Date.now();
-        for (let i = 0; i < 28; i++) {
-            // 월드 그리드 좌표 상에서 물방울이 천천히 떠오르도록 (맵 드래그 시 연동)
-            const gx = -24.0 + ((i * 3.8 + Math.sin(now * 0.002 + i) * 2.0) % 52.0);
-            const gy = 1.0 + ((i * 2.5 + now * 0.0008) % 28.0);
+        // 8개의 발생 지점에서 각각 1~3개씩 불규칙하게 뭉쳐서 올라옴
+        const sourcePoints = [];
+        for (let s = 0; s < 8; s++) {
+            const seed = s * 6173;
+            sourcePoints.push(-20.0 + (seed % 400) * 0.105); // 바닥 발생 gx 위치
+        }
+        for (let i = 0; i < 24; i++) {
+            const srcIdx = i % 8;            // 어떤 발생 지점에서 나오는지
+            const clusterOff = Math.floor(i / 8); // 같은 지점에서 1~3번째 방울
+            const seed = i * 4951;
+
+            const riseSpeed = 0.0005 + (seed % 5) * 0.0001; // 개별 상승 속도
+            const wobbleFreq = 0.001 + (seed % 3) * 0.0003;  // 좌우 흔들림 주기
+            const wobbleAmp = 0.6 + (seed % 4) * 0.2;        // 좌우 흔들림 폭
+
+            // gx: 발생 지점 근처에서 좌우로 살짝 흔들리며 상승
+            const baseGx = sourcePoints[srcIdx] + clusterOff * 0.5;
+            const gx = baseGx + Math.sin(now * wobbleFreq + i * 1.7) * wobbleAmp;
+
+            // gy: 바닥(~-2)에서 위(~28)로 천천히 올라옴
+            const cycleLen = 30.0;
+            const progress = ((now * riseSpeed + (seed % 800) * 0.038) % cycleLen) / cycleLen; // 0~1 진행률
+            const gy = -2.0 + progress * cycleLen;
+
+            // 올라갈수록 크기가 살짝 커지는 느낌
+            const baseSize = 0.08 + (seed % 3) * 0.04;
+            const growFactor = 1.0 + progress * 0.6; // 위로 갈수록 최대 1.6배
+            const r = scaleLength(baseSize * growFactor);
+
+            // 올라갈수록 투명해지는 느낌 (위에서 터지듯 사라짐)
+            const alpha = progress < 0.85 ? 0.65 : Math.max(0, 0.65 * (1.0 - (progress - 0.85) / 0.15));
+
             const sc = gridToScreen(gx, gy);
-            const r = scaleLength(0.12 + (i % 4) * 0.06);
-            
-            ctx.strokeStyle = 'rgba(186, 230, 253, 0.65)';
-            ctx.fillStyle = 'rgba(186, 230, 253, 0.15)';
+
+            ctx.strokeStyle = `rgba(186, 230, 253, ${alpha})`;
+            ctx.fillStyle = `rgba(186, 230, 253, ${alpha * 0.25})`;
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, Math.max(1, r), 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            
+
             // 물방울 반사 하이라이트 점
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.beginPath();
-            ctx.arc(sc.x - r * 0.3, sc.y - r * 0.3, Math.max(0.5, r * 0.3), 0, Math.PI * 2);
-            ctx.fill();
+            if (alpha > 0.2) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
+                ctx.beginPath();
+                ctx.arc(sc.x - r * 0.3, sc.y - r * 0.3, Math.max(0.5, r * 0.25), 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         ctx.restore();
     }
