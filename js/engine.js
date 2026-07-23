@@ -2277,16 +2277,16 @@ function render() {
         ctx.restore();
     }
 
-    // 발전소('electric') 지형 분위기: 차분하고 은은한 네온 스파크 & 간헐적 번개 방전 아크
+    // 발전소('electric') 지형 분위기: 차분하고 은은한 네온 자홍색 스파크 & 간헐적 번개 방전 아크
     if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
         ctx.save();
         const now = Date.now();
-        // 1. 느리고 은은하게 떠다니는 네온 전기 스파크 (13개로 1개 증가, 속도 감속)
+        // 1. 느리고 은은하게 떠다니는 네온 자홍색/핑크 전기 스파크
         for (let i = 0; i < 13; i++) {
             const spkX = ((i * 150 + now * 0.02) % canvas.width);
             const spkY = ((i * 90 + Math.sin(now * 0.0015 + i) * 20 + canvas.height * 0.5) % canvas.height);
             const size = 1.5 + (i % 2) * 1.0;
-            ctx.fillStyle = (i % 2 === 0) ? 'rgba(251, 191, 36, 0.7)' : 'rgba(34, 211, 238, 0.7)';
+            ctx.fillStyle = (i % 2 === 0) ? 'rgba(232, 121, 249, 0.75)' : 'rgba(244, 114, 182, 0.75)';
             ctx.shadowBlur = 6;
             ctx.shadowColor = ctx.fillStyle;
             ctx.fillRect(spkX, spkY, size, size * 1.5);
@@ -2297,7 +2297,7 @@ function render() {
             const sparkGridY = getTerrainY(sparkGridX);
             if (sparkGridY !== -100) {
                 const p = gridToScreen(sparkGridX, sparkGridY);
-                ctx.strokeStyle = Math.random() > 0.5 ? 'rgba(254, 240, 138, 0.8)' : 'rgba(103, 232, 249, 0.8)';
+                ctx.strokeStyle = Math.random() > 0.5 ? 'rgba(244, 114, 182, 0.8)' : 'rgba(232, 121, 249, 0.8)';
                 ctx.lineWidth = 2;
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = ctx.strokeStyle;
@@ -2307,6 +2307,32 @@ function render() {
                 ctx.lineTo(p.x + (Math.random() - 0.5) * 18, p.y - 18 - Math.random() * 15);
                 ctx.stroke();
             }
+        }
+        ctx.restore();
+    }
+
+    // 깊은 바닷속('ocean') 지형 분위기: 공중 상승 해저 물방울(Bubbles) 렌더링
+    if (LEVELS[currentStage % LEVELS.length].terrain === 'ocean') {
+        ctx.save();
+        const now = Date.now();
+        for (let i = 0; i < 28; i++) {
+            const bubX = ((i * 137 + Math.sin(now * 0.002 + i) * 25) % canvas.width);
+            const bubY = ((canvas.height - (i * 83 + now * 0.04) % canvas.height) + canvas.height) % canvas.height;
+            const r = 2.0 + (i % 4) * 1.5;
+            
+            ctx.strokeStyle = 'rgba(186, 230, 253, 0.65)';
+            ctx.fillStyle = 'rgba(186, 230, 253, 0.15)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(bubX, bubY, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // 물방울 반사 하이라이트 점
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(bubX - r * 0.3, bubY - r * 0.3, r * 0.3, 0, Math.PI * 2);
+            ctx.fill();
         }
         ctx.restore();
     }

@@ -1,12 +1,13 @@
 const LEVELS = [
-    { title: "Stage 1", terrain: 'grass', count: 3, flyingCount: 1 },
-    { title: "Stage 2", terrain: 'ice',   count: 3, flyingCount: 1 },
-    { title: "Stage 3", terrain: 'sky',   count: 3, flyingCount: 3 },
-    { title: "Stage 4", terrain: 'lava',  count: 3, flyingCount: 1 },
-    { title: "Stage 5", terrain: 'cave',  count: 3, flyingCount: 2 },
+    { title: "Stage 1", terrain: 'grass',    count: 3, flyingCount: 1 },
+    { title: "Stage 2", terrain: 'ice',      count: 3, flyingCount: 1 },
+    { title: "Stage 3", terrain: 'sky',      count: 3, flyingCount: 3 },
+    { title: "Stage 4", terrain: 'lava',     count: 3, flyingCount: 1 },
+    { title: "Stage 5", terrain: 'cave',     count: 3, flyingCount: 2 },
     { title: "Stage 6", terrain: 'electric', count: 4, flyingCount: 1 },
-    { title: "Stage 7", terrain: 'psychic',  count: 4, flyingCount: 2 },
-    { title: "Stage 8", terrain: 'garden',   count: 4, flyingCount: 2 },
+    { title: "Stage 7", terrain: 'ocean',    count: 4, flyingCount: 1 },
+    { title: "Stage 8", terrain: 'psychic',  count: 4, flyingCount: 2 },
+    { title: "Stage 9", terrain: 'garden',   count: 4, flyingCount: 2 },
 ];
 
 let terrainSeed = 0;
@@ -51,14 +52,26 @@ const TERRAINS = {
     },
     electric: {
         name: "발전소",
-        bg: ["#020617", "#075985", "#0c4a6e"], // 세련된 딥 슬레이트 사이안 네이비 배경
-        color: "#0284c7", outColor: "#075985", // 맑고 선명한 네온 사이안 청록색 하이테크 지형
+        bg: ["#09090b", "#18181b", "#27272a"], // 강렬한 다크 사이버펑크 카본 슬레이트 배경
+        color: "#c026d3", outColor: "#701a75", // 화려하고 신비로운 사이버펑크 네온 자홍색 지형
         func: (x) => {
             const seed = terrainSeed || 0;
             // 완만하고 쾌적한 발전소 지형: 자폭 위험이 없도록 경사를 완화하고 부드러운 1~2개의 넓은 플랫폼만 배치
             const baseWave = Math.sin((x + seed) / 3.5) * 1.8;
             const lowStep = Math.floor(Math.sin((x + seed) / 6) * 2) * 0.8;
             return -2.0 + baseWave + lowStep;
+        }
+    },
+    ocean: {
+        name: "깊은 바닷속",
+        bg: ["#020617", "#075985", "#0c4a6e"], // 깊은 딥블루 에메랄드 해저 배경
+        color: "#0284c7", outColor: "#0369a1", // 선명하고 맑은 네온 사이안 해저 모래 언덕 지형
+        func: (x) => {
+            const seed = terrainSeed || 0;
+            // 완만하게 굽이치는 해저 모래 언덕 물결 지형
+            const wave1 = Math.sin((x + seed) / 4) * 2.2;
+            const wave2 = Math.cos((x - seed) / 2.5) * 1.0;
+            return -2.5 + wave1 + wave2;
         }
     },
     psychic: {
