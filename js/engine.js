@@ -1336,23 +1336,21 @@ function updateGame() {
             if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
             const groundY = getTerrainY(ent.x, ent.y) + 0.75;
             if (ent.y < groundY) {
-                // 지형 경사도 계산 (현재 x 기준 좌우 0.1의 높이차)
-                const yRight = getTerrainY(ent.x + 0.1, ent.y);
-                const yLeft = getTerrainY(ent.x - 0.1, ent.y);
-                if (yRight > -50 && yLeft > -50) {
-                    let slope = (yRight - yLeft) / 0.2;
-                    slope = Math.max(-10, Math.min(10, slope)); // 극단적인 절벽 튕김 방지를 위해 경사도 제한
-                    // 경사에 따라 미끄러지는 힘 추가 (내리막 방향으로 가속 - 과도하지 않게 수치 대폭 하향)
-                    ent.vx += -slope * 0.015;
-                }
-
-                ent.y = groundY; 
-                ent.vy *= -0.5; 
-                ent.vx *= 0.6; 
-                ent.angularVelocity *= 0.6;
-                
-                if (Math.abs(ent.vy) < 0.05 && Math.abs(ent.vx) < 0.05) {
-                    ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
+                if (groundY - ent.y > 1.5) {
+                    // 가파른 절벽/크레이터 벽에 수평으로 부딪힌 경우: 위로 순간이동(과도한 튕김) 방지
+                    ent.vx *= -0.5; // 벽에서 반사
+                    ent.x += ent.vx; // 벽에서 밀어내어 끼임 방지
+                    ent.vy *= 0.8; // 벽에 마찰되어 떨어지는 속도 약간 감소 (미끄러지듯 추락)
+                } else {
+                    // 일반적인 바닥 충돌
+                    ent.y = groundY; 
+                    ent.vy *= -0.5; 
+                    ent.vx *= 0.6; 
+                    ent.angularVelocity *= 0.6;
+                    
+                    if (Math.abs(ent.vy) < 0.05 && Math.abs(ent.vx) < 0.05) {
+                        ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
+                    }
                 }
             }
         } else if (!ent.isFlying) {
