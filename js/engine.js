@@ -135,8 +135,8 @@ function resetView() {
     // 하단 계기판 UI 패널(약 22% 영역) 고려하여 상단 가시 영역에 가득 차도록 계산
     let spanY = rawYSpan / 0.78;
 
-    let reqXSpan = Math.max(spanX, spanY * aspect);
-    if (reqXSpan < 16) reqXSpan = 16; // 최대 확대 배율 적용 (번거로운 수동 확대 불필요)
+    let reqXSpan = Math.max(spanX, spanY * aspect) * 1.18; // 초기 진입 시 배율 1단계 축소(줌아웃)
+    if (reqXSpan < 19) reqXSpan = 19;
     let reqYSpan = reqXSpan / aspect;
 
     // 3. 하단 계기판 UI 영역(22%)을 감안해 시각적 유효 영역 중앙에 포켓몬 평균 좌표(centerX, centerY) 배치
