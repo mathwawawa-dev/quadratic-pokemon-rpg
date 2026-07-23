@@ -51,9 +51,16 @@ const TERRAINS = {
     },
     electric: {
         name: "발전소",
-        bg: ["#1e1b4b", "#312e81", "#fbbf24"],
-        color: "#1e1b4b", outColor: "#100e2b", // 언덕 아래를 배경 가장 어두운 남색 톤으로 통일
-        func: (x) => Math.sin((x + terrainSeed) / 1.5) * 1.8 + Math.cos((x - terrainSeed) * 1.2) * 0.8 - 1
+        bg: ["#0f172a", "#1e1b4b", "#312e81", "#4338ca"],
+        color: "#2e1065", outColor: "#0f0728",
+        func: (x) => {
+            const seed = terrainSeed || 0;
+            // 계단식 고전압 변전소 구조물 + 과충전 전기 파형
+            const stepPlatform = Math.floor(Math.sin((x + seed) / 4) * 3) * 1.2;
+            const surgePeak = Math.abs(Math.sin((x * 0.8 + seed))) * 4.0;
+            const zigZag = (Math.floor(x * 2) % 2 === 0 ? 0.3 : -0.3);
+            return -2.5 + stepPlatform + surgePeak + zigZag;
+        }
     },
     psychic: {
         name: "왜곡된 차원",

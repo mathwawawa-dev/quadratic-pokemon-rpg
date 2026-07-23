@@ -2211,6 +2211,40 @@ function render() {
         ctx.restore();
     }
 
+    // 발전소('electric') 지형 분위기: 네온 전기 스파크 & 번개 방전 파티클 렌더링
+    if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
+        ctx.save();
+        const now = Date.now();
+        // 1. 공중 및 지면 전기 스파크 파티클
+        for (let i = 0; i < 25; i++) {
+            const spkX = ((i * 113 + now * 0.12) % canvas.width);
+            const spkY = ((i * 73 + Math.sin(now * 0.01 + i) * 40 + canvas.height * 0.6) % canvas.height);
+            const size = 1.5 + (i % 3) * 1.5;
+            ctx.fillStyle = (i % 2 === 0) ? '#fbbf24' : '#22d3ee';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.fillRect(spkX, spkY, size, size * 1.8);
+        }
+        // 2. 간발의 차로 튀어오르는 번개 방전 스파크 아크
+        if (Math.random() < 0.35) {
+            const sparkGridX = -30 + Math.random() * 60;
+            const sparkGridY = getTerrainY(sparkGridX);
+            if (sparkGridY !== -100) {
+                const p = gridToScreen(sparkGridX, sparkGridY);
+                ctx.strokeStyle = Math.random() > 0.5 ? '#fef08a' : '#67e8f9';
+                ctx.lineWidth = 2 + Math.random() * 2;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = ctx.strokeStyle;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x + (Math.random() - 0.5) * 20, p.y - 10 - Math.random() * 25);
+                ctx.lineTo(p.x + (Math.random() - 0.5) * 30, p.y - 25 - Math.random() * 25);
+                ctx.stroke();
+            }
+        }
+        ctx.restore();
+    }
+
     // Clouds with hole effect via offscreen canvas
     const offCanvas = document.createElement('canvas');
     offCanvas.width = canvas.width;
