@@ -537,7 +537,13 @@ function initStage() {
                 rx = Math.max(-25, Math.min(35, rx));
                 
                 if (isFlying || isSkyMap) {
-                    ry = flyingYPool[flyingYIdx % flyingYPool.length] + (Math.random()-0.5)*4;
+                    const terrainYAtRx = getTerrainY(rx);
+                    if (isFloatingMapLocal && terrainYAtRx > -50) {
+                        // 공중정원 맵: 섬 상단 표면(terrainYAtRx) 위로 최소 +2.8~4.3 공중 배치 (섬 몸통 겹침 완벽 방지)
+                        ry = terrainYAtRx + 2.8 + Math.random() * 1.5;
+                    } else {
+                        ry = flyingYPool[flyingYIdx % flyingYPool.length] + (Math.random()-0.5)*4;
+                    }
                 } else {
                     ry = getTerrainY(rx) + yOffset;
                     if (ry < -50) { attempts++; continue; }
@@ -547,12 +553,17 @@ function initStage() {
                 const strictIsland = attempts < 300;
                 valid = checkValidPos(rx, ry, (isFlying || isSkyMap), strictIsland);
                 
-                if (isFloatingMapLocal && (isFlying || isSkyMap) && getTerrainY(rx) <= -50) {
-                    valid = false;
+                if (isFloatingMapLocal && (isFlying || isSkyMap)) {
+                    const terrainYAtRx = getTerrainY(rx);
+                    if (terrainYAtRx > -50 && ry < terrainYAtRx + 2.2) {
+                        valid = false; // 섬 표면과 겹치거나 아래로 침범 시 즉시 재배치
+                    } else if (terrainYAtRx <= -50) {
+                        valid = false;
+                    }
                 }
                 
                 if (isFlying && !valid) {
-                    ry += (Math.random() - 0.5) * 5;
+                    ry += 2.0; // 실패 시 위쪽 공중으로 고도 이동
                     valid = checkValidPos(rx, ry, true, strictIsland);
                 }
                 attempts++;
@@ -572,9 +583,11 @@ function initStage() {
         // 2차 실패 시 (혹은 처음부터 공중이었는데 실패): 최후의 수단으로 겹치지 않게 강제 분산 배치
         if (!valid) {
             rx = side === 'L' ? player.x - 10 - idx*6 : player.x + 10 + idx*6;
-            ry = 15 + idx * 4; 
-            if (!e.isFlying) {
-                ry = getTerrainY(rx) + 0.75;
+            const terrainYAtRx = getTerrainY(rx);
+            if (e.isFlying) {
+                ry = terrainYAtRx > -50 ? terrainYAtRx + 2.8 : 15 + idx * 4;
+            } else {
+                ry = terrainYAtRx + 0.75;
                 if (ry < -50) { e.isFlying = true; e.hasCloud = true; ry = 15 + idx * 4; }
             }
         }
