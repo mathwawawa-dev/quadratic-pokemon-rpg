@@ -387,6 +387,8 @@ function initStage() {
     }
 
     const isFloatingMap = TERRAINS[stage.terrain].isFloating;
+    const stageHeightOffset = isFloatingMap ? 0 : (1 + Math.random() * 3); // 공중정원 제외 맵 지형 1~4 무작위 높이 상승
+
     for (let x = -60; x <= 60; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
         if (tData.layers) {
@@ -413,7 +415,7 @@ function initStage() {
                 }
             }
         } else {
-            let y = tData.func(x);
+            let y = tData.func(x) + stageHeightOffset;
             if (!isFloatingMap) {
                 // 양 끝 경사 높은 언덕 주석 처리 (요청 시 언제든 복구 가능)
                 // if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
