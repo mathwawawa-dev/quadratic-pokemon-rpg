@@ -1803,10 +1803,9 @@ function updateGame() {
                 }
             }
 
-            // 화면을 벗어나면 (관통 미사일 포함) 비활성화
-            const isGardenMap = tData && tData.isFloating;
-            const limitX = isGardenMap ? 60 : 30;
-            const limitMinY = isGardenMap ? -30 : -20;
+            // 화면을 벗어나면 (관통 미사일 포함) 비활성화 — 모든 맵에서 x = ±60 영역까지 궤적이 표현되도록 확장
+            const limitX = 60;
+            const limitMinY = -30;
             if (Math.abs(missile.x) > limitX || missile.y < limitMinY) {
                 missile.active = false; GAME_STATE = 'IDLE';
                 if (enemies.filter(e => e.hp <= 0).length >= 2) {
