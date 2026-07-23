@@ -595,9 +595,9 @@ function initStage() {
                 
                 if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
-                    if (isFloatingMapLocal && terrainYAtRx > -50) {
-                        // 공중정원 맵: 섬 상단 표면(terrainYAtRx) 위로 최소 +2.8~4.3 공중 배치 (섬 몸통 겹침 완벽 방지)
-                        ry = terrainYAtRx + 2.8 + Math.random() * 1.5;
+                    if (terrainYAtRx > -50) {
+                        // 모든 맵(일반, 스파이크 언덕, 공중정원): 지형/스파이크 표면(terrainYAtRx) 위로 최소 +2.5~4.0 공중 배치 (지형 파묻힘 완벽 방지)
+                        ry = Math.max(terrainYAtRx + 2.5, flyingYPool[flyingYIdx % flyingYPool.length]) + Math.random() * 1.5;
                     } else {
                         ry = flyingYPool[flyingYIdx % flyingYPool.length] + (Math.random()-0.5)*4;
                     }
@@ -610,11 +610,11 @@ function initStage() {
                 const strictIsland = attempts < 300;
                 valid = checkValidPos(rx, ry, (isFlying || isSkyMap), strictIsland);
                 
-                if (isFloatingMapLocal && (isFlying || isSkyMap)) {
+                if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
-                    if (terrainYAtRx > -50 && ry < terrainYAtRx + 2.2) {
-                        valid = false; // 섬 표면과 겹치거나 아래로 침범 시 즉시 재배치
-                    } else if (terrainYAtRx <= -50) {
+                    if (terrainYAtRx > -50 && ry < terrainYAtRx + 2.0) {
+                        valid = false; // 지형/스파이크 표면과 겹치거나 아래로 침범 시 즉시 재배치
+                    } else if (isFloatingMapLocal && terrainYAtRx <= -50) {
                         valid = false;
                     }
                 }
@@ -1273,7 +1273,12 @@ function applyDamageAndEffects(target, mx, my) {
     target.hp -= totalDamage;
     target.shake = 20; screenShake = 15;
     const kbDir = target.x > player.x ? 1 : -1;
-    Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.01+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
+    if (target.hp <= 0) {
+        // 사망 시 넉백 속도를 초기화하여 그 자리(체력 0 이 된 위치)에서 영혼 유령 효과로 성불 (데스존 추락 방지)
+        Object.assign(target, { isKnockedBack: false, vx: 0, vy: 0, angularVelocity: 0, rotation: 0 });
+    } else {
+        Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.01+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
+    }
     if (missile.type !== 'pierce') {
         createCrater(target.x, target.y - 0.75, explosionRadius);
         createExplosion(target.x, target.y, getMissileColor());
@@ -1451,7 +1456,10 @@ function updateGame() {
     }
 
     [player, ...enemies].forEach(ent => {
-        if (ent.hp <= 0) return;
+        if (ent.hp <= 0) {
+            ent.isKnockedBack = false; ent.vx = 0; ent.vy = 0; ent.rotation = 0;
+            return;
+        }
         if (ent.isKnockedBack) {
             // 다음 x 위치의 지형 높이를 미리 확인 — 급경사(언덕/스파이크 벽)에 올라타는 순간 점프 방지
             const nextX   = ent.x + ent.vx;
