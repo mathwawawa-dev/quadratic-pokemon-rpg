@@ -1376,10 +1376,11 @@ function updateGame() {
                     ent.x += ent.vx; // 벽에서 밀어내어 끼임 방지
                     ent.vy *= 0.8; // 벽에 마찰되어 떨어지는 속도 약간 감소 (미끄러지듯 추락)
                 } else {
-                    // 일반적인 바닥 충돌
+                    // 일반적인 바닥 충돌 (얼음 설산 지형은 넉백 시 더 많이 미끄러짐)
                     ent.y = groundY; 
                     ent.vy *= -0.5; 
-                    ent.vx *= 0.6; 
+                    const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.88 : 0.6;
+                    ent.vx *= iceFriction; 
                     ent.angularVelocity *= 0.6;
                     
                     if (Math.abs(ent.vy) < 0.05 && Math.abs(ent.vx) < 0.05) {
@@ -2192,6 +2193,23 @@ function render() {
     const grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
     tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 얼음 설산('ice') 지형 분위기: 눈보라 입자(Snowflakes) 렌더링
+    if (LEVELS[currentStage % LEVELS.length].terrain === 'ice') {
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        const now = Date.now();
+        for (let i = 0; i < 35; i++) {
+            const snowX = ((i * 97 + now * 0.05) % canvas.width);
+            const snowY = ((i * 131 + now * 0.08) % canvas.height);
+            const r = 1.5 + (i % 3) * 1.2;
+            const osc = Math.sin(now * 0.002 + i) * 15;
+            ctx.beginPath();
+            ctx.arc((snowX + osc + canvas.width) % canvas.width, snowY, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
 
     // Clouds with hole effect via offscreen canvas
     const offCanvas = document.createElement('canvas');

@@ -32,9 +32,16 @@ const TERRAINS = {
     },
     ice: {
         name: "얼음 설산",
-        bg: ["#001f3f", "#005c99", "#cce6ff"],
-        color: "#b3d9ff", outColor: "#001f3f",
-        func: (x) => -4 + Math.abs(Math.sin((x + terrainSeed) / 3)) * 4 + Math.cos(x - terrainSeed) * 0.5
+        bg: ["#001428", "#003d66", "#66adff", "#d9eaff"],
+        color: "rgba(179, 217, 255, 0.95)", outColor: "#002b4d",
+        func: (x) => {
+            const seed = terrainSeed || 0;
+            // 뾰족하고 가파른 얼음 봉우리와 깊은 크레바스(빙혈) 구덩이가 조화롭게 섞인 만년설 지형
+            const peak = Math.abs(Math.sin((x + seed) / 2.5)) * 6.0;
+            const crevasse = Math.sin((x - seed) / 3.8) * 3.5;
+            const detail = Math.sin(x * 1.8 + seed) * 0.8;
+            return -4.0 + peak + crevasse + detail;
+        }
     },
     cave: {
         name: "어두운 동굴",
