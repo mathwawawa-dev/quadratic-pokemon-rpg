@@ -52,7 +52,7 @@ let effects = [];
 let screenShake = 0;
 let terrainHeights = {};
 let terrainBottoms = {};
-let explosionRadius = 0.2; // 폭발 반경 (0.2로 미니멀 축소)
+let explosionRadius = 0.5; // 폭발 반경 (지름 1.0으로 세팅)
 let playerGold = 0;
 let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
 let balloons = [];          // 공중 풍선 목록
@@ -689,7 +689,7 @@ function initStage() {
     updateHPUI();
     missile.active = false; missile.trail = []; effects = [];
     baseDamageBoost = 1.0;  // 스테이지마다 파워 부스트 초기화
-    explosionRadius = 0.2;  // 폭발 반경 초기화
+    explosionRadius = 0.5;  // 폭발 반경 초기화
 
     // 포켓볼 생성 (필드당 1개, y≥13 공중, 플레이어와 적 사이의 x좌표 보장)
     balloons = [];
