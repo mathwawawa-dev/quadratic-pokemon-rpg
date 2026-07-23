@@ -2215,8 +2215,8 @@ function render() {
     if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
         ctx.save();
         const now = Date.now();
-        // 1. 느리고 은은하게 떠다니는 네온 전기 스파크 (12개로 축소, 속도 80% 감속)
-        for (let i = 0; i < 12; i++) {
+        // 1. 느리고 은은하게 떠다니는 네온 전기 스파크 (13개로 1개 증가, 속도 감속)
+        for (let i = 0; i < 13; i++) {
             const spkX = ((i * 150 + now * 0.02) % canvas.width);
             const spkY = ((i * 90 + Math.sin(now * 0.0015 + i) * 20 + canvas.height * 0.5) % canvas.height);
             const size = 1.5 + (i % 2) * 1.0;
@@ -2225,8 +2225,8 @@ function render() {
             ctx.shadowColor = ctx.fillStyle;
             ctx.fillRect(spkX, spkY, size, size * 1.5);
         }
-        // 2. 가끔씩 은은하게 튀어오르는 단일 번개 아크 (확률 0.035로 대폭 축소, 한 번에 단 1개만)
-        if (Math.random() < 0.035) {
+        // 2. 약 5~6초 간격(확률 0.003)으로 은은하게 튀어오르는 단일 번개 아크
+        if (Math.random() < 0.003) {
             const sparkGridX = -25 + Math.random() * 50;
             const sparkGridY = getTerrainY(sparkGridX);
             if (sparkGridY !== -100) {
