@@ -2278,17 +2278,31 @@ function render() {
     tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 얼음 설산('ice') 지형 분위기: 눈보라 입자(Snowflakes) 렌더링 (월드 그리드 좌표 동기화)
+    // 얼음 설산('ice') 지형 분위기: 위에서 아래로 내리는 눈발 (월드 그리드 좌표 동기화)
     if (LEVELS[currentStage % LEVELS.length].terrain === 'ice') {
         ctx.save();
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
         const now = Date.now();
         for (let i = 0; i < 35; i++) {
-            // 월드 그리드 좌표 상에서 눈발이 천천히 내리도록 (맵 드래그 시 연동)
-            const gx = -25.0 + ((i * 3.2 + now * 0.001 + Math.sin(now * 0.002 + i) * 1.5) % 55.0);
-            const gy = 2.0 + ((i * 1.8 + now * 0.0015) % 30.0);
+            // 각 눈송이마다 고유 시드로 속도/위치 분산
+            const seed = i * 7919;
+            const fallSpeed = 0.0008 + (seed % 7) * 0.00015; // 개별 낙하 속도 (느린 것~빠른 것 분산)
+            const swayAmp = 1.2 + (seed % 5) * 0.4;          // 좌우 흔들림 폭
+            const swayFreq = 0.0015 + (seed % 3) * 0.0005;   // 좌우 흔들림 주기
+
+            // gx: 좌우로 살랑살랑 흔들리며 수평 이동
+            const baseGx = -25.0 + (seed % 500) * 0.11;
+            const gx = baseGx + Math.sin(now * swayFreq + i * 2.3) * swayAmp;
+
+            // gy: 위에서 아래로 천천히 내려옴 (높은 값 → 낮은 값)
+            const cycleLen = 32.0; // 그리드 단위 순환 길이
+            const gy = 30.0 - ((now * fallSpeed + (seed % 1000) * 0.032) % cycleLen);
+
             const sc = gridToScreen(gx, gy);
-            const r = scaleLength(0.08 + (i % 3) * 0.05);
+            const sizeGroup = i % 3;
+            const r = scaleLength(0.06 + sizeGroup * 0.04);
+            const alpha = 0.6 + sizeGroup * 0.15; // 크기별 투명도 차이 (원근감)
+
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, Math.max(1, r), 0, Math.PI * 2);
             ctx.fill();
