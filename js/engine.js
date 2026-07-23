@@ -1524,7 +1524,7 @@ function updateGame() {
                         const targetX = missile.homingTarget.x;
                         const targetY = missile.homingTarget.y;
                         const angle = Math.atan2(targetY - missile.y, targetX - missile.x);
-                        const speed = Math.max(0.65, Math.abs(missile.dx) * 2.0); // 락온 후 일직선 돌진 속도 대폭 상향 (기존 대비 약 2.5배)
+                        const speed = Math.max(0.32, Math.abs(missile.dx) * 0.95); // 락온 후 일직선 돌진 속도 미세 조율 (부드럽고 적절한 속도감)
                         missile.x += Math.cos(angle) * speed;
                         missile.y += Math.sin(angle) * speed;
                     } else {
