@@ -1185,6 +1185,24 @@ function checkCollision(mx, my, t) {
 function createExplosion(x, y, color) {
     for (let i = 0; i < 15; i++)
         effects.push({ type: 'particle', x, y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 30, color });
+    
+    // 발전소('electric') 맵 전용: 전력 과충전 착탄 이펙트 (확산 전기 파동 링 + 황금빛 방전 스파크)
+    if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
+        effects.push({ type: 'ring', x, y, life: 25, maxLife: 25, color: '#fbbf24' });
+        effects.push({ type: 'ring', x, y, life: 35, maxLife: 35, color: '#f59e0b' });
+        for (let sp = 0; sp < 14; sp++) {
+            const angle = Math.random() * Math.PI * 2;
+            const spd = 0.3 + Math.random() * 0.45;
+            effects.push({
+                type: 'particle',
+                x, y,
+                vx: Math.cos(angle) * spd,
+                vy: Math.sin(angle) * spd,
+                life: 35,
+                color: sp % 2 === 0 ? '#fef08a' : '#fbbf24'
+            });
+        }
+    }
 }
 function createCloudPop(x, y) {
     for (let i = 0; i < 25; i++) {
@@ -2282,13 +2300,13 @@ function render() {
         ctx.save();
         const now = Date.now();
 
-        // 0. 은은하게 공중을 떠다니며 이글거리는 플라즈마 에너지 구체 (16개)
+        // 0. 은은하게 공중을 떠다니며 이글거리는 플라즈마 에너지 구체 (8개로 축소, 속도 감속)
         const plasmaPositions = [];
-        for (let i = 0; i < 16; i++) {
-            const orbX = ((i * 127 + Math.sin(now * 0.001 + i) * 35) % canvas.width);
-            const orbY = ((i * 79 + Math.cos(now * 0.0012 + i * 2) * 25 + canvas.height * 0.45) % (canvas.height * 0.85));
+        for (let i = 0; i < 8; i++) {
+            const orbX = ((i * 240 + Math.sin(now * 0.0004 + i) * 30) % canvas.width);
+            const orbY = ((i * 120 + Math.cos(now * 0.0005 + i * 2) * 20 + canvas.height * 0.4) % (canvas.height * 0.8));
             const baseR = 4.0 + (i % 3) * 3.0;
-            const pulseR = baseR + Math.sin(now * 0.003 + i) * 2.0;
+            const pulseR = baseR + Math.sin(now * 0.0015 + i) * 1.5;
             
             plasmaPositions.push({ x: orbX, y: orbY });
 
