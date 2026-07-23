@@ -2277,16 +2277,16 @@ function render() {
         ctx.restore();
     }
 
-    // 발전소('electric') 지형 분위기: 차분하고 은은한 네온 자홍색 스파크 & 간헐적 번개 방전 아크
+    // 발전소('electric') 지형 분위기: 차분한 앰버/골드 스파크 & 간헐적 번개 방전 아크
     if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
         ctx.save();
         const now = Date.now();
-        // 1. 느리고 은은하게 떠다니는 네온 자홍색/핑크 전기 스파크
+        // 1. 느리고 은은하게 떠다니는 따뜻한 앰버/골드 전기 스파크
         for (let i = 0; i < 13; i++) {
             const spkX = ((i * 150 + now * 0.02) % canvas.width);
             const spkY = ((i * 90 + Math.sin(now * 0.0015 + i) * 20 + canvas.height * 0.5) % canvas.height);
             const size = 1.5 + (i % 2) * 1.0;
-            ctx.fillStyle = (i % 2 === 0) ? 'rgba(232, 121, 249, 0.75)' : 'rgba(244, 114, 182, 0.75)';
+            ctx.fillStyle = (i % 2 === 0) ? 'rgba(245, 158, 11, 0.75)' : 'rgba(251, 191, 36, 0.75)';
             ctx.shadowBlur = 6;
             ctx.shadowColor = ctx.fillStyle;
             ctx.fillRect(spkX, spkY, size, size * 1.5);
@@ -2297,7 +2297,7 @@ function render() {
             const sparkGridY = getTerrainY(sparkGridX);
             if (sparkGridY !== -100) {
                 const p = gridToScreen(sparkGridX, sparkGridY);
-                ctx.strokeStyle = Math.random() > 0.5 ? 'rgba(244, 114, 182, 0.8)' : 'rgba(232, 121, 249, 0.8)';
+                ctx.strokeStyle = Math.random() > 0.5 ? 'rgba(251, 191, 36, 0.8)' : 'rgba(245, 158, 11, 0.8)';
                 ctx.lineWidth = 2;
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = ctx.strokeStyle;
