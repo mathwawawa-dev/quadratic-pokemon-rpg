@@ -1295,7 +1295,7 @@ function applyDamageAndEffects(target, mx, my) {
         // 사망 시 넉백 속도를 초기화하여 그 자리(체력 0 이 된 위치)에서 영혼 유령 효과로 성불 (데스존 추락 방지)
         Object.assign(target, { isKnockedBack: false, vx: 0, vy: 0, angularVelocity: 0, rotation: 0 });
     } else {
-        Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.01+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
+        Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.02+0.05), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
     }
     if (missile.type !== 'pierce') {
         createCrater(target.x, target.y - 0.75, explosionRadius);
