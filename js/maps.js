@@ -23,6 +23,7 @@ const TERRAINS = {
         name: "구름 위 하늘",
         bg: ["#4ca1af", "#c4e0e5"],
         color: "rgba(255,255,255,0.8)", outColor: "#4ca1af",
+        deathZoneY: -30,
         func: (x) => Math.sin((x + terrainSeed) / 4) * 2 + Math.sin((x - terrainSeed) / 1.5) * 0.5 - 2
     },
     lava: {

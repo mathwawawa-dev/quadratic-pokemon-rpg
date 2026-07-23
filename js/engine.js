@@ -51,6 +51,7 @@ let missile = { active: false, x: 0, y: 0, trail: [], maxY: 0, func: null, dx: 0
 let effects = [];
 let screenShake = 0;
 let terrainHeights = {};
+let originalTerrainHeights = {};
 let terrainBottoms = {};
 let explosionRadius = 0.7; // 폭발 반경 (0.7로 축소)
 let playerGold = 0;
@@ -239,7 +240,8 @@ function getTerrainY(x, currentY) {
     const key = (Math.round(x * 10) / 10).toFixed(1);
     const ys = terrainHeights[key] || [-100];
     
-    if (TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating) {
+    const currentTerrain = LEVELS[currentStage % LEVELS.length].terrain;
+    if (TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky') {
         if (currentY !== undefined) {
             const bs = terrainBottoms[key] || [];
             let bestY = -100;
@@ -279,7 +281,7 @@ function createCrater(cx, cy, radius) {
             // 실제 폭발 구체(cy - halfHeight) 아래로 지형 레이어가 깎이도록 정밀 검증 (상단 높이 제한 해제하여 경사면 붕괴 구현)
             if (y !== -100 && y >= craterBottomY) {
                 terrainHeights[key][i] = Math.min(y, craterBottomY);
-                if (isFloating) {
+                if (isFloating || stage.terrain === 'sky') {
                     if (terrainBottoms[key] && terrainHeights[key][i] < terrainBottoms[key][i]) {
                         terrainHeights[key][i] = -100;
                     }
@@ -370,6 +372,7 @@ function initStage() {
     const tData = TERRAINS[stage.terrain];
     if (tData.init) tData.init(terrainSeed);
     terrainHeights = {};
+    originalTerrainHeights = {};
     terrainBottoms = {};
     terrainSpikes = [];
     craters = [];
@@ -436,7 +439,7 @@ function initStage() {
             }
         } else {
             let y = tData.func(x) + stageHeightOffset;
-            if (!isFloatingMap) {
+            if (!isFloatingMap && stage.terrain !== 'sky') {
                 // 양 끝 경사 높은 언덕 주석 처리 (요청 시 언제든 복구 가능)
                 // if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
                 // else if (x > 20) { const dx = x - 20; y += dx * dx * 5; }
@@ -449,8 +452,20 @@ function initStage() {
                     y += sp.height * Math.exp(-(d * d) / (2 * sp.width * sp.width));
                 }
             }
-            terrainHeights[key] = [y];
+            if (stage.terrain === 'sky') {
+                if (x < -38 || x > 38) {
+                    y = -100;
+                    terrainHeights[key] = [-100];
+                    terrainBottoms[key] = [-100];
+                } else {
+                    terrainHeights[key] = [y];
+                    terrainBottoms[key] = [y - 5.0];
+                }
+            } else {
+                terrainHeights[key] = [y];
+            }
         }
+        originalTerrainHeights[key] = [...terrainHeights[key]];
     }
 
     // 플레이어의 x 위치 설정 (스파이크 언덕 정상이거나 지나치게 높은 곳은 피하도록 검증 루프 적용)
@@ -1463,7 +1478,7 @@ function updateGame() {
                     // 일반적인 바닥 충돌 (얼음 설산 지형은 넉백 시 더 많이 미끄러짐)
                     ent.y = groundY; 
                     ent.vy *= -0.5; 
-                    const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.88 : 0.6;
+                    const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.88 : 0.65;
                     ent.vx *= iceFriction; 
                     ent.angularVelocity *= 0.6;
                     
@@ -1478,7 +1493,7 @@ function updateGame() {
             if (ent.y > groundY + 0.1) { ent.vy -= 0.02; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
-        const deathZoneY = LEVELS[currentStage % LEVELS.length].terrain === 'garden' ? -30 : -8;
+        const deathZoneY = ['garden', 'sky'].includes(LEVELS[currentStage % LEVELS.length].terrain) ? -30 : -8;
         if (ent.y < deathZoneY && ent.hp > 0) {
             ent.hp = 0;
             createExplosion(ent.x, deathZoneY, '#ffffff');
@@ -1803,19 +1818,49 @@ function updateGame() {
                     hitY = hitPoint.y;
                 }
             } else {
-                for (let i = 0; i < ys.length; i++) {
-                    const y = ys[i];
-                    if (y !== -100 && missile.y < y) {
-                        if (isFloatingMapLocal) {
-                            const origY = tData.layers ? tData.layers[i](missile.x) : tData.func(missile.x);
-                            // 섬의 바닥 두께(기본 4.0 + wave 여유분 1.0 = 5.0)를 빼서 실제 바닥보다 더 아래(공중)인지 확인
-                            if (missile.y < origY - 5.0) continue; 
-                            hitY = (missile.y > origY - 2.5) ? y : origY - 5.0;
-                        } else {
-                            hitY = y; 
+                const stepVx = missile.x - prevStepX;
+                const stepVy = missile.y - prevStepY;
+                const dist = Math.hypot(stepVx, stepVy);
+                const steps = Math.max(1, Math.ceil(dist / 0.1));
+                
+                let hitPoint = null;
+                for (let step = 1; step <= steps; step++) {
+                    const tx = prevStepX + (stepVx * step) / steps;
+                    const ty = prevStepY + (stepVy * step) / steps;
+                    
+                    const key = (Math.round(tx * 10) / 10).toFixed(1);
+                    const origYs = originalTerrainHeights[key] || [];
+                    
+                    let insideGround = false;
+                    for (let i = 0; i < origYs.length; i++) {
+                        const origY = origYs[i];
+                        if (ty <= origY && origY !== -100) {
+                            if (isFloatingMapLocal || stage.terrain === 'sky') {
+                                const bottomY = origY - 5.0; // 하늘(sky) 맵 섬의 대략적인 두께
+                                if (ty >= bottomY) { insideGround = true; break; }
+                            } else {
+                                insideGround = true; break;
+                            }
                         }
-                        break;
                     }
+                    
+                    if (insideGround) {
+                        let insideCrater = false;
+                        if (typeof craters !== 'undefined') {
+                            for (const c of craters) {
+                                if (Math.hypot(tx - c.x, ty - c.y) <= c.r) {
+                                    insideCrater = true; break;
+                                }
+                            }
+                        }
+                        if (!insideCrater) { hitPoint = {x: tx, y: ty}; break; }
+                    }
+                }
+                
+                if (hitPoint) {
+                    missile.x = hitPoint.x;
+                    missile.y = hitPoint.y;
+                    hitY = hitPoint.y;
                 }
             }
             if (hitY !== -100 && !missile.isCheat) {
@@ -2272,14 +2317,14 @@ function render() {
     ctx.save();
     if (screenShake > 0) ctx.translate((Math.random()-0.5)*10, (Math.random()-0.5)*10);
 
-    // Background
-    const tData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
+    const stage = LEVELS[currentStage % LEVELS.length];
+    const tData = TERRAINS[stage.terrain];
     const grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
     tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 얼음 설산('ice') 지형 분위기: 위에서 아래로 내리는 눈발 (월드 그리드 좌표 동기화)
-    if (LEVELS[currentStage % LEVELS.length].terrain === 'ice') {
+    if (stage.terrain === 'ice') {
         ctx.save();
         const now = Date.now();
         for (let i = 0; i < 35; i++) {
@@ -2668,17 +2713,109 @@ function render() {
                 if (inIsland) drawIslandPoly(islandPoints, islandThickness);
             }
         }
+    } else if (stage.terrain === 'sky') {
+        const skyStartX = -38;
+        const skyEndX = 38;
+        const thickness = 5.0;
+
+        const offCanvasGround = document.createElement('canvas');
+        offCanvasGround.width = canvas.width;
+        offCanvasGround.height = canvas.height;
+        const offCtxGround = offCanvasGround.getContext('2d');
+
+        const getOrigY = (x) => {
+            const key = (Math.round(x * 10) / 10).toFixed(1);
+            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
+        };
+
+        // 1. 상단 표면 곡선 (skyStartX -> skyEndX)
+        offCtxGround.beginPath();
+        const startP = gridToScreen(skyStartX, getOrigY(skyStartX));
+        offCtxGround.moveTo(startP.x, startP.y);
+        for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.2)) {
+            const p = gridToScreen(x, getOrigY(x));
+            offCtxGround.lineTo(p.x, p.y);
+            if (x >= skyEndX) break;
+        }
+
+        // 2. 우측 끝 뭉툭한 볼록 둥근 곡선 캡 마감
+        const rightTopY = getOrigY(skyEndX);
+        const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - thickness / 2);
+        const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
+        offCtxGround.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
+
+        // 3. 하단 표면 곡선 (skyEndX -> skyStartX)
+        for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
+            const p = gridToScreen(x, getOrigY(x) - thickness);
+            offCtxGround.lineTo(p.x, p.y);
+            if (x <= skyStartX) break;
+        }
+
+        // 4. 좌측 끝 뭉툭한 볼록 둥근 곡선 캡 마감
+        const leftTopY = getOrigY(skyStartX);
+        const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - thickness / 2);
+        const leftTopP = gridToScreen(skyStartX, leftTopY);
+        offCtxGround.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
+
+        offCtxGround.closePath();
+
+        offCtxGround.fillStyle = tData.color;
+        offCtxGround.fill();
+        // 구름 위 하늘 맵은 흰 테두리 선(stroke)을 제거하여 x=38 부근 흰 선 완벽 삭제
+
+        // 5. 폭발 구멍(craters) 타공
+        if (typeof craters !== 'undefined' && craters.length > 0) {
+            offCtxGround.globalCompositeOperation = 'destination-out';
+            for (const crater of craters) {
+                const p = gridToScreen(crater.x, crater.y);
+                const pr = scaleLength(crater.r);
+                offCtxGround.beginPath();
+                offCtxGround.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                offCtxGround.fill();
+            }
+            offCtxGround.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.drawImage(offCanvasGround, 0, 0);
     } else {
-        ctx.beginPath();
-        const startP = gridToScreen(X_MIN, getTerrainY(X_MIN));
-        ctx.moveTo(startP.x, startP.y);
+        const offCanvasGround = document.createElement('canvas');
+        offCanvasGround.width = canvas.width;
+        offCanvasGround.height = canvas.height;
+        const offCtxGround = offCanvasGround.getContext('2d');
+
+        offCtxGround.beginPath();
+        const getOrigY = (x) => {
+            const key = (Math.round(x * 10) / 10).toFixed(1);
+            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : getTerrainY(x);
+        };
+        const startP = gridToScreen(X_MIN, getOrigY(X_MIN));
+        offCtxGround.moveTo(startP.x, startP.y);
         for (let x = X_MIN; x <= X_MAX; x += 0.2) { 
-            const p = gridToScreen(x, getTerrainY(x)); 
-            ctx.lineTo(p.x, p.y); 
+            const p = gridToScreen(x, getOrigY(x)); 
+            offCtxGround.lineTo(p.x, p.y); 
         }
         const br = gridToScreen(X_MAX, Y_MIN - 10), bl = gridToScreen(X_MIN, Y_MIN - 10);
-        ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y); ctx.closePath();
-        ctx.fill(); ctx.stroke();
+        offCtxGround.lineTo(br.x, br.y); offCtxGround.lineTo(bl.x, bl.y); offCtxGround.closePath();
+        
+        offCtxGround.fillStyle = tData.color;
+        offCtxGround.fill();
+        offCtxGround.lineWidth = 2;
+        offCtxGround.strokeStyle = 'rgba(255,255,255,0.2)';
+        offCtxGround.stroke();
+
+        if (typeof craters !== 'undefined' && craters.length > 0) {
+            offCtxGround.globalCompositeOperation = 'destination-out';
+            for (const crater of craters) {
+                const p = gridToScreen(crater.x, crater.y);
+                const pr = scaleLength(crater.r);
+                offCtxGround.beginPath();
+                offCtxGround.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                offCtxGround.fill();
+            }
+            offCtxGround.globalCompositeOperation = 'source-over';
+        }
+        
+        ctx.drawImage(offCanvasGround, 0, 0);
     }
 
     // Grid & Axes
@@ -2720,8 +2857,8 @@ function render() {
     ctx.fillStyle = gridColor; ctx.fillText('O', origin.x - 15, origin.y + 15);
 
     // Death Zone
-    const isGardenMap = LEVELS[currentStage % LEVELS.length].terrain === 'garden';
-    const dzValue = isGardenMap ? -30 : -8;
+    const isDeepDeathZoneMap = ['garden', 'sky'].includes(LEVELS[currentStage % LEVELS.length].terrain);
+    const dzValue = isDeepDeathZoneMap ? -30 : -8;
     const dTop = gridToScreen(0, dzValue);
     if (Y_MIN < dzValue) {
         ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, dTop.y, canvas.width, canvas.height - dTop.y);
