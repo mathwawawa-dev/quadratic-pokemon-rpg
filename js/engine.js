@@ -2400,48 +2400,36 @@ function render() {
         ctx.restore();
     }
 
-    // 깊은 바닷속('ocean') 지형 분위기: 해저 바닥 무작위 위치에서 번갈아 발생하는 공기방울 (월드 그리드 좌표 동기화)
+    // 깊은 바닷속('ocean') 지형 분위기: 60fps 무늘림 해저 물방울 렌더링 (월드 그리드 좌표 동기화)
     if (LEVELS[currentStage % LEVELS.length].terrain === 'ocean') {
         ctx.save();
         const now = Date.now();
         
-        // 16개의 공기방울 (한 주기가 끝나면 무작위 해저 지형 위치로 새로 이동하여 분출)
-        for (let i = 0; i < 16; i++) {
-            const seed = i * 4951;
-            // 상승 속도를 이전 대비 1/3 수준으로 대폭 감속 (1회 풀 상승 시 약 16~18초 소요되는 극도로 차분한 속도)
-            const riseSpeed = 0.000055 + (seed % 4) * 0.000012;
-            const timeOffset = (seed % 1000) * 0.001;
+        // 14개의 해저 공기방울 (불연속 점프/끊김 없이 연속적인 S자 물살 곡선으로 60fps 부드럽게 표류)
+        for (let i = 0; i < 14; i++) {
+            // 개별 물방울의 연속적이고 은은한 상승 및 물살 파동
+            const seed = i * 3571;
+            const riseSpeed = 0.001 + (i % 3) * 0.0002; // 극도로 부드럽고 은은한 상승
             
-            // 현재 사이클 번호 (상승 완료 후 소멸 시 1씩 증가)
-            const rawProgress = (now * riseSpeed + timeOffset);
-            const cycle = Math.floor(rawProgress);
-            const progress = rawProgress - cycle; // 0.0 ~ 1.0 (바닥 -> 상층부 진행률)
+            // gy: 연속적인 바닥 -> 상층부 상승 (0 ~ 25 그리드)
+            const gy = ((now * riseSpeed + i * 1.9) % 25.0);
+            const progress = gy / 25.0; // 0.0 ~ 1.0
 
-            // 사이클마다 고유한 해저 바닥 무작위 gx 위치 결정 (고정 위치 탈피!)
-            const cycleHash = (i * 7919 + cycle * 3571) % 1000;
-            const spawnGx = -22.0 + (cycleHash / 1000.0) * 44.0;
-            
-            // 해당 gx의 해저 지형 높이 감지
-            const terrainY = getTerrainY(spawnGx);
-            const startY = terrainY !== -100 ? terrainY + 0.3 : 0.0;
+            // gx: 유기적인 해저 물살(S자 파동)을 따라 수평 위치가 매끄럽게 표류
+            const baseGx = -22.0 + (i * 3.4) % 44.0;
+            const currentSway = Math.sin(now * 0.0004 + i * 1.5) * 2.5 + Math.sin(now * 0.0008 + gy * 0.25) * 1.2;
+            const gx = baseGx + currentSway;
 
-            const heightRange = 25.0;
-            const gy = startY + progress * heightRange;
-
-            // 느린 상승에 맞춰 물살 S자 파동 주기도 함께 슬로우 차분화 (0.0007 -> 0.0003)
-            const currentWave = Math.sin(now * 0.0003 + gy * 0.2) * (0.8 + progress * 0.8) + Math.sin(now * 0.0006 + i) * 0.4;
-            const gx = spawnGx + currentWave;
-
-            // 올라갈수록 기압 감퇴로 은은하게 팽창 (1.0배 -> 1.6배)
+            // 상승하면서 수압 감퇴로 은은하게 팽창 (1.0배 -> 1.5배)
             const baseR = scaleLength(0.08 + (i % 3) * 0.04);
-            const currentR = baseR * (1.0 + progress * 0.6);
+            const currentR = baseR * (1.0 + progress * 0.5);
 
-            // 상층부 소멸 투명도
-            const alpha = progress < 0.83 ? 0.68 : Math.max(0, 0.68 * (1.0 - (progress - 0.83) / 0.17));
+            // 상층부 소멸 투명도 (0.83 이상에서 부드럽게 페이드아웃)
+            const alpha = progress < 0.83 ? 0.65 : Math.max(0, 0.65 * (1.0 - (progress - 0.83) / 0.17));
 
             const sc = gridToScreen(gx, gy);
 
-            // 공기방울 외곽선 & 내부
+            // 공기방울 외곽선 및 투명 내부
             ctx.strokeStyle = `rgba(186, 230, 253, ${alpha})`;
             ctx.fillStyle = `rgba(186, 230, 253, ${alpha * 0.22})`;
             ctx.lineWidth = 1.4;
@@ -2450,7 +2438,7 @@ function render() {
             ctx.fill();
             ctx.stroke();
 
-            // 물방울 반사 하이라이트
+            // 입체적인 햇빛 반사 하이라이트
             if (alpha > 0.15) {
                 ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.85})`;
                 ctx.beginPath();
