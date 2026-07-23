@@ -1279,7 +1279,18 @@ function applyDamageAndEffects(target, mx, my) {
 
     target.hp -= totalDamage;
     target.shake = 20; screenShake = 15;
-    const kbDir = target.x > player.x ? 1 : -1;
+    // 넉백 방향: 타겟 위치 ±1 grid 지형 높이 비교 → 내리막(낮은 쪽)으로 밀려남
+    // 차이가 0.3 미만(평탄)이면 기존대로 플레이어 위치 기준
+    const slopeCheckDist = 1.0;
+    const terrainRight = getTerrainY(target.x + slopeCheckDist);
+    const terrainLeft  = getTerrainY(target.x - slopeCheckDist);
+    const slopeDiff = terrainRight - terrainLeft; // 양수: 오른쪽이 낮음, 음수: 왼쪽이 낮음
+    let kbDir;
+    if (Math.abs(slopeDiff) >= 0.3) {
+        kbDir = slopeDiff > 0 ? 1 : -1; // 더 낮은 쪽(내리막)으로 넉백
+    } else {
+        kbDir = target.x > player.x ? 1 : -1; // 평탄: 플레이어 기준
+    }
     if (target.hp <= 0) {
         // 사망 시 넉백 속도를 초기화하여 그 자리(체력 0 이 된 위치)에서 영혼 유령 효과로 성불 (데스존 추락 방지)
         Object.assign(target, { isKnockedBack: false, vx: 0, vy: 0, angularVelocity: 0, rotation: 0 });
