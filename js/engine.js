@@ -118,28 +118,31 @@ function resetView() {
     let minY = player.y, maxY = player.y;
     
     enemies.forEach(e => {
-        if (e.x < minX) minX = e.x; if (e.x > maxX) maxX = e.x;
-        if (e.y < minY) minY = e.y; if (e.y > maxY) maxY = e.y;
+        if (e.hp > 0 || true) {
+            if (e.x < minX) minX = e.x; if (e.x > maxX) maxX = e.x;
+            if (e.y < minY) minY = e.y; if (e.y > maxY) maxY = e.y;
+        }
     });
 
-    // 1. 등장하는 모든 포켓몬(아군+적군)의 X, Y 좌표 평균 (중앙 지점)
+    // 1. 아군 및 적군 포켓몬 X좌표 / Y좌표의 각각 평균값 (화면 중심)
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
 
-    // 2. 가로 범위(X) 및 하단 UI 패널(약 20% 높이 차지)을 고려한 실질 유효 세로 범위(Y) 계산
-    let spanX = (maxX - minX) + 4.5;
-    let usableYSpan = (maxY - minY) + 3.0; // 포켓몬이 상하로 잘리지 않는 유효 높이
-    let spanY = usableYSpan / 0.72;        // 하단 계기판 UI 패널 영역(20%) 고려
+    // 2. 포켓몬들이 가려지지 않고 선명하게 보일 수 있는 최대 확대 배율 계산
+    let spanX = (maxX - minX) + 3.8;
+    let rawYSpan = (maxY - minY) + 2.8;
+    
+    // 하단 계기판 UI 패널(약 22% 영역) 고려하여 상단 가시 영역에 가득 차도록 계산
+    let spanY = rawYSpan / 0.78;
 
-    // 3. 화면 비율에 맞춰 모든 포켓몬이 100% 보이되 확대 배율을 최대화
     let reqXSpan = Math.max(spanX, spanY * aspect);
-    if (reqXSpan < 18) reqXSpan = 18; // 과도한 확대 방지
+    if (reqXSpan < 16) reqXSpan = 16; // 최대 확대 배율 적용 (번거로운 수동 확대 불필요)
     let reqYSpan = reqXSpan / aspect;
 
-    // 4. 하단 계기판 UI에 가리지 않도록 Y 시점을 위로 상향 (유효 화면 중앙에 배치)
+    // 3. 하단 계기판 UI 영역(22%)을 감안해 시각적 유효 영역 중앙에 포켓몬 평균 좌표(centerX, centerY) 배치
     X_MIN = centerX - reqXSpan / 2;
     X_MAX = centerX + reqXSpan / 2;
-    Y_MIN = centerY - reqYSpan * 0.58; // Y_MIN을 낮춰 게임 화면 실질 중심을 시각적 중앙으로 올림
+    Y_MIN = centerY - reqYSpan * 0.61;
     Y_MAX = Y_MIN + reqYSpan;
 
     resize();
