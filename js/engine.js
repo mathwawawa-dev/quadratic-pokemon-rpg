@@ -689,7 +689,7 @@ function initStage() {
     updateHPUI();
     missile.active = false; missile.trail = []; effects = [];
     baseDamageBoost = 1.0;  // 스테이지마다 파워 부스트 초기화
-    explosionRadius = 1.2;  // 폭발 반경 초기화
+    explosionRadius = 0.2;  // 폭발 반경 초기화
 
     // 포켓볼 생성 (필드당 1개, y≥13 공중, 플레이어와 적 사이의 x좌표 보장)
     balloons = [];
