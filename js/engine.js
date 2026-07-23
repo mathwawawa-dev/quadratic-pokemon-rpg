@@ -374,13 +374,32 @@ function initStage() {
     terrainSpikes = [];
     craters = [];
 
+    // 플레이어 스폰 위치 사전 산출 (스파이크가 플레이어 주변 5.0 이내에 생기는 것 방지)
+    let approxPx = 0;
+    if (stage.terrain === 'garden') {
+        approxPx = 0;
+    } else {
+        const pxRoll = Math.random();
+        if (pxRoll < 0.45)      approxPx =  (2 + Math.random() * 4);
+        else if (pxRoll < 0.93) approxPx = -(2 + Math.random() * 4);
+        else                    approxPx = 0;
+    }
+
     // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 1~3개의 뾰족한 언덕 배치
+    // 내 포켓몬(approxPx) 주변 반경 5.0 이내에는 스파이크가 절대 생성되지 않도록 제한 (자폭 방지)
     terrainSpikes = [];
     const spikeProb = stage.terrain === 'ice' ? 0.5 : 0.3;
     const spikeCount = Math.random() < spikeProb ? Math.floor(Math.random() * 3) + 1 : 0;
     for (let s = 0; s < spikeCount; s++) {
+        let scx = 0;
+        let tryCount = 0;
+        do {
+            scx = -15 + Math.random() * 30;
+            tryCount++;
+        } while (Math.abs(scx - approxPx) < 5.0 && tryCount < 30);
+
         terrainSpikes.push({
-            cx: -12 + Math.random() * 24,          // 스파이크 중심 x
+            cx: scx,
             height: 6 + Math.random() * 10,        // 솟아오르는 높이 (6~16)
             width:  0.8 + Math.random() * 1.2      // 스파이크 너비 (좁을수록 뾰족)
         });
