@@ -187,6 +187,14 @@ function setupGlobalShortcuts() {
 
 // ---------- Entry Point ----------
 window.addEventListener('load', () => {
+    if (window.mathVirtualKeyboard) {
+        window.mathVirtualKeyboard.policy = 'manual';
+        window.mathVirtualKeyboard.hide();
+    }
+    const mf = document.getElementById('math-input');
+    if (mf) {
+        mf.mathVirtualKeyboardPolicy = 'manual';
+    }
     setupGlobalShortcuts();
     showIntro();
 });
