@@ -276,9 +276,9 @@ function createCrater(cx, cy, radius) {
         
         for (let i = 0; i < terrainHeights[key].length; i++) {
             const y = terrainHeights[key][i];
-            // 폭발 범위(craterTopY ~ craterBottomY) 영역에 포함된 지형 레이어만 깎이도록 정밀 검증 (상하 반경 엄격 적용)
-            if (y !== -100 && y <= cy + radius && y >= cy - radius) {
-                terrainHeights[key][i] = craterBottomY;
+            // 실제 폭발 구체(cy - halfHeight ~ cy + halfHeight)와 겹치는 지형 레이어만 깎이도록 정밀 검증
+            if (y !== -100 && y >= craterBottomY && y <= craterTopY + 1.0) {
+                terrainHeights[key][i] = Math.min(y, craterBottomY);
                 if (isFloating) {
                     if (terrainBottoms[key] && terrainHeights[key][i] < terrainBottoms[key][i]) {
                         terrainHeights[key][i] = -100;
@@ -1884,7 +1884,7 @@ function updateGame() {
                 } else {
                     missile.active = false; GAME_STATE = 'IDLE';
                     const targetX = missile.x;
-                    const targetY = hitY !== -100 ? hitY : missile.y;
+                    const targetY = missile.y;
                     createExplosion(targetX, targetY, getMissileColor());
                     createCrater(targetX, targetY, explosionRadius);
                     let hitSomeone = false;
