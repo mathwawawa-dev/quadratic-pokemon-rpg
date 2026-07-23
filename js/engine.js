@@ -241,7 +241,7 @@ function getTerrainY(x, currentY) {
         for (const y of ys) {
             if (y !== -100 && y > bestY && y <= currentY + 1.5) bestY = y;
         }
-        if (bestY !== -100) return bestY;
+        return bestY; // 허공으로 떨어질 때 상위 섬으로 튀지 않고 자연스럽게 낙하
     }
     return Math.max(...ys);
 }
@@ -1327,9 +1327,10 @@ function updateGame() {
             }
             ent.y += ent.vy;
             ent.rotation += ent.angularVelocity;
-            ent.vy -= 0.02;
-            if (ent.x - ent.w/2 < -20) { ent.x = -20 + ent.w/2; ent.vx *= -0.8; }
-            if (ent.x + ent.w/2 >  20) { ent.x =  20 - ent.w/2; ent.vx *= -0.8; }
+            const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
+            const limitX = isFloatingMapLocal ? 60 : 20;
+            if (ent.x - ent.w/2 < -limitX) { ent.x = -limitX + ent.w/2; ent.vx *= -0.8; }
+            if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
             const groundY = getTerrainY(ent.x, ent.y) + 0.75;
             if (ent.y < groundY) {
                 // 지형 경사도 계산 (현재 x 기준 좌우 0.1의 높이차)
