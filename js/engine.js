@@ -51,6 +51,8 @@ let missile = { active: false, x: 0, y: 0, trail: [], maxY: 0, func: null, dx: 0
 let effects = [];
 let screenShake = 0;
 let terrainHeights = {};
+let terrainBottoms = {};
+let terrainSpikes = [];
 let explosionRadius = 1.2; // 폭발 반경 (1.2로 복구)
 let playerGold = 0;
 let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
@@ -235,14 +237,22 @@ function getTerrainYAll(x) {
 }
 
 function getTerrainY(x, currentY) {
-    const ys = getTerrainYAll(x);
-    if (currentY !== undefined) {
-        let bestY = -100;
-        for (const y of ys) {
-            // 임계값을 4.0으로 늘려 땅속성 포켓몬(-1.3 깊이)이 경사면을 만났을 때 지형을 무시하고 추락하는 버그 방지
-            if (y !== -100 && y > bestY && y <= currentY + 4.0) bestY = y;
+    const key = (Math.round(x * 10) / 10).toFixed(1);
+    const ys = terrainHeights[key] || [-100];
+    
+    if (TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating) {
+        if (currentY !== undefined) {
+            const bs = terrainBottoms[key] || [];
+            let bestY = -100;
+            for (let i = 0; i < ys.length; i++) {
+                const y = ys[i];
+                const b = bs[i] !== undefined ? bs[i] : -1000;
+                // 현재 높이(currentY)가 섬의 가장 밑바닥(b)보다 살짝 아래(-2.0)까지는 같은 층으로 간주함.
+                // 푹 파인 깊은 크레이터의 가파른 벽을 정상적으로 인식할 수 있게 됨.
+                if (y !== -100 && y > bestY && b <= currentY + 2.0) bestY = y;
+            }
+            return bestY;
         }
-        return bestY; // If falling off an island, return -100 so pokemon falls downward naturally
     }
     return Math.max(...ys);
 }
@@ -271,32 +281,7 @@ function createCrater(cx, cy, radius) {
             if (y !== -100 && y <= cy + radius && y >= cy - radius) {
                 terrainHeights[key][i] = craterBottomY;
                 if (isFloating) {
-                    const tData = TERRAINS[stage.terrain];
-                    const orig = tData.layers ? tData.layers[i](x) : tData.func(x);
-                    
-                    let minBottom = 1000;
-                    let found = false;
-                    if (tData.islands && tData.islands[i]) {
-                        for (const s of tData.islands[i]) {
-                            if (x >= s.cx - s.rx && x <= s.cx + s.rx) {
-                                const dx = x - s.cx;
-                                const bY = s.cy - s.ry * Math.sqrt(1 - (dx * dx) / (s.rx * s.rx));
-                                if (bY < minBottom) {
-                                    minBottom = bY;
-                                    found = true;
-                                }
-                            }
-                        }
-                    }
-                    
-                    let thick = 4.0;
-                    if (found) {
-                        thick = orig - minBottom;
-                    } else if (tData.getThickness) {
-                        thick = tData.getThickness(x);
-                    }
-                    
-                    if (terrainHeights[key][i] < orig - thick) {
+                    if (terrainBottoms[key] && terrainHeights[key][i] < terrainBottoms[key][i]) {
                         terrainHeights[key][i] = -100;
                     }
                 }
@@ -386,6 +371,8 @@ function initStage() {
     const tData = TERRAINS[stage.terrain];
     if (tData.init) tData.init(terrainSeed);
     terrainHeights = {};
+    terrainBottoms = {};
+    terrainSpikes = [];
     craters = [];
 
     // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 1~3개의 뾰족한 언덕 배치
@@ -405,6 +392,27 @@ function initStage() {
         const key = (Math.round(x * 10) / 10).toFixed(1);
         if (tData.layers) {
             terrainHeights[key] = tData.layers.map(l => l(x));
+            if (isFloatingMap) {
+                terrainBottoms[key] = [];
+                for (let i = 0; i < tData.layers.length; i++) {
+                    let minBottom = 1000;
+                    let found = false;
+                    if (tData.islands && tData.islands[i]) {
+                        for (const s of tData.islands[i]) {
+                            if (x >= s.cx - s.rx && x <= s.cx + s.rx) {
+                                const dx = x - s.cx;
+                                const bY = s.cy - s.ry * Math.sqrt(1 - (dx * dx) / (s.rx * s.rx));
+                                if (bY < minBottom) {
+                                    minBottom = bY;
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+                    if (!found) minBottom = terrainHeights[key][i] - 4.0;
+                    terrainBottoms[key].push(minBottom);
+                }
+            }
         } else {
             let y = tData.func(x);
             if (!isFloatingMap) {

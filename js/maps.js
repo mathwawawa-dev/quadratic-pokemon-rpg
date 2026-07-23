@@ -102,7 +102,7 @@ const TERRAINS = {
                             cy: baseY - 0.8 + (Math.random() - 0.5) * 1.0,
                             rx: rxSub,
                             ry: rySub,
-                            rot: (Math.random() - 0.5) * 0.2
+                            rot: 0 // 물리가 rot 0을 기준으로 계산되므로 일치시켜야 함
                         });
                     }
                 }
