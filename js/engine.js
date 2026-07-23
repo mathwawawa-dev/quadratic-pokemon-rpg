@@ -52,7 +52,7 @@ let effects = [];
 let screenShake = 0;
 let terrainHeights = {};
 let terrainBottoms = {};
-let explosionRadius = 0.5; // 폭발 반경 (지름 1.0으로 세팅)
+let explosionRadius = 0.7; // 폭발 반경 (0.7로 축소)
 let playerGold = 0;
 let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
 let balloons = [];          // 공중 풍선 목록
@@ -276,8 +276,8 @@ function createCrater(cx, cy, radius) {
         
         for (let i = 0; i < terrainHeights[key].length; i++) {
             const y = terrainHeights[key][i];
-            // 실제 폭발 구체(cy - halfHeight ~ cy + halfHeight)와 겹치는 지형 레이어만 깎이도록 정밀 검증
-            if (y !== -100 && y >= craterBottomY && y <= craterTopY + 1.0) {
+            // 실제 폭발 구체(cy - halfHeight) 아래로 지형 레이어가 깎이도록 정밀 검증 (상단 높이 제한 해제하여 경사면 붕괴 구현)
+            if (y !== -100 && y >= craterBottomY) {
                 terrainHeights[key][i] = Math.min(y, craterBottomY);
                 if (isFloating) {
                     if (terrainBottoms[key] && terrainHeights[key][i] < terrainBottoms[key][i]) {
@@ -689,7 +689,7 @@ function initStage() {
     updateHPUI();
     missile.active = false; missile.trail = []; effects = [];
     baseDamageBoost = 1.0;  // 스테이지마다 파워 부스트 초기화
-    explosionRadius = 0.5;  // 폭발 반경 초기화
+    explosionRadius = 0.7;  // 폭발 반경 초기화
 
     // 포켓볼 생성 (필드당 1개, y≥13 공중, 플레이어와 적 사이의 x좌표 보장)
     balloons = [];
