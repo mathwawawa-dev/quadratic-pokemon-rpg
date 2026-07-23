@@ -2277,20 +2277,71 @@ function render() {
         ctx.restore();
     }
 
-    // 발전소('electric') 지형 분위기: 차분한 앰버/골드 스파크 & 간헐적 번개 방전 아크
+    // 발전소('electric') 지형 분위기: 플라즈마 에너지 구체 & 자력선 입자 렌더링
     if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
         ctx.save();
         const now = Date.now();
-        // 1. 느리고 은은하게 떠다니는 따뜻한 앰버/골드 전기 스파크
-        for (let i = 0; i < 13; i++) {
-            const spkX = ((i * 150 + now * 0.02) % canvas.width);
-            const spkY = ((i * 90 + Math.sin(now * 0.0015 + i) * 20 + canvas.height * 0.5) % canvas.height);
-            const size = 1.5 + (i % 2) * 1.0;
-            ctx.fillStyle = (i % 2 === 0) ? 'rgba(245, 158, 11, 0.75)' : 'rgba(251, 191, 36, 0.75)';
-            ctx.shadowBlur = 6;
-            ctx.shadowColor = ctx.fillStyle;
-            ctx.fillRect(spkX, spkY, size, size * 1.5);
+
+        // 0. 은은하게 공중을 떠다니며 이글거리는 플라즈마 에너지 구체 (16개)
+        const plasmaPositions = [];
+        for (let i = 0; i < 16; i++) {
+            const orbX = ((i * 127 + Math.sin(now * 0.001 + i) * 35) % canvas.width);
+            const orbY = ((i * 79 + Math.cos(now * 0.0012 + i * 2) * 25 + canvas.height * 0.45) % (canvas.height * 0.85));
+            const baseR = 4.0 + (i % 3) * 3.0;
+            const pulseR = baseR + Math.sin(now * 0.003 + i) * 2.0;
+            
+            plasmaPositions.push({ x: orbX, y: orbY });
+
+            // 외곽 글로우
+            ctx.shadowBlur = 14;
+            ctx.shadowColor = (i % 2 === 0) ? 'rgba(251, 146, 60, 0.8)' : 'rgba(245, 158, 11, 0.8)';
+
+            // 코어 그라데이션 구체
+            const orbGrad = ctx.createRadialGradient(orbX, orbY, 0, orbX, orbY, pulseR);
+            orbGrad.addColorStop(0, 'rgba(254, 240, 138, 0.9)');   // 황금빛 중심 코어
+            orbGrad.addColorStop(0.5, (i % 2 === 0) ? 'rgba(251, 146, 60, 0.45)' : 'rgba(245, 158, 11, 0.45)');
+            orbGrad.addColorStop(1, 'rgba(127, 29, 29, 0)');      // 버건디 바깥 가장자리 투명 처리
+
+            ctx.fillStyle = orbGrad;
+            ctx.beginPath();
+            ctx.arc(orbX, orbY, pulseR, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 구체 주변을 회전하는 자력선 마이크로 위성 입자
+            const satAngle = now * 0.002 + i;
+            const satDist = pulseR + 6;
+            const satX = orbX + Math.cos(satAngle) * satDist;
+            const satY = orbY + Math.sin(satAngle) * satDist;
+            ctx.fillStyle = '#fef08a';
+            ctx.beginPath();
+            ctx.arc(satX, satY, 1.2, 0, Math.PI * 2);
+            ctx.fill();
         }
+
+        // 1. 가까운 플라즈마 구체 간 은은하게 연결되는 자력선 방전선 (Magnetic Flux Arcs)
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 1.0;
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.18)';
+        ctx.setLineDash([4, 6]);
+        for (let a = 0; a < plasmaPositions.length; a++) {
+            for (let b = a + 1; b < plasmaPositions.length; b++) {
+                const dx = plasmaPositions[a].x - plasmaPositions[b].x;
+                const dy = plasmaPositions[a].y - plasmaPositions[b].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 140) {
+                    ctx.beginPath();
+                    ctx.moveTo(plasmaPositions[a].x, plasmaPositions[a].y);
+                    ctx.quadraticCurveTo(
+                        (plasmaPositions[a].x + plasmaPositions[b].x) / 2 + Math.sin(now * 0.003 + a) * 15,
+                        (plasmaPositions[a].y + plasmaPositions[b].y) / 2 + Math.cos(now * 0.003 + b) * 15,
+                        plasmaPositions[b].x, plasmaPositions[b].y
+                    );
+                    ctx.stroke();
+                }
+            }
+        }
+        ctx.setLineDash([]); // 점선 초기화
+
         // 2. 약 5~6초 간격(확률 0.003)으로 은은하게 튀어오르는 단일 번개 아크
         if (Math.random() < 0.003) {
             const sparkGridX = -25 + Math.random() * 50;
