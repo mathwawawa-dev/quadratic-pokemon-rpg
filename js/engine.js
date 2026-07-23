@@ -418,6 +418,10 @@ function initStage() {
                 // 양 끝 경사 높은 언덕 주석 처리 (요청 시 언제든 복구 가능)
                 // if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
                 // else if (x > 20) { const dx = x - 20; y += dx * dx * 5; }
+
+                // x = ±60 외곽 경계선에서 수직으로 뚝 떨어지지 않고 낭떠러지로 자연스럽게 부드럽게 깎이도록 하향 슬로프 적용
+                if (x < -45) { const dx = -45 - x; y -= dx * dx * 0.15; }
+                else if (x > 45) { const dx = x - 45; y -= dx * dx * 0.15; }
                 for (const sp of terrainSpikes) {
                     const d = x - sp.cx;
                     y += sp.height * Math.exp(-(d * d) / (2 * sp.width * sp.width));
