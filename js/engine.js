@@ -798,8 +798,6 @@ window.addEventListener('keydown', (e) => {
         return;
     }
     if (e.target.tagName.toLowerCase() === 'math-field') return;
-    if (e.key === 'a' || e.key === 'A') window.movePlayer(-1);
-    if (e.key === 'd' || e.key === 'D') window.movePlayer(1);
 }, { capture: true });
 
 // ---------- Fire Missile ----------
