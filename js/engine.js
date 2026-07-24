@@ -1940,9 +1940,8 @@ function updateGame() {
                         applyDamageAndEffects(ent, chtX, chtY);
                     }
                 });
-                if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
-                } else {
+                // applyDamageAndEffects가 이미 STAGE CLEAR 처리 → GAME_STATE가 'IDLE'인 경우만 버튼 복구
+                if (GAME_STATE !== 'OVER') {
                     setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 1000);
                 }
                 return;
