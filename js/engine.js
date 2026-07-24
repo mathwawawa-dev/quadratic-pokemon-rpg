@@ -1352,7 +1352,7 @@ function applyDamageAndEffects(target, mx, my) {
     if (player.hp <= 0) {
         GAME_STATE = 'OVER';
         showMessage('GAME OVER', '자폭했습니다...');
-    } else if (deadEnemies >= 2) {
+    } else if (deadEnemies >= 2 && GAME_STATE !== 'OVER') {
         GAME_STATE = 'OVER';
         showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false);
     } else if (missile.type !== 'pierce' && !missile.active) {
@@ -1664,7 +1664,7 @@ function updateGame() {
             effects.push({ type: 'text', x: ent.x, y: deathZoneY + 2, text: 'FALL!', color: '#ef4444', life: 60 });
             updateHPUI();
             if (ent === player) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('GAME OVER', '플레이어가 추락했습니다!'), 1500); }
-            else if (enemies.filter(e => e.hp <= 0).length >= 2) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500); }
+            else if (GAME_STATE !== 'OVER' && enemies.filter(e => e.hp <= 0).length >= 2) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500); }
         }
     });
 
