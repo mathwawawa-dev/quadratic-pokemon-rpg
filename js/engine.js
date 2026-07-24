@@ -1309,8 +1309,8 @@ function applyDamageAndEffects(target, mx, my) {
     const totalDamage = Math.floor((30 + fallHeight * 1.7) * mult * baseDamageBoost * boostMult * firstTurnMult);
     if (isFirstTurn && enemies.includes(target)) {
         isFirstTurn = false;
-        effects.push({ type: 'text', x: target.x, y: target.y + 4.0, text: '✨ 초심자의 버프!', color: '#a78bfa', life: 240 });
-        effects.push({ type: 'text', x: target.x, y: target.y + 5.5, text: 'x2 데미지!', color: '#f0abfc', life: 200 });
+        player.w *= 1.2; player.h *= 1.2; effects.push({ type: 'text', x: player.x, y: player.y + 3.0, text: '💥 기선 제압!', color: '#a78bfa', life: 240 });
+        
     }
 
     target.hp -= totalDamage;
