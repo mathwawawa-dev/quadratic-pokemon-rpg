@@ -878,6 +878,7 @@ window.addEventListener('keydown', (e) => {
 
         const p1 = { x: player.x, y: player.y };
 
+        // 3점 지정 포물선 피팅
         const fit3 = (pt1, pt2, pt3) => {
             const denom = (pt1.x - pt2.x) * (pt1.x - pt3.x) * (pt2.x - pt3.x);
             if (Math.abs(denom) < 0.001) return null;
@@ -887,12 +888,28 @@ window.addEventListener('keydown', (e) => {
             return { a, b, c };
         };
 
+        // 수학적으로 a < 0 (위로 볼록)과 최고점 H < 34.0을 100% 보장하는 2점+정점 수학 공식
+        const fit2Apex = (pt1, pt2, extraHeight = 4.0) => {
+            if (Math.abs(pt1.x - pt2.x) < 0.001) return null;
+            const H = Math.min(33.0, Math.max(pt1.y, pt2.y) + extraHeight);
+            const d1 = Math.sqrt(Math.max(0.1, H - pt1.y));
+            const d2 = Math.sqrt(Math.max(0.1, H - pt2.y));
+            const xv = (d1 * pt2.x + d2 * pt1.x) / (d1 + d2);
+            const a = -Math.pow((d1 + d2) / (pt1.x - pt2.x), 2);
+            const b = -2 * a * xv;
+            const c = H + a * xv * xv;
+            return { a, b, c };
+        };
+
+        // 안전성 검사 (a < 0 음수 계수, 최고점 vertexY < 34.0, 데스존 미침범)
         const isParabolaSafe = (a, b, c, minX, maxX, deathY) => {
-            if (a >= -0.0001) return false; // 음수 가속도 (위로 오목한 포물선 금지)
+            if (a >= -0.001) return false; // 반드시 위로 볼록 (a < 0)
+            const vertexY = c - (b * b) / (4 * a);
+            if (vertexY >= 34.0) return false; // 최고점이 천장(y=40)에 절대 닿지 않도록 제한
             const step = 0.5;
             for (let x = minX; x <= maxX; x += step) {
                 const y = a * x * x + b * x + c;
-                if (y >= 37.0) return false; // y=40 천장 천장아웃 방지
+                if (y >= 35.0) return false; // 천장아웃 방지
                 if (y <= deathY + 0.5) return false; // 데스존 침범 방지
             }
             return true;
@@ -900,7 +917,7 @@ window.addEventListener('keydown', (e) => {
 
         let result = null;
 
-        // 1. 적 2명이 모두 살아있는 경우, 둘을 동시에 지나는 포물선 우선 시도
+        // 1. 살아있는 적이 2명 이상인 경우, 둘 다 지나면서 a < 0 및 최고점 < 34.0을 만족하는지 우선 검사
         if (aliveEnemies.length >= 2) {
             const pt2 = { x: aliveEnemies[0].x, y: aliveEnemies[0].y };
             const pt3 = { x: aliveEnemies[1].x, y: aliveEnemies[1].y };
@@ -914,30 +931,29 @@ window.addEventListener('keydown', (e) => {
             }
         }
 
-        // 2. 적 2명 동시 타격 포물선이 천장/데스존을 침범하거나 적이 1명인 경우: 첫번째 생존 적을 안전한 호로 타격
+        // 2. 적 2명 동시 타격 포물선이 아래로 볼록(a > 0)하거나 최고점이 34.0 이상이면: 첫 번째 생존 적을 위로 볼록(a < 0)한 포물선으로 타격
         if (!result) {
             for (const tgt of aliveEnemies) {
                 const pt2 = { x: tgt.x, y: tgt.y };
-                const apexY = Math.min(32.0, Math.max(p1.y, pt2.y) + 4.0);
-                const pt3 = { x: (p1.x + pt2.x) / 2, y: apexY };
-                const res = fit3(p1, pt2, pt3);
-                if (res) {
-                    const minX = Math.min(p1.x, pt2.x);
-                    const maxX = Math.max(p1.x, pt2.x);
-                    if (isParabolaSafe(res.a, res.b, res.c, minX, maxX, deathZoneY)) {
-                        result = res;
-                        break;
+                for (let h = 5.0; h >= 2.0; h -= 1.0) {
+                    const res = fit2Apex(p1, pt2, h);
+                    if (res) {
+                        const minX = Math.min(p1.x, pt2.x);
+                        const maxX = Math.max(p1.x, pt2.x);
+                        if (isParabolaSafe(res.a, res.b, res.c, minX, maxX, deathZoneY)) {
+                            result = res;
+                            break;
+                        }
                     }
                 }
+                if (result) break;
             }
         }
 
-        // 3. 최후의 보루: 가장 낮은 안정된 호로 생성
+        // 3. 최후의 보루
         if (!result) {
             const tgt = aliveEnemies[0];
-            const pt2 = { x: tgt.x, y: tgt.y };
-            const pt3 = { x: (p1.x + pt2.x) / 2, y: Math.max(p1.y, pt2.y) + 2.0 };
-            result = fit3(p1, pt2, pt3) || { a: -0.05, b: 0, c: p1.y + 0.05 * p1.x * p1.x };
+            result = fit2Apex(p1, { x: tgt.x, y: tgt.y }, 2.0) || { a: -0.05, b: 0, c: p1.y + 0.05 * p1.x * p1.x };
         }
 
         const { a, b, c } = result;
