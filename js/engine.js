@@ -1673,8 +1673,12 @@ function updateGame() {
                     const slopeDiff = slopeRightY - slopeLeftY;
                     const isLocalMin = (slopeRightY > groundY + 0.02) && (slopeLeftY > groundY + 0.02);
                     
-                    if (Math.abs(slopeDiff) > 0.05 && !isLocalMin) {
-                        ent.vx += -slopeDiff * 0.15; 
+                    let safeSlopeDiff = slopeDiff;
+                    if (safeSlopeDiff > 2.0) safeSlopeDiff = 2.0;
+                    if (safeSlopeDiff < -2.0) safeSlopeDiff = -2.0;
+                    
+                    if (Math.abs(safeSlopeDiff) > 0.05 && !isLocalMin) {
+                        ent.vx += -safeSlopeDiff * 0.15; 
                     }
                     
                     const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.88 : 0.7;
