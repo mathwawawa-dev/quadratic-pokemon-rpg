@@ -1991,6 +1991,9 @@ function updateGame() {
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
                                 if (ent.hp > 0 && Math.hypot(ent.x - chtX, ent.y - chtY) <= explosionRadius + 1.5) {
+                                    // 지하에 있는 적(디그다 등)은 지면 위로 먼저 올려줌
+                                    const surfaceY = getTerrainY(ent.x) + 0.75;
+                                    if (ent.y < surfaceY - 0.1) { ent.y = surfaceY; ent.vy = 0; }
                                     applyDamageAndEffects(ent, chtX, chtY);
                                 }
                             });
@@ -2064,6 +2067,9 @@ function updateGame() {
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
                                 if (ent.hp > 0 && Math.hypot(ent.x - targetX, ent.y - targetY) <= explosionRadius + 1.5) {
+                                    // 지하에 있는 적(디그다 등)은 지면 위로 먼저 올려줌
+                                    const surfaceY = getTerrainY(ent.x) + 0.75;
+                                    if (ent.y < surfaceY - 0.1) { ent.y = surfaceY; ent.vy = 0; }
                                     applyDamageAndEffects(ent, targetX, targetY);
                                 }
                             });
