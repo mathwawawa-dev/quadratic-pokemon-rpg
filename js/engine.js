@@ -1443,44 +1443,45 @@ function updateGame() {
         }
     }
 
-    // 화산 용암('lava') 맵 기믹: 15초마다 화산 폭발로 인한 용암 피해 (넉백 없음)
+    // 화산 용암('lava') 맵 기믹: 15초마다 무작위 지형에서 포물선으로 날아오는 용암탄
     if (currentTerrainKey === 'lava' && player.hp > 0 && GAME_STATE !== 'OVER') {
         const now = Date.now();
         if (!window.lastLavaEruptionTime) window.lastLavaEruptionTime = now;
         if (now - window.lastLavaEruptionTime >= 15000) { // 15초마다 분출
             window.lastLavaEruptionTime = now;
             
-            // 플레이어 발밑에서 용암이 솟구치는 파티클 효과
+            // 플레이어와 10~15 그리드 떨어진 랜덤한 지형에서 시작
+            const sign = Math.random() < 0.5 ? 1 : -1;
+            const dist = 10 + Math.random() * 5;
+            const startX = player.x + sign * dist;
+            const startY = getTerrainY(startX) - 1.0; // 땅보다 살짝 아래에서 튀어나오는 느낌
+            
+            effects.push({
+                type: 'lava_rock',
+                startX: startX,
+                startY: startY,
+                targetX: player.x,
+                targetY: player.y,
+                height: 8 + Math.random() * 4, // 최고점 추가 높이
+                maxLife: 75,
+                life: 75, // 1.25초 비행
+                x: startX,
+                y: startY
+            });
+            
+            // 발사 위치 파티클 효과
             for (let pi = 0; pi < 15; pi++) {
                 effects.push({
                     type: 'particle',
-                    x: player.x + (Math.random() - 0.5) * 2.5,
-                    y: player.y - 0.5,
+                    x: startX + (Math.random() - 0.5) * 2.0,
+                    y: startY + 0.5,
                     vx: (Math.random() - 0.5) * 0.4,
                     vy: Math.random() * 0.7 + 0.3, // 위로 솟구침
                     life: 45,
                     color: (pi % 2 === 0) ? '#ea580c' : '#dc2626' // 짙은 주황, 빨강
                 });
             }
-            
-            // 텍스트, 화면 흔들림 및 5 데미지 처리 (넉백 미적용)
-            effects.push({
-                type: 'text',
-                x: player.x,
-                y: player.y + 2.8,
-                text: '🔥용암 분출! -5HP',
-                color: '#ea580c',
-                life: 180
-            });
-            player.hp -= 5;
-            player.shake = 18;
-            screenShake = 15;
-            updateHPUI();
-            
-            if (player.hp <= 0) {
-                GAME_STATE = 'OVER';
-                showMessage('GAME OVER', '뜨거운 용암에 쓰러졌습니다...');
-            }
+            screenShake = 5; // 발사 시 약한 흔들림
         }
     }
 
@@ -1505,12 +1506,53 @@ function updateGame() {
         if (h.life <= 0) cloudHoles.splice(i, 1);
     }
 
-    for (let i = effects.length - 1; i >= 0; i--) {
+        for (let i = effects.length - 1; i >= 0; i--) {
         const e = effects[i];
         e.life--;
         if (e.type === 'text')     { e.y += 0.03; }
         if (e.type === 'particle') { e.x += e.vx; e.y += e.vy; e.vy -= 0.02; }
-        if (e.type === 'ring')     { /* 위치 고정, life만 감소 */ }
+        if (e.type === 'ring')     { /* life 감소 */ }
+        
+        if (e.type === 'lava_rock') {
+            const p = 1.0 - (e.life / e.maxLife); // 0.0 ~ 1.0
+            e.x = e.startX + (e.targetX - e.startX) * p;
+            e.y = e.startY + (e.targetY - e.startY) * p + e.height * 4 * p * (1 - p);
+            
+            // 트레일 파티클 생성
+            if (e.life % 2 === 0) {
+                effects.push({
+                    type: 'particle',
+                    x: e.x + (Math.random()-0.5)*0.5,
+                    y: e.y + (Math.random()-0.5)*0.5,
+                    vx: 0, vy: 0, life: 15,
+                    color: '#ea580c'
+                });
+            }
+
+            if (e.life <= 0) {
+                // 용암탄 폭발
+                if (typeof createExplosion === 'function') createExplosion(e.x, e.y, '#ea580c');
+                
+                // 폭발 반경(explosionRadius) 내 모든 포켓몬에게 데미지 (넉백 없음)
+                [player, ...enemies].forEach(ent => {
+                    if (ent.hp <= 0) return;
+                    const dx = ent.x - e.x, dy = ent.y - e.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist <= explosionRadius + 0.5) {
+                        ent.hp -= 5;
+                        ent.shake = 18;
+                        effects.push({ type: 'text', x: ent.x, y: ent.y + 2.8, text: '🔥용암 폭발! -5HP', color: '#ea580c', life: 180 });
+                    }
+                });
+                screenShake = 15;
+                if (typeof updateHPUI === 'function') updateHPUI();
+                if (player.hp <= 0) {
+                    GAME_STATE = 'OVER';
+                    if (typeof showMessage === 'function') showMessage('GAME OVER', '뜨거운 용암탄에 쓰러졌습니다...');
+                }
+            }
+        }
+        
         if (e.life <= 0) effects.splice(i, 1);
     }
 
@@ -3125,6 +3167,13 @@ function render() {
             ctx.fillStyle = e.color; ctx.font = '900 28px Outfit'; ctx.textAlign = 'center';
             ctx.fillText(e.text, sc.x, sc.y);
             ctx.globalAlpha = 1;
+        } else if (e.type === 'lava_rock') {
+            const sc = gridToScreen(e.x, e.y);
+            ctx.fillStyle = '#dc2626';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ea580c';
+            ctx.beginPath(); ctx.arc(sc.x, sc.y, scaleLength(0.5), 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
         } else if (e.type === 'particle') {
             const sc = gridToScreen(e.x, e.y);
             ctx.globalAlpha = Math.max(0, e.life / 40);
