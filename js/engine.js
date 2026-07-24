@@ -1832,6 +1832,7 @@ function updateGame() {
             
             let hitPoint = null;
             let hitY = -100;
+            let directHitTarget = null;
             
             for (let step = 1; step <= steps; step++) {
                 const tx = prevStepX + (stepVx * step) / steps;
@@ -1864,6 +1865,7 @@ function updateGame() {
                 
                 if (directHit && missile.type !== 'pierce') {
                     hitPoint = {x: tx, y: ty};
+                    directHitTarget = directHit;
                     break;
                 }
                 
@@ -1991,14 +1993,28 @@ function updateGame() {
                     createExplosion(targetX, targetY, getMissileColor());
                     createCrater(targetX, targetY, explosionRadius);
                     let hitSomeone = false;
-                    const targets = [player, ...enemies];
-                    targets.forEach(ent => {
-                        if (ent.hp <= 0) return;
-                        const edx = ent.x - targetX, edy = ent.y - targetY;
-                        if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
-                            applyDamageAndEffects(ent, targetX, targetY); hitSomeone = true;
-                        }
-                    });
+                    // 직격(공중 포켓몬 포함) 처리: directHitTarget이 있으면 우선 적용
+                    if (directHitTarget && directHitTarget.hp > 0) {
+                        applyDamageAndEffects(directHitTarget, targetX, targetY);
+                        hitSomeone = true;
+                        const allTargets = [player, ...enemies];
+                        allTargets.forEach(ent => {
+                            if (ent === directHitTarget || ent.hp <= 0) return;
+                            const edx = ent.x - targetX, edy = ent.y - targetY;
+                            if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
+                                applyDamageAndEffects(ent, targetX, targetY);
+                            }
+                        });
+                    } else {
+                        const allTargets = [player, ...enemies];
+                        allTargets.forEach(ent => {
+                            if (ent.hp <= 0) return;
+                            const edx = ent.x - targetX, edy = ent.y - targetY;
+                            if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
+                                applyDamageAndEffects(ent, targetX, targetY); hitSomeone = true;
+                            }
+                        });
+                    }
                     if (!hitSomeone) {
                         effects.push({ type: 'text', x: missile.x, y: missile.y+1, text: 'MISS', color: '#fff', life: 40 });
                         screenShake = 10;
