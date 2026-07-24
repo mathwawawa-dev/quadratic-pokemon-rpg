@@ -463,7 +463,7 @@ function initStage() {
                       terrainHeights[key] = [y];
                       terrainBottoms[key] = [y - 5.0];
                   }
-              } else if (stage.terrain === 'grass') {
+              } else if (stage.terrain === 'grass' || stage.terrain === 'ice') {
                   const roundedX = Math.round(x * 10) / 10;
                   // x < -20 또는 x > 20일 때 서서히 둥글게 깎아지르도록 (내리막)
                   if (x < -20) {
@@ -2976,8 +2976,9 @@ function render() {
             const key = (Math.round(x * 10) / 10).toFixed(1);
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : getTerrainY(x);
         };
-                const drawMinX = stage.terrain === 'grass' ? Math.max(X_MIN, -25) : X_MIN;
-          const drawMaxX = stage.terrain === 'grass' ? Math.min(X_MAX, 25) : X_MAX;
+                const isBoundedTerrain = stage.terrain === 'grass' || stage.terrain === 'ice';
+          const drawMinX = isBoundedTerrain ? Math.max(X_MIN, -25) : X_MIN;
+          const drawMaxX = isBoundedTerrain ? Math.min(X_MAX, 25) : X_MAX;
           
           if (drawMinX <= drawMaxX) {
               const startP = gridToScreen(drawMinX, getOrigY(drawMinX));
