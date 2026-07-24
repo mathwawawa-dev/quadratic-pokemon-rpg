@@ -805,6 +805,9 @@ function initStage() {
     Promise.race([waitForImages, maxWait]).then(() => {
         const finalizeStageInit = () => {
             GAME_STATE = 'IDLE';
+            // 스테이지 전환 후 발사 버튼이 비활성 상태로 남는 버그 방지
+            const fireBtn = document.getElementById('fire-btn');
+            if (fireBtn) fireBtn.disabled = false;
             if (window.startGuideMessageRotation) window.startGuideMessageRotation();
             // 스테이지 시작 직후 자동으로 수식입력창에 포커스를 줍니다.
             const mf = document.getElementById('math-input');
