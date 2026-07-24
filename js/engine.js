@@ -2352,6 +2352,97 @@ function render() {
     tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // 화산 용암('lava') 지형 분위기: 원경 화산 실루엣 (고정 배경으로 랙 방지)
+    if (stage.terrain === 'lava') {
+        ctx.save();
+        // 1. 원경 화산 산맥 실루엣 (단순 다각형 렌더링으로 초경량화)
+        // 줌/이동에 영향을 받지 않는 가장 먼 배경 역할을 함
+        ctx.fillStyle = '#140303'; // 어두운 붉은-검정 톤
+        ctx.beginPath();
+        
+        // 왼쪽 뾰족한 산
+        ctx.moveTo(0, canvas.height);
+        ctx.lineTo(canvas.width * 0.15, canvas.height * 0.45);
+        ctx.lineTo(canvas.width * 0.35, canvas.height);
+        
+        // 중앙 메인 화산 (분화구가 평탄함)
+        ctx.moveTo(canvas.width * 0.2, canvas.height);
+        ctx.lineTo(canvas.width * 0.45, canvas.height * 0.28);
+        ctx.lineTo(canvas.width * 0.55, canvas.height * 0.28); // 분화구 부분
+        ctx.lineTo(canvas.width * 0.85, canvas.height);
+        
+        // 오른쪽 작은 산
+        ctx.moveTo(canvas.width * 0.7, canvas.height);
+        ctx.lineTo(canvas.width * 0.9, canvas.height * 0.5);
+        ctx.lineTo(canvas.width, canvas.height);
+        
+        ctx.fill();
+
+        // 2. 메인 화산 분화구 주변 은은한 붉은 광원 (Glow)
+        const craterX = canvas.width * 0.5;
+        const craterY = canvas.height * 0.28;
+        const glowRadius = canvas.height * 0.35;
+        const glow = ctx.createRadialGradient(craterX, craterY, 0, craterX, craterY, glowRadius);
+        glow.addColorStop(0, 'rgba(239, 68, 68, 0.4)'); // 밝은 Red-Orange
+        glow.addColorStop(1, 'rgba(239, 68, 68, 0)');
+        
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(craterX, craterY, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. 가벼운 불티(Ember) 파티클 시스템 (월드 좌표 연동형)
+        // 35개 정도로 제한하여 랙 방지. 아래에서 위로 서서히 떠오르며 좌우로 살랑거림
+        const now = Date.now();
+        for (let i = 0; i < 35; i++) {
+            const seed = i * 31337;
+            const riseSpeed = 0.0008 + (seed % 7) * 0.00015;
+            const swayAmp = 0.6 + (seed % 5) * 0.2;
+            const swayFreq = 0.001 + (seed % 3) * 0.0003;
+
+            // X 위치 분산 (월드 그리드 상 넓게 퍼지도록)
+            const baseGx = -25.0 + (seed % 600) * 0.1;
+            const gx = baseGx + Math.sin(now * swayFreq + i * 1.5) * swayAmp;
+            
+            // Y 위치 분산 (위로 상승, 사이클 반복)
+            const cycleLen = 40.0;
+            // 위로 떠오르므로 Y값이 계속 감소하도록(또는 렌더링상 gy가 증가하도록 계산)
+            // gridToScreen에서는 gy값이 클수록 화면 상단에 렌더링됨
+            const gy = -10.0 + ((now * riseSpeed + (seed % 1000) * 0.05) % cycleLen);
+
+            const sc = gridToScreen(gx, gy);
+            
+            // 화면 밖으로 크게 벗어난 파티클은 그리지 않아 최적화
+            if (sc.x < -20 || sc.x > canvas.width + 20 || sc.y < -20 || sc.y > canvas.height + 20) {
+                continue;
+            }
+            
+            // 파티클 크기 및 투명도
+            const sizeGroup = i % 3;
+            const r = scaleLength(0.04 + sizeGroup * 0.02); // 작은 불티
+            
+            // 깜빡임 효과 (Flicker)
+            const flicker = Math.sin(now * 0.004 + i) * 0.25;
+            const alpha = Math.max(0.1, 0.5 + sizeGroup * 0.15 + flicker);
+            
+            // 색상 변화 (주황 ~ 붉은 주황 ~ 짙은 주황)
+            const colors = ['255, 165, 0', '255, 85, 0', '253, 186, 116'];
+            const color = colors[i % 3];
+
+            ctx.fillStyle = `rgba(${color}, ${alpha})`;
+            // 불티의 자체 발광 효과 (약간의 블러)
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = `rgba(${color}, ${alpha})`;
+            
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, Math.max(0.5, r), 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.shadowBlur = 0; // 그림자 이펙트 초기화
+
+        ctx.restore();
+    }
+
     // 얼음 설산('ice') 지형 분위기: 위에서 아래로 내리는 눈발 (월드 그리드 좌표 동기화)
     if (stage.terrain === 'ice') {
         ctx.save();
