@@ -1997,7 +1997,9 @@ function updateGame() {
                             createCrater(chtX, chtY, explosionRadius);
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
-                                if (ent.hp > 0 && Math.hypot(ent.x - chtX, ent.y - chtY) <= explosionRadius + 1.5) {
+                                const inRadius = Math.hypot(ent.x - chtX, ent.y - chtY) <= explosionRadius + 1.5;
+                                const inColumn = Math.abs(ent.x - chtX) <= explosionRadius + 0.5 && ent.y >= chtY;
+                                if (ent.hp > 0 && (inRadius || inColumn)) {
                                     // 지하에 있는 적(디그다 등)은 지면 위로 먼저 올려줌
                                     const surfaceY = getTerrainY(ent.x) + 0.75;
                                     if (ent.y < surfaceY - 0.1) { ent.y = surfaceY; ent.vy = 0; }
@@ -2078,7 +2080,9 @@ function updateGame() {
                             createCrater(targetX, targetY, explosionRadius);
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
-                                if (ent.hp > 0 && Math.hypot(ent.x - targetX, ent.y - targetY) <= explosionRadius + 1.5) {
+                                const inRadius = Math.hypot(ent.x - targetX, ent.y - targetY) <= explosionRadius + 1.5;
+                                const inColumn = Math.abs(ent.x - targetX) <= explosionRadius + 0.5 && ent.y >= targetY;
+                                if (ent.hp > 0 && (inRadius || inColumn)) {
                                     // 지하에 있는 적(디그다 등)은 지면 위로 먼저 올려줌
                                     const surfaceY = getTerrainY(ent.x) + 0.75;
                                     if (ent.y < surfaceY - 0.1) { ent.y = surfaceY; ent.vy = 0; }
