@@ -1856,10 +1856,10 @@ function updateGame() {
                 }
             }
 
-            if (missile.y > 50) {
+            if (missile.y > 40) {
                 missile.active = false; GAME_STATE = 'OVER';
-                createExplosion(missile.x, 50, '#ffffff');
-                setTimeout(() => showMessage('OUT!', '그래프가 천장 (<math-field read-only style="font-size:1.1rem; min-height:0; padding:2px 2px; border:none; background:rgba(0,0,0,0.5); display:inline-block; vertical-align:-1px;">y=50</math-field>)을 벗어났습니다.'), 500);
+                createExplosion(missile.x, 40, '#ffffff');
+                setTimeout(() => showMessage('OUT!', '그래프가 천장 (<math-field read-only style="font-size:1.1rem; min-height:0; padding:2px 2px; border:none; background:rgba(0,0,0,0.5); display:inline-block; vertical-align:-1px;">y=40</math-field>)을 벗어났습니다.'), 500);
                 return;
             }
             // 반사된 미사일이 플레이어와 충돌하는지 체크
@@ -3199,7 +3199,7 @@ function render() {
     }
 
     // OUT Line
-    const outSc = gridToScreen(0, 50);
+    const outSc = gridToScreen(0, 40);
     ctx.strokeStyle = 'rgba(239,68,68,0.6)'; ctx.lineWidth = 2; ctx.setLineDash([15, 10]);
     ctx.beginPath(); ctx.moveTo(0, outSc.y); ctx.lineTo(canvas.width, outSc.y); ctx.stroke();
     ctx.setLineDash([]);
@@ -3207,7 +3207,7 @@ function render() {
     
     ctx.textAlign = "left";
     const oTxt1 = "DANGER / OUT LINE ( ";
-    const oTxt2 = "y = 50";
+    const oTxt2 = "y = 40";
     const oTxt3 = " )";
     
     ctx.font = "bold 16px 'Outfit', sans-serif";
