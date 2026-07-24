@@ -1232,10 +1232,13 @@ function handleBarrierCollision(e) {
         let validX = false;
         let attempts = 0;
         let rx = e.x;
+        const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
         while (!validX && attempts < 100) {
             rx = -18 + Math.random() * 36;
             if (Math.abs(rx - player.x) >= 4) {
-                validX = true;
+                if (!isFloatingMapLocal || getTerrainY(rx) > -50) {
+                    validX = true;
+                }
             }
             attempts++;
         }
