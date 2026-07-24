@@ -104,9 +104,27 @@ function resize() {
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
     const aspect = canvas.width / canvas.height;
-    const yRange = Y_MAX - Y_MIN;
-    const xCenter = (X_MIN + X_MAX) / 2;
-    const xRange = yRange * aspect;
+    let yRange = Y_MAX - Y_MIN;
+    let xRange = yRange * aspect;
+    
+    // Zoom out limit (max scale = 70)
+    if (xRange > 70) {
+        xRange = 70;
+        yRange = xRange / aspect;
+        const yCenter = (Y_MIN + Y_MAX) / 2;
+        Y_MIN = yCenter - yRange / 2;
+        Y_MAX = yCenter + yRange / 2;
+    }
+    
+    // Pan limit: X_MIN >= -35, X_MAX <= 35
+    let xCenter = (X_MIN + X_MAX) / 2;
+    if (xCenter - xRange / 2 < -35) {
+        xCenter = -35 + xRange / 2;
+    }
+    if (xCenter + xRange / 2 > 35) {
+        xCenter = 35 - xRange / 2;
+    }
+    
     X_MIN = xCenter - xRange / 2;
     X_MAX = xCenter + xRange / 2;
     CELL_SIZE = canvas.height / yRange;
@@ -221,6 +239,7 @@ function doDrag(cx, cy) {
     X_MAX = X_MIN + (canvas.width / canvas.height) * yRange;
     Y_MIN = dragStartYMin + dyGrid;
     Y_MAX = Y_MIN + yRange;
+    resize();
 }
 canvas.addEventListener('mousedown', (e) => { updatePointerTooltip(e.clientX, e.clientY); startDrag(e.clientX, e.clientY); });
 window.addEventListener('mousemove', (e) => { if (isDragging) { updatePointerTooltip(e.clientX, e.clientY); doDrag(e.clientX, e.clientY); } });
