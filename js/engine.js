@@ -1923,6 +1923,23 @@ function updateGame() {
                 hitY = hitPoint.y;
             }
             
+            // 치트 미사일: 지형은 통과하지만 적 직격 시 데미지 처리
+            if (missile.isCheat && directHitTarget && directHitTarget.hp > 0) {
+                applyDamageAndEffects(directHitTarget, missile.x, missile.y);
+                // 추가 반경 내 대상도 처리
+                const explosionRadius2 = 2.5;
+                const allChtTargets = [player, ...enemies];
+                allChtTargets.forEach(ent => {
+                    if (ent === directHitTarget || ent.hp <= 0) return;
+                    const edx = ent.x - missile.x, edy = ent.y - missile.y;
+                    if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius2) {
+                        applyDamageAndEffects(ent, missile.x, missile.y);
+                    }
+                });
+                // 치트 미사일은 계속 날아감 (관통)
+                directHitTarget = null;
+            }
+
             if (hitY !== -100 && !missile.isCheat) {
                 if (missile.type === 'pierce') {
                     // 관통 미사일은 지형을 무시하고 지나감
