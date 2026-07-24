@@ -1629,20 +1629,23 @@ function updateGame() {
                     ent.y = groundY; 
                     ent.vy *= -0.5; 
                     
-                    const slopeRightY = getTerrainY(ent.x + 0.5, ent.y) + 0.75;
-                    const slopeLeftY = getTerrainY(ent.x - 0.5, ent.y) + 0.75;
+                    const slopeRightY = getTerrainY(ent.x + 0.2, ent.y) + 0.75;
+                    const slopeLeftY = getTerrainY(ent.x - 0.2, ent.y) + 0.75;
                     const slopeDiff = slopeRightY - slopeLeftY;
+                    const isLocalMin = (slopeRightY > groundY + 0.02) && (slopeLeftY > groundY + 0.02);
                     
-                    if (Math.abs(slopeDiff) > 0.1) {
-                        ent.vx += -slopeDiff * 0.08; 
+                    if (Math.abs(slopeDiff) > 0.05 && !isLocalMin) {
+                        ent.vx += -slopeDiff * 0.15; 
                     }
                     
                     const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.88 : 0.7;
                     ent.vx *= iceFriction; 
                     ent.angularVelocity *= 0.6;
                     
-                    if (Math.abs(ent.vy) < 0.05 && Math.abs(ent.vx) < 0.05 && Math.abs(slopeDiff) <= 0.1) {
-                        ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
+                    if (Math.abs(ent.vy) < 0.05 && Math.abs(ent.vx) < 0.05) {
+                        if (isLocalMin || Math.abs(slopeDiff) <= 0.05) {
+                            ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
+                        }
                     }
                 }
             }
