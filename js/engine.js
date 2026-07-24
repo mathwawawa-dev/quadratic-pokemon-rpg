@@ -107,22 +107,22 @@ function resize() {
     let yRange = Y_MAX - Y_MIN;
     let xRange = yRange * aspect;
     
-    // Zoom out limit (max scale = 70)
-    if (xRange > 70) {
-        xRange = 70;
+    // Zoom out limit (max scale = 78)
+    if (xRange > 78) {
+        xRange = 78;
         yRange = xRange / aspect;
         const yCenter = (Y_MIN + Y_MAX) / 2;
         Y_MIN = yCenter - yRange / 2;
         Y_MAX = yCenter + yRange / 2;
     }
     
-    // Pan limit: X_MIN >= -35, X_MAX <= 35
+    // Pan limit: X_MIN >= -39, X_MAX <= 39
     let xCenter = (X_MIN + X_MAX) / 2;
-    if (xCenter - xRange / 2 < -35) {
-        xCenter = -35 + xRange / 2;
+    if (xCenter - xRange / 2 < -39) {
+        xCenter = -39 + xRange / 2;
     }
-    if (xCenter + xRange / 2 > 35) {
-        xCenter = 35 - xRange / 2;
+    if (xCenter + xRange / 2 > 39) {
+        xCenter = 39 - xRange / 2;
     }
     
     X_MIN = xCenter - xRange / 2;
