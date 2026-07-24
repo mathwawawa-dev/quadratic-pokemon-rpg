@@ -18,9 +18,13 @@ function setupMathInput() {
     }, { capture: true });
     mf.oncontextmenu = () => false;
 
-    // 마우스 클릭 시 수식입력창 강제 포커스
-    mf.addEventListener('pointerdown', () => {
-        mf.focus();
+    // 마우스 클릭 시: focus() 를 강제 호출하면 MathLive가 이전 커서 위치를 복원해버리므로,
+    // 마우스 클릭은 MathLive 자체 처리에 맡겨 클릭 위치로 커서가 정확히 가도록 함.
+    // 터치/스타일러스는 명시적 focus() 필요.
+    mf.addEventListener('pointerdown', (e) => {
+        if (e.pointerType !== 'mouse') {
+            mf.focus();
+        }
     });
 
     // 백틱(`) 토글: 수식창 <-> 좌표평면(캔버스)
