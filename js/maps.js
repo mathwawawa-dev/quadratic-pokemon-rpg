@@ -49,7 +49,20 @@ const TERRAINS = {
         name: "어두운 동굴",
         bg: ["#0d0d0d", "#262626", "#404040"],
         color: "#595959", outColor: "#0d0d0d",
-        func: (x) => Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2
+        hasCaveWall: true,
+        // 바닥 지형 함수
+        func: (x) => Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2,
+        // 동굴 천장 함수: 중심 가운데가 높고, 양 끝으로 갈수록 낮아지는 비대칭 종 모양
+        ceilFunc: (x) => {
+            const seed = terrainSeed || 0;
+            // 중심 돔: 가운데(x=0) 기준 종 모양
+            const dome = 28 - (x * x) * 0.045;
+            // 천장 요철 노이즈
+            const noise = Math.sin((x + seed) / 3.5) * 2.2
+                        + Math.cos((x - seed * 0.7) / 2.1) * 1.4
+                        + Math.sin((x * 1.3 + seed) / 1.5) * 0.7;
+            return dome + noise;
+        }
     },
     electric: {
         name: "발전소",
