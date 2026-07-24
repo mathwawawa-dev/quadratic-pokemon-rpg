@@ -2352,44 +2352,10 @@ function render() {
     tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 화산 용암('lava') 지형 분위기: 원경 화산 실루엣 (고정 배경으로 랙 방지)
+    // 화산 용암('lava') 지형 분위기: 가벼운 불티 파티클
     if (stage.terrain === 'lava') {
         ctx.save();
-        // 1. 원경 화산 산맥 실루엣 (단순 다각형 렌더링으로 초경량화)
-        // 줌/이동에 영향을 받지 않는 가장 먼 배경 역할을 함
-        ctx.fillStyle = '#140303'; // 어두운 붉은-검정 톤
-        ctx.beginPath();
-        
-        // 왼쪽 뾰족한 산
-        ctx.moveTo(0, canvas.height);
-        ctx.lineTo(canvas.width * 0.15, canvas.height * 0.45);
-        ctx.lineTo(canvas.width * 0.35, canvas.height);
-        
-        // 중앙 메인 화산 (분화구가 평탄함)
-        ctx.moveTo(canvas.width * 0.2, canvas.height);
-        ctx.lineTo(canvas.width * 0.45, canvas.height * 0.28);
-        ctx.lineTo(canvas.width * 0.55, canvas.height * 0.28); // 분화구 부분
-        ctx.lineTo(canvas.width * 0.85, canvas.height);
-        
-        // 오른쪽 작은 산
-        ctx.moveTo(canvas.width * 0.7, canvas.height);
-        ctx.lineTo(canvas.width * 0.9, canvas.height * 0.5);
-        ctx.lineTo(canvas.width, canvas.height);
-        
-        ctx.fill();
 
-        // 2. 메인 화산 분화구 주변 은은한 붉은 광원 (Glow)
-        const craterX = canvas.width * 0.5;
-        const craterY = canvas.height * 0.28;
-        const glowRadius = canvas.height * 0.35;
-        const glow = ctx.createRadialGradient(craterX, craterY, 0, craterX, craterY, glowRadius);
-        glow.addColorStop(0, 'rgba(239, 68, 68, 0.4)'); // 밝은 Red-Orange
-        glow.addColorStop(1, 'rgba(239, 68, 68, 0)');
-        
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(craterX, craterY, glowRadius, 0, Math.PI * 2);
-        ctx.fill();
 
         // 3. 가벼운 불티(Ember) 파티클 시스템 (월드 좌표 연동형)
         // 35개 정도로 제한하여 랙 방지. 아래에서 위로 서서히 떠오르며 좌우로 살랑거림
