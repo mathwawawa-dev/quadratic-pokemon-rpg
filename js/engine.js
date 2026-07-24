@@ -1628,11 +1628,20 @@ function updateGame() {
                     // 일반적인 바닥 충돌 (얼음 설산 지형은 넉백 시 더 많이 미끄러짐)
                     ent.y = groundY; 
                     ent.vy *= -0.5; 
+                    
+                    const slopeRightY = getTerrainY(ent.x + 0.5, ent.y) + 0.75;
+                    const slopeLeftY = getTerrainY(ent.x - 0.5, ent.y) + 0.75;
+                    const slopeDiff = slopeRightY - slopeLeftY;
+                    
+                    if (Math.abs(slopeDiff) > 0.1) {
+                        ent.vx += -slopeDiff * 0.08; 
+                    }
+                    
                     const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.88 : 0.7;
                     ent.vx *= iceFriction; 
                     ent.angularVelocity *= 0.6;
                     
-                    if (Math.abs(ent.vy) < 0.05 && Math.abs(ent.vx) < 0.05) {
+                    if (Math.abs(ent.vy) < 0.05 && Math.abs(ent.vx) < 0.05 && Math.abs(slopeDiff) <= 0.1) {
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
                     }
                 }
