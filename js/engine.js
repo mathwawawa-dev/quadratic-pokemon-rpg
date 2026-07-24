@@ -465,6 +465,15 @@ function initStage() {
                   }
               } else if (stage.terrain === 'grass') {
                   const roundedX = Math.round(x * 10) / 10;
+                  // x < -20 또는 x > 20일 때 서서히 둥글게 깎아지르도록 (내리막)
+                  if (x < -20) {
+                      const dx = -20 - x;
+                      y -= dx * dx * 4;
+                  } else if (x > 20) {
+                      const dx = x - 20;
+                      y -= dx * dx * 4;
+                  }
+                  
                   if (roundedX < -25 || roundedX > 25) {
                       y = -100;
                       terrainHeights[key] = [-100];
@@ -2967,36 +2976,24 @@ function render() {
             const key = (Math.round(x * 10) / 10).toFixed(1);
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : getTerrainY(x);
         };
-        const drawMinX = stage.terrain === 'grass' ? Math.max(X_MIN, -25) : X_MIN;
+                const drawMinX = stage.terrain === 'grass' ? Math.max(X_MIN, -25) : X_MIN;
           const drawMaxX = stage.terrain === 'grass' ? Math.min(X_MAX, 25) : X_MAX;
           
           if (drawMinX <= drawMaxX) {
-              if (stage.terrain === 'grass' && drawMinX === -25 && X_MIN < -25) {
-                  const edgeP = gridToScreen(X_MIN, -100);
-                  offCtxGround.moveTo(edgeP.x, edgeP.y);
-                  const dropP = gridToScreen(-25, -100);
-                  offCtxGround.lineTo(dropP.x, dropP.y);
-                  const startP = gridToScreen(-25, getOrigY(-25));
-                  offCtxGround.lineTo(startP.x, startP.y);
-              } else {
-                  const startP = gridToScreen(drawMinX, getOrigY(drawMinX));
-                  offCtxGround.moveTo(startP.x, startP.y);
-              }
+              const startP = gridToScreen(drawMinX, getOrigY(drawMinX));
+              offCtxGround.moveTo(startP.x, startP.y);
               
               for (let x = drawMinX; x <= drawMaxX; x += 0.2) { 
                   const p = gridToScreen(x, getOrigY(x)); 
                   offCtxGround.lineTo(p.x, p.y); 
               }
               
-              if (stage.terrain === 'grass' && drawMaxX === 25 && X_MAX > 25) {
-                  const dropP = gridToScreen(25, -100);
-                  offCtxGround.lineTo(dropP.x, dropP.y);
-                  const edgeP = gridToScreen(X_MAX, -100);
-                  offCtxGround.lineTo(edgeP.x, edgeP.y);
-              }
+              const br = gridToScreen(drawMaxX, -100);
+              const bl = gridToScreen(drawMinX, -100);
+              offCtxGround.lineTo(br.x, br.y); 
+              offCtxGround.lineTo(bl.x, bl.y); 
           }
-        const br = gridToScreen(X_MAX, Y_MIN - 10), bl = gridToScreen(X_MIN, Y_MIN - 10);
-        offCtxGround.lineTo(br.x, br.y); offCtxGround.lineTo(bl.x, bl.y); offCtxGround.closePath();
+          offCtxGround.closePath();
         
         offCtxGround.fillStyle = tData.color;
         offCtxGround.fill();
