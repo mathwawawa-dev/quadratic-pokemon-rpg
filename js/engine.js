@@ -2887,107 +2887,75 @@ function render() {
     // 완성된 오프스크린 이미지를 메인 캔버스에 합성
     ctx.drawImage(offCanvas, 0, 0);
 
-    // Cave ceiling/wall overlay (동굴 외벽 렌더링)
+    // Cave ceiling/wall overlay (동굴 외벽 렌더링) - 추가 canvas 생성 없이 ctx만 사용
     if (tData.hasCaveWall && tData.ceilFunc) {
-        const caveOff = document.createElement('canvas');
-        caveOff.width = canvas.width;
-        caveOff.height = canvas.height;
-        const cCtx = caveOff.getContext('2d');
-
         const caveMinX = -25, caveMaxX = 25;
 
-        // 1. 동굴 내부 영역 경로(클리핑용) 정의
-        //    바닥선 → 우 끝 하단 → 좌 끝 하단으로 막는 큰 폴리곤
-        cCtx.beginPath();
-        // 바닥 지형 상단 라인 (좌→우)
-        const floorKey = (x) => (Math.round(x * 10) / 10).toFixed(1);
-        const floorY = (x) => {
-            const ys = terrainHeights[floorKey(x)];
-            return (ys && ys.length > 0 && ys[0] > -50) ? ys[0] : -8;
+        // 동굴 내부 경로(천장선 + 화면 하단)를 한 번만 구성
+        const cavePath = () => {
+            ctx.beginPath();
+            const sp = gridToScreen(caveMinX, tData.ceilFunc(caveMinX));
+            ctx.moveTo(sp.x, sp.y);
+            for (let x = caveMinX; x <= caveMaxX; x += 0.4) {
+                const p = gridToScreen(Math.min(x, caveMaxX), tData.ceilFunc(Math.min(x, caveMaxX)));
+                ctx.lineTo(p.x, p.y);
+            }
+            // 우하단 → 좌하단 → 닫기
+            ctx.lineTo(canvas.width + 10, canvas.height + 10);
+            ctx.lineTo(-10, canvas.height + 10);
+            ctx.closePath();
         };
 
-        // 동굴 내부 폴리곤: 천장 곡선 (좌→우) → 오른쪽 벽 → 바닥 (우→좌) → 왼쪽 벽 → 닫기
-        const cStartP = gridToScreen(caveMinX, tData.ceilFunc(caveMinX));
-        cCtx.moveTo(cStartP.x, cStartP.y);
-        for (let x = caveMinX; x <= caveMaxX; x += 0.3) {
-            const cx = Math.min(x, caveMaxX);
-            const p = gridToScreen(cx, tData.ceilFunc(cx));
-            cCtx.lineTo(p.x, p.y);
-        }
-        // 우측 하단 코너
-        const rBot = gridToScreen(caveMaxX, -100);
-        cCtx.lineTo(rBot.x, rBot.y);
-        // 좌측 하단 코너
-        const lBot = gridToScreen(caveMinX, -100);
-        cCtx.lineTo(lBot.x, lBot.y);
-        cCtx.closePath();
+        ctx.save();
 
-        // 2. 동굴 내부를 투명하게 (source-over로 암석색 채우고 내부만 남김)
-        //    전략: 전체를 암석색으로 채운 뒤, 동굴 내부 경로를 destination-out으로 도려냄
-        const rockOff = document.createElement('canvas');
-        rockOff.width = canvas.width;
-        rockOff.height = canvas.height;
-        const rCtx = rockOff.getContext('2d');
-
-        // 화면 전체를 동굴 암석 색으로 채움
-        rCtx.fillStyle = '#0d0d0d';
-        rCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // 내부 동굴 공간을 도려냄
-        rCtx.globalCompositeOperation = 'destination-out';
-        rCtx.beginPath();
-        const cStartP2 = gridToScreen(caveMinX, tData.ceilFunc(caveMinX));
-        rCtx.moveTo(cStartP2.x, cStartP2.y);
-        for (let x = caveMinX; x <= caveMaxX; x += 0.3) {
-            const cx = Math.min(x, caveMaxX);
-            const p = gridToScreen(cx, tData.ceilFunc(cx));
-            rCtx.lineTo(p.x, p.y);
-        }
-        const rBot2 = gridToScreen(caveMaxX, -100);
-        rCtx.lineTo(rBot2.x, rBot2.y);
-        const lBot2 = gridToScreen(caveMinX, -100);
-        rCtx.lineTo(lBot2.x, lBot2.y);
-        rCtx.closePath();
-        rCtx.fill();
-        rCtx.globalCompositeOperation = 'source-over';
-
-        // 천장 안쪽 면에 그라데이션 광택 (돌 느낌)
-        const gradTop = gridToScreen(0, 32);
-        const gradBot = gridToScreen(0, 18);
-        const ceilGrad = rCtx.createLinearGradient(0, gradTop.y, 0, gradBot.y);
-        ceilGrad.addColorStop(0, 'rgba(20,20,20,0.9)');
-        ceilGrad.addColorStop(0.5, 'rgba(55,55,55,0.4)');
-        ceilGrad.addColorStop(1, 'rgba(80,80,80,0)');
-        rCtx.fillStyle = ceilGrad;
-        // 천장 안쪽 면에만 그라데이션 적용
-        rCtx.beginPath();
-        const cStartP3 = gridToScreen(caveMinX, tData.ceilFunc(caveMinX));
-        rCtx.moveTo(cStartP3.x, cStartP3.y);
-        for (let x = caveMinX; x <= caveMaxX; x += 0.3) {
-            const cx = Math.min(x, caveMaxX);
-            const p = gridToScreen(cx, tData.ceilFunc(cx));
-            rCtx.lineTo(p.x, p.y);
-        }
-        const gradLineR = gridToScreen(caveMaxX, gridToScreen(0, 0).y);
-        rCtx.lineTo(gridToScreen(caveMaxX, 0).x, gridToScreen(caveMaxX, 28).y);
-        rCtx.lineTo(gridToScreen(caveMinX, 0).x, gridToScreen(caveMinX, 28).y);
-        rCtx.closePath();
-        rCtx.fill();
-
-        ctx.drawImage(rockOff, 0, 0);
-
-        // 3. 천장 테두리선 (암석 윤곽)
+        // 1. 동굴 내부를 클리핑 → 동굴 외부(천장 위)에만 암석색 채우기
+        //    → 역발상: 화면 전체 rect에서 동굴 내부를 빼는 evenodd fill rule 이용
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(120,120,120,0.6)';
-        ctx.lineWidth = 3;
-        const cEdge = gridToScreen(caveMinX, tData.ceilFunc(caveMinX));
-        ctx.moveTo(cEdge.x, cEdge.y);
-        for (let x = caveMinX; x <= caveMaxX; x += 0.3) {
-            const cx = Math.min(x, caveMaxX);
-            const p = gridToScreen(cx, tData.ceilFunc(cx));
+        // 화면 전체 사각형 (외부 경계)
+        ctx.rect(-10, -10, canvas.width + 20, canvas.height + 20);
+        // 동굴 내부 경로 (CCW 방향이 되도록 → evenodd 규칙으로 구멍)
+        const sp2 = gridToScreen(caveMinX, tData.ceilFunc(caveMinX));
+        ctx.moveTo(-10, canvas.height + 10);
+        ctx.lineTo(canvas.width + 10, canvas.height + 10);
+        const ep2 = gridToScreen(caveMaxX, tData.ceilFunc(caveMaxX));
+        ctx.lineTo(ep2.x, ep2.y);
+        for (let x = caveMaxX; x >= caveMinX; x -= 0.4) {
+            const p = gridToScreen(Math.max(x, caveMinX), tData.ceilFunc(Math.max(x, caveMinX)));
             ctx.lineTo(p.x, p.y);
         }
+        ctx.lineTo(-10, canvas.height + 10);
+
+        ctx.fillStyle = '#0d0d0d';
+        ctx.fill('evenodd');
+
+        // 2. 천장 안쪽 그라데이션 (돌 질감)
+        const gradT = gridToScreen(0, 32);
+        const gradB = gridToScreen(0, 20);
+        if (gradT.y < gradB.y) {
+            const ceilGrad = ctx.createLinearGradient(0, gradT.y, 0, gradB.y);
+            ceilGrad.addColorStop(0, 'rgba(10,10,10,0.7)');
+            ceilGrad.addColorStop(1, 'rgba(80,80,80,0)');
+            cavePath();
+            ctx.clip();
+            ctx.fillStyle = ceilGrad;
+            ctx.fillRect(0, gradT.y, canvas.width, gradB.y - gradT.y + 60);
+        }
+
+        ctx.restore();
+
+        // 3. 천장 테두리선 (암석 윤곽)
+        ctx.save();
+        ctx.beginPath();
+        const cEdge = gridToScreen(caveMinX, tData.ceilFunc(caveMinX));
+        ctx.moveTo(cEdge.x, cEdge.y);
+        for (let x = caveMinX; x <= caveMaxX; x += 0.4) {
+            const p = gridToScreen(Math.min(x, caveMaxX), tData.ceilFunc(Math.min(x, caveMaxX)));
+            ctx.lineTo(p.x, p.y);
+        }
+        ctx.strokeStyle = 'rgba(130,130,130,0.7)';
+        ctx.lineWidth = 3;
         ctx.stroke();
+        ctx.restore();
     }
 
     // Terrain polygon
