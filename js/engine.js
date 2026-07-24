@@ -1818,137 +1818,57 @@ function updateGame() {
                 return;
             }
 
-            if (missile.type === 'pierce') {
-                const targets = missile.hasLeftPlayer ? [player, ...enemies] : enemies;
-                for (const e of targets) {
-                    if (e.hp > 0 && checkCollision(missile.x, missile.y, e)) {
-                        if (!missile.hitTargets.has(e)) {
-                            missile.hitTargets.add(e);
-                            applyDamageAndEffects(e, missile.x, missile.y);
-                            
-                            // 관통(PIERCE) 전용 시각 이펙트 & 텍스트 팝업 & 검기 연출
-                            effects.push({ type: 'text', x: e.x, y: e.y + 1.8, text: 'PIERCE!', color: '#00e5ff', life: 120 });
-                            effects.push({ type: 'ring', x: e.x, y: e.y, color: '#00e5ff', life: 25, maxLife: 25 });
-                            for (let pi = 0; pi < 15; pi++) {
-                                const ang = (pi / 15) * Math.PI * 2;
-                                const spd = 0.25 + Math.random() * 0.45;
-                                effects.push({
-                                    type: 'particle',
-                                    x: e.x,
-                                    y: e.y,
-                                    vx: Math.cos(ang) * spd,
-                                    vy: Math.sin(ang) * spd,
-                                    life: 30,
-                                    color: pi % 2 === 0 ? '#00e5ff' : '#ffffff'
-                                });
-                            }
-                            screenShake = 12;
-                        }
-                    }
-                }
-            } else {
-                let directHit = null;
-                let targetsToCheck = [...enemies];
-                if (missile.isReflected) targetsToCheck.push(player);
-                for (const e of targetsToCheck) { if (e.hp > 0 && checkCollision(missile.x, missile.y, e)) { directHit = e; break; } }
-                if (directHit) {
-                    missile.active = false;
-                    const targetX = directHit.x;
-                    const targetY = directHit.y;
-                    
-                    if (missile.type === 'satellite') {
-                        GAME_STATE = 'IDLE';
-                        document.getElementById('fire-btn').disabled = true;
-                        for (let i = 0; i < 4; i++) {
-                            setTimeout(() => {
-                                if (GAME_STATE === 'OVER') return;
-                                effects.push({ type: 'laser', x: targetX, y: targetY, life: 15 });
-                                screenShake = 15;
-                                createCrater(targetX, targetY - 0.75, explosionRadius);
-                                const targets = [player, ...enemies];
-                                targets.forEach(ent => {
-                                    if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius) {
-                                        applyDamageAndEffects(ent, targetX, targetY);
-                                    }
-                                });
-                                if (i === 3) {
-                                    if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                                        GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
-                                    } else {
-                                        setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
-                                    }
-                                }
-                            }, i * 250);
-                        }
-                    } else if (missile.type === 'net') {
-                        // ---- 그물 미사일: 반경 3 이내 적을 폭탄 위치로 끌어당김 ----
-                        missile.active = false; GAME_STATE = 'IDLE';
-                        document.getElementById('fire-btn').disabled = true;
-                        const netRadius = 3;
-                        // 그물 이펙트 (링 + 파티클)
-                        effects.push({ type: 'netPull', x: targetX, y: targetY, life: 40, maxLife: 40 });
-                        screenShake = 8;
-                        // 범위 내 적 끌어당기기
-                        let pulled = [];
-                        enemies.forEach(ent => {
-                            if (ent.hp <= 0) return;
-                            const dist = Math.hypot(ent.x - targetX, ent.y - targetY);
-                            if (dist <= netRadius) pulled.push(ent);
-                        });
-                        // 0.3초 후 위치 이동 + 데미지
-                        setTimeout(() => {
-                            pulled.forEach(ent => {
-                                if (ent.hp <= 0) return;
-                                ent.x = targetX;
-                                ent.y = Math.max(getTerrainY(targetX) + 0.75, targetY);
-                                ent.isKnockedBack = false; ent.vx = 0; ent.vy = 0;
-                                applyDamageAndEffects(ent, targetX, targetY);
-                            });
-                            if (player.hp > 0 && Math.hypot(player.x - targetX, player.y - targetY) <= netRadius) {
-                                applyDamageAndEffects(player, targetX, targetY);
-                            }
-                            createExplosion(targetX, targetY, '#2dd4bf');
-                            createCrater(targetX, targetY - 0.5, explosionRadius);
-                            if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                                GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
-                            } else {
-                                setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
-                            }
-                        }, 400);
-                    } else {
-                        createExplosion(targetX, targetY, getMissileColor());
-                        createCrater(targetX, targetY - 0.75, explosionRadius);
-
-                        const targets = [player, ...enemies];
-                        targets.forEach(ent => {
-                            if (ent.hp <= 0) return;
-                            const edx = ent.x - targetX, edy = ent.y - targetY;
-                            if (ent === directHit || Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
-                                applyDamageAndEffects(ent, targetX, targetY);
-                            }
-                        });
-                    }
-                    return;
-                }
-            }
-
-            let hitY = -100;
-            const ys = getTerrainYAll(missile.x);
+            
             const stage = LEVELS[currentStage % LEVELS.length];
             const tData = TERRAINS[stage.terrain];
             const isFloatingMapLocal = tData.isFloating;
             
-            if (tData.islands) {
-                const stepVx = missile.x - prevStepX;
-                const stepVy = missile.y - prevStepY;
-                const dist = Math.hypot(stepVx, stepVy);
-                const steps = Math.max(1, Math.ceil(dist / 0.05));
+            const stepVx = missile.x - prevStepX;
+            const stepVy = missile.y - prevStepY;
+            const dist = Math.hypot(stepVx, stepVy);
+            const stepSize = tData.islands ? 0.05 : 0.1;
+            const steps = Math.max(1, Math.ceil(dist / stepSize));
+            
+            let hitPoint = null;
+            let hitY = -100;
+            
+            for (let step = 1; step <= steps; step++) {
+                const tx = prevStepX + (stepVx * step) / steps;
+                const ty = prevStepY + (stepVy * step) / steps;
                 
-                let hitPoint = null;
-                for (let step = 1; step <= steps; step++) {
-                    const tx = prevStepX + (stepVx * step) / steps;
-                    const ty = prevStepY + (stepVy * step) / steps;
-                    let insideEllipse = false;
+                // 1. 적 충돌 검사
+                let directHit = null;
+                let targetsToCheck = [...enemies];
+                if (missile.isReflected) targetsToCheck.push(player);
+                for (const e of targetsToCheck) {
+                    if (e.hp > 0 && checkCollision(tx, ty, e)) {
+                        if (missile.type === 'pierce') {
+                            if (!missile.hitTargets.has(e)) {
+                                missile.hitTargets.add(e);
+                                applyDamageAndEffects(e, tx, ty);
+                                effects.push({ type: 'text', x: e.x, y: e.y + 1.8, text: 'PIERCE!', color: '#00e5ff', life: 120 });
+                                effects.push({ type: 'ring', x: e.x, y: e.y, color: '#00e5ff', life: 25, maxLife: 25 });
+                                for (let pi = 0; pi < 15; pi++) {
+                                    const ang = (pi / 15) * Math.PI * 2;
+                                    const spd = 0.25 + Math.random() * 0.45;
+                                    effects.push({ type: 'particle', x: e.x, y: e.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, life: 30, color: pi % 2 === 0 ? '#00e5ff' : '#ffffff' });
+                                }
+                                screenShake = 12;
+                            }
+                        } else {
+                            directHit = e; break;
+                        }
+                    }
+                }
+                
+                if (directHit && missile.type !== 'pierce') {
+                    hitPoint = {x: tx, y: ty};
+                    break;
+                }
+                
+                // 2. 지형 충돌 검사
+                let insideTerrain = false;
+                if (tData.islands) {
                     for (let l = 0; l < tData.islands.length; l++) {
                         for (const s of tData.islands[l]) {
                             const dx0 = tx - s.cx;
@@ -1958,73 +1878,48 @@ function updateGame() {
                             const sinR = Math.sin(-rot);
                             const dx = dx0 * cosR - dy0 * sinR;
                             const dy = dx0 * sinR + dy0 * cosR;
-                            if ((dx*dx)/(s.rx*s.rx) + (dy*dy)/(s.ry*s.ry) <= 1.0) {
-                                insideEllipse = true; break;
-                            }
+                            if ((dx*dx)/(s.rx*s.rx) + (dy*dy)/(s.ry*s.ry) <= 1.0) { insideTerrain = true; break; }
                         }
-                        if (insideEllipse) break;
+                        if (insideTerrain) break;
                     }
-                    if (insideEllipse) {
-                        let insideCrater = false;
-                        for (const c of craters) {
-                            if (Math.hypot(tx - c.x, ty - c.y) <= c.r) {
-                                insideCrater = true; break;
-                            }
-                        }
-                        if (!insideCrater) { hitPoint = {x: tx, y: ty}; break; }
-                    }
-                }
-                if (hitPoint) {
-                    missile.x = hitPoint.x;
-                    missile.y = hitPoint.y;
-                    hitY = hitPoint.y;
-                }
-            } else {
-                const stepVx = missile.x - prevStepX;
-                const stepVy = missile.y - prevStepY;
-                const dist = Math.hypot(stepVx, stepVy);
-                const steps = Math.max(1, Math.ceil(dist / 0.1));
-                
-                let hitPoint = null;
-                for (let step = 1; step <= steps; step++) {
-                    const tx = prevStepX + (stepVx * step) / steps;
-                    const ty = prevStepY + (stepVy * step) / steps;
-                    
+                } else {
                     const key = (Math.round(tx * 10) / 10).toFixed(1);
                     const origYs = originalTerrainHeights[key] || [];
-                    
-                    let insideGround = false;
                     for (let i = 0; i < origYs.length; i++) {
                         const origY = origYs[i];
                         if (ty <= origY && origY !== -100) {
                             if (isFloatingMapLocal || stage.terrain === 'sky') {
-                                const bottomY = origY - 5.0; // 하늘(sky) 맵 섬의 대략적인 두께
-                                if (ty >= bottomY) { insideGround = true; break; }
+                                const bottomY = origY - 5.0; 
+                                if (ty >= bottomY) { insideTerrain = true; break; }
                             } else {
-                                insideGround = true; break;
+                                insideTerrain = true; break;
                             }
                         }
-                    }
-                    
-                    if (insideGround) {
-                        let insideCrater = false;
-                        if (typeof craters !== 'undefined') {
-                            for (const c of craters) {
-                                if (Math.hypot(tx - c.x, ty - c.y) <= c.r) {
-                                    insideCrater = true; break;
-                                }
-                            }
-                        }
-                        if (!insideCrater) { hitPoint = {x: tx, y: ty}; break; }
                     }
                 }
                 
-                if (hitPoint) {
-                    missile.x = hitPoint.x;
-                    missile.y = hitPoint.y;
-                    hitY = hitPoint.y;
+                if (insideTerrain) {
+                    let insideCrater = false;
+                    if (typeof craters !== 'undefined') {
+                        for (const c of craters) {
+                            if (Math.hypot(tx - c.x, ty - c.y) <= c.r) { insideCrater = true; break; }
+                        }
+                    }
+                    if (!insideCrater) { 
+                        if (missile.type !== 'pierce') {
+                            hitPoint = {x: tx, y: ty}; 
+                            break; 
+                        }
+                    }
                 }
             }
+            
+            if (hitPoint) {
+                missile.x = hitPoint.x;
+                missile.y = hitPoint.y;
+                hitY = hitPoint.y;
+            }
+            
             if (hitY !== -100 && !missile.isCheat) {
                 if (missile.type === 'pierce') {
                     // 관통 미사일은 지형을 무시하고 지나감
