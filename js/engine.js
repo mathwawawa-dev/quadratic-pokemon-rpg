@@ -892,9 +892,16 @@ window.addEventListener('keydown', (e) => {
             return { a, b, c };
         };
 
-        // 첫 번째 생존 적을 조준, 높이를 조절하며 안전한 포물선 탐색
+        // 플레이어가 바라보는 방향(player.facing)의 적 우선 선택
+        // → 포물선 꼭짓점이 발사 방향 앞에 위치해야 미사일이 올라갔다 내려오는 ∩ 형태로 보임
+        const dir = player.facing || 1;
+        const sameDir = aliveEnemies.filter(e => Math.sign(e.x - player.x) === dir);
+        const chosenEnemy = sameDir.length > 0
+            ? sameDir.reduce((a, b) => Math.abs(a.x - player.x) < Math.abs(b.x - player.x) ? a : b)  // 같은 방향 중 가장 가까운 적
+            : aliveEnemies.reduce((a, b) => Math.abs(a.x - player.x) < Math.abs(b.x - player.x) ? a : b); // 없으면 전방향 중 가장 가까운 적
+
         let result = null;
-        const tgt = aliveEnemies[0];
+        const tgt = chosenEnemy;
         const pt2 = { x: tgt.x, y: tgt.y };
         for (let h = 6.0; h >= 1.5; h -= 0.5) {
             const res = fit2Apex(p1, pt2, h);
