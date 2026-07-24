@@ -2037,12 +2037,17 @@ function updateGame() {
                 } else {
                     createExplosion(chtX, chtY, getMissileColor());
                     createCrater(chtX, chtY, explosionRadius);
+                    // 지하 적(디그다 등) 표면 스냅
+                    const dtSurfY = getTerrainY(directHitTarget.x) + 0.75;
+                    if (directHitTarget.y < dtSurfY - 0.1) { directHitTarget.y = dtSurfY; directHitTarget.vy = 0; }
                     applyDamageAndEffects(directHitTarget, chtX, chtY);
                     const allChtTargets = [player, ...enemies];
                     allChtTargets.forEach(ent => {
                         if (ent === directHitTarget || ent.hp <= 0) return;
                         const edx = ent.x - chtX, edy = ent.y - chtY;
                         if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
+                            const sfY = getTerrainY(ent.x) + 0.75;
+                            if (ent.y < sfY - 0.1) { ent.y = sfY; ent.vy = 0; }
                             applyDamageAndEffects(ent, chtX, chtY);
                         }
                     });
