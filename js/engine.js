@@ -2175,7 +2175,9 @@ function drawEntity(ent) {
     const srcImg = (domImg && domImg.complete && domImg.naturalWidth > 0) ? domImg : ent.img;
     if (srcImg && srcImg.complete && srcImg.naturalWidth > 0) {
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(srcImg, -drawW/2, -drawH/2, drawW, drawH);
+        let visualYOffset = 0;
+        if (ent.name === '파이리') visualYOffset = scaleLength(0.5); // 파이리 이미지 오프셋
+        ctx.drawImage(srcImg, -drawW/2, -drawH/2 - visualYOffset, drawW, drawH);
     } else {
         // 이미지가 로드 실패(에러) 상태이거나 아예 이미지가 없는 경우에만 대체 도형을 그립니다.
         // 로딩 중일 때는 깜빡이는 박스를 그리지 않아 잔상을 방지합니다.
