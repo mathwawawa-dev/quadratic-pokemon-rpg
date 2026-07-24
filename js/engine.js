@@ -689,6 +689,16 @@ function initStage() {
         const isPsychic = (stage.terrain === 'psychic');
         const barrierType = isPsychic ? barrierTypes[idx % barrierTypes.length] : null;
 
+        // 최종 안전 보정: 생성 Y가 death zone보다 낮으면 즉시 추락하므로 강제로 올려줌
+        const spawnDeathZoneY = ['garden', 'sky'].includes(stage.terrain) ? -30 : -8;
+        if (ry <= spawnDeathZoneY + 2.0) {
+            // 해당 X 위치 지형 위, 없으면 공중으로 올려 배치
+            const safeTerrainY = getTerrainY(rx);
+            ry = safeTerrainY > -50 ? safeTerrainY + 2.5 : spawnDeathZoneY + 8;
+            e.isFlying = true;
+            e.hasCloud = true;
+        }
+
         return {
             x: rx, y: ry,
             w: 1.5, h: 1.5, hp: 100 + currentStage * 25, maxHp: 100 + currentStage * 25,
