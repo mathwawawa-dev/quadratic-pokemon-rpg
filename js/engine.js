@@ -872,11 +872,20 @@ window.addEventListener('keydown', (e) => {
     // Ctrl+Shift+Q: 정답 함수 자동 계산 & 즉시 발사 (스타팅 화면 Q 3회 연타 치트 해금 시만 작동)
     if (e.ctrlKey && e.shiftKey && (e.key === 'q' || e.key === 'Q')) {
         if (!window.isCheatUnlocked) return;
-        const aliveEnemies = enemies.filter(e => e.hp > 0);
-        if (GAME_STATE !== 'IDLE' || aliveEnemies.length < 2) return;
+        const deathZoneY = ['garden', 'sky'].includes(LEVELS[currentStage % LEVELS.length].terrain) ? -30 : -8;
+        const aliveEnemies = enemies.filter(ent => ent.hp > 0 && ent.y >= deathZoneY);
+        if (GAME_STATE !== 'IDLE' || aliveEnemies.length === 0) return;
+
         const p1 = { x: player.x, y: player.y };
-        const p2 = { x: aliveEnemies[0].x, y: aliveEnemies[0].y };
-        const p3 = { x: aliveEnemies[1].x, y: aliveEnemies[1].y };
+        let p2, p3;
+        if (aliveEnemies.length >= 2) {
+            p2 = { x: aliveEnemies[0].x, y: aliveEnemies[0].y };
+            p3 = { x: aliveEnemies[1].x, y: aliveEnemies[1].y };
+        } else {
+            p2 = { x: aliveEnemies[0].x, y: aliveEnemies[0].y };
+            p3 = { x: (p1.x + p2.x) / 2, y: Math.max(p1.y, p2.y) + 4.0 };
+        }
+
         const denom = (p1.x - p2.x) * (p1.x - p3.x) * (p2.x - p3.x);
         if (Math.abs(denom) < 0.001) return;
         const a = (p3.x * (p2.y - p1.y) + p2.x * (p1.y - p3.y) + p1.x * (p3.y - p2.y)) / denom;
