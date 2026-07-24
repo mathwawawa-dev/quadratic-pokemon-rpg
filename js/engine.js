@@ -878,82 +878,40 @@ window.addEventListener('keydown', (e) => {
 
         const p1 = { x: player.x, y: player.y };
 
-        // 3점 지정 포물선 피팅
-        const fit3 = (pt1, pt2, pt3) => {
-            const denom = (pt1.x - pt2.x) * (pt1.x - pt3.x) * (pt2.x - pt3.x);
-            if (Math.abs(denom) < 0.001) return null;
-            const a = (pt3.x * (pt2.y - pt1.y) + pt2.x * (pt1.y - pt3.y) + pt1.x * (pt3.y - pt2.y)) / denom;
-            const b = (pt3.x**2 * (pt1.y - pt2.y) + pt2.x**2 * (pt3.y - pt1.y) + pt1.x**2 * (pt2.y - pt3.y)) / denom;
-            const c = (pt2.x * pt3.x * (pt2.x - pt3.x) * pt1.y + pt3.x * pt1.x * (pt3.x - pt1.x) * pt2.y + pt1.x * pt2.x * (pt1.x - pt2.x) * pt3.y) / denom;
-            return { a, b, c };
-        };
-
-        // 수학적으로 a < 0 (위로 볼록)과 최고점 H < 34.0을 100% 보장하는 2점+정점 수학 공식
-        const fit2Apex = (pt1, pt2, extraHeight = 4.0) => {
+        // a < 0 (위로 볼록) 수학적 100% 보장: 2점 + 정점 높이 공식
+        // a = -((√(H-y1)+√(H-y2))/(x1-x2))^2 → 항상 음수
+        const fit2Apex = (pt1, pt2, extraHeight = 5.0) => {
             if (Math.abs(pt1.x - pt2.x) < 0.001) return null;
             const H = Math.min(33.0, Math.max(pt1.y, pt2.y) + extraHeight);
-            const d1 = Math.sqrt(Math.max(0.1, H - pt1.y));
-            const d2 = Math.sqrt(Math.max(0.1, H - pt2.y));
+            const d1 = Math.sqrt(Math.max(0.001, H - pt1.y));
+            const d2 = Math.sqrt(Math.max(0.001, H - pt2.y));
             const xv = (d1 * pt2.x + d2 * pt1.x) / (d1 + d2);
-            const a = -Math.pow((d1 + d2) / (pt1.x - pt2.x), 2);
+            const a = -Math.pow((d1 + d2) / (pt1.x - pt2.x), 2); // 항상 < 0
             const b = -2 * a * xv;
             const c = H + a * xv * xv;
             return { a, b, c };
         };
 
-        // 안전성 검사 (a < 0 음수 계수, 최고점 vertexY < 34.0, 데스존 미침범)
-        const isParabolaSafe = (a, b, c, minX, maxX, deathY) => {
-            if (a >= -0.001) return false; // 반드시 위로 볼록 (a < 0)
-            const vertexY = c - (b * b) / (4 * a);
-            if (vertexY >= 34.0) return false; // 최고점이 천장(y=40)에 절대 닿지 않도록 제한
-            const step = 0.5;
-            for (let x = minX; x <= maxX; x += step) {
-                const y = a * x * x + b * x + c;
-                if (y >= 35.0) return false; // 천장아웃 방지
-                if (y <= deathY + 0.5) return false; // 데스존 침범 방지
-            }
-            return true;
-        };
-
+        // 첫 번째 생존 적을 조준, 높이를 조절하며 안전한 포물선 탐색
         let result = null;
-
-        // 1. 살아있는 적이 2명 이상인 경우, 둘 다 지나면서 a < 0 및 최고점 < 34.0을 만족하는지 우선 검사
-        if (aliveEnemies.length >= 2) {
-            const pt2 = { x: aliveEnemies[0].x, y: aliveEnemies[0].y };
-            const pt3 = { x: aliveEnemies[1].x, y: aliveEnemies[1].y };
-            const res = fit3(p1, pt2, pt3);
-            if (res) {
-                const minX = Math.min(p1.x, pt2.x, pt3.x);
-                const maxX = Math.max(p1.x, pt2.x, pt3.x);
-                if (isParabolaSafe(res.a, res.b, res.c, minX, maxX, deathZoneY)) {
-                    result = res;
-                }
+        const tgt = aliveEnemies[0];
+        const pt2 = { x: tgt.x, y: tgt.y };
+        for (let h = 6.0; h >= 1.5; h -= 0.5) {
+            const res = fit2Apex(p1, pt2, h);
+            if (!res) continue;
+            // 궤적 전체 스캔: 천장(y≥35) 및 데스존 침범 여부 확인
+            const minX = Math.min(p1.x, pt2.x) - 1;
+            const maxX = Math.max(p1.x, pt2.x) + 1;
+            let safe = true;
+            for (let x = minX; x <= maxX; x += 0.5) {
+                const y = res.a * x * x + res.b * x + res.c;
+                if (y >= 35.0 || y <= deathZoneY + 0.5) { safe = false; break; }
             }
+            if (safe) { result = res; break; }
         }
-
-        // 2. 적 2명 동시 타격 포물선이 아래로 볼록(a > 0)하거나 최고점이 34.0 이상이면: 첫 번째 생존 적을 위로 볼록(a < 0)한 포물선으로 타격
+        // 최후의 보루: 낮은 호로라도 위로 볼록 보장
         if (!result) {
-            for (const tgt of aliveEnemies) {
-                const pt2 = { x: tgt.x, y: tgt.y };
-                for (let h = 5.0; h >= 2.0; h -= 1.0) {
-                    const res = fit2Apex(p1, pt2, h);
-                    if (res) {
-                        const minX = Math.min(p1.x, pt2.x);
-                        const maxX = Math.max(p1.x, pt2.x);
-                        if (isParabolaSafe(res.a, res.b, res.c, minX, maxX, deathZoneY)) {
-                            result = res;
-                            break;
-                        }
-                    }
-                }
-                if (result) break;
-            }
-        }
-
-        // 3. 최후의 보루
-        if (!result) {
-            const tgt = aliveEnemies[0];
-            result = fit2Apex(p1, { x: tgt.x, y: tgt.y }, 2.0) || { a: -0.05, b: 0, c: p1.y + 0.05 * p1.x * p1.x };
+            result = fit2Apex(p1, pt2, 1.5) || { a: -0.05, b: 0, c: p1.y + 0.05 * p1.x * p1.x };
         }
 
         const { a, b, c } = result;
