@@ -387,6 +387,7 @@ function initStage() {
     player.isKnockedBack = false;
     player.rotation      = 0;
     player.name          = starterData.name;
+    player.visualScale   = 1.0;
 
     // 지형 높이맵 + 랜덤 스파이크 언덕 생성
     const tData = TERRAINS[stage.terrain];
