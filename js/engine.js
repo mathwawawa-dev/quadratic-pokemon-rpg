@@ -220,7 +220,7 @@ window.addEventListener('wheel', (e) => {
 }, { passive: true });
 
 let isDragging = false, dragStartX = 0, dragStartY = 0;
-let dragStartXMin = 0, dragStartYMin = 0, dragStartYMax = 0;
+let dragStartXMin = 0, dragStartXMax = 0, dragStartYMin = 0, dragStartYMax = 0;
 let pointerTooltip = { active: false, x: 0, y: 0, gridX: 0, gridY: 0, alpha: 0 };
 
 function updatePointerTooltip(cx, cy) {
@@ -238,17 +238,20 @@ function startDrag(cx, cy) {
     if (GAME_STATE === 'FIRING') return;
     isDragging = true;
     dragStartX = cx; dragStartY = cy;
-    dragStartXMin = X_MIN; dragStartYMin = Y_MIN; dragStartYMax = Y_MAX;
+    dragStartXMin = X_MIN; dragStartXMax = X_MAX;
+    dragStartYMin = Y_MIN; dragStartYMax = Y_MAX;
 }
 function doDrag(cx, cy) {
     if (!isDragging) return;
-    const dxGrid = (cx - dragStartX) / canvas.width * (X_MAX - X_MIN);
-    const yRange = dragStartYMax - dragStartYMin;
-    const dyGrid = (cy - dragStartY) / canvas.height * yRange;
+    // 드래그 시작 시의 범위를 기준으로 델타 계산 (클램핑에 의한 drift 방지)
+    const startXRange = dragStartXMax - dragStartXMin;
+    const startYRange = dragStartYMax - dragStartYMin;
+    const dxGrid = (cx - dragStartX) / canvas.width * startXRange;
+    const dyGrid = (cy - dragStartY) / canvas.height * startYRange;
     X_MIN = dragStartXMin - dxGrid;
-    X_MAX = X_MIN + (canvas.width / canvas.height) * yRange;
+    X_MAX = dragStartXMax - dxGrid;
     Y_MIN = dragStartYMin + dyGrid;
-    Y_MAX = Y_MIN + yRange;
+    Y_MAX = dragStartYMax + dyGrid;
     resize();
 }
 canvas.addEventListener('mousedown', (e) => { updatePointerTooltip(e.clientX, e.clientY); startDrag(e.clientX, e.clientY); });
