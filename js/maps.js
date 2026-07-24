@@ -141,17 +141,15 @@ const TERRAINS = {
                         // Top Layer
             addIslandCluster(0, rnd(12, 14), rnd(22, 24), rnd(9.5, 11.5));
 
-            // Middle Layer
-            addIslandCluster(1, rnd(-24, -22), rnd(-15, -13), rnd(-2.5, -0.5));
-            addIslandCluster(1, rnd(-9, -7), rnd(1, 3), rnd(-5.0, -3.0));
-            addIslandCluster(1, rnd(6, 8), rnd(15, 17), rnd(-2.5, -0.5));
-            addIslandCluster(1, rnd(19, 21), rnd(24, 25), rnd(-5.0, -3.0));
+            // Middle Layer (1층) - 좌, 중, 우 3개 배치 (총 3개)
+            addIslandCluster(1, rnd(-26, -24), rnd(-16, -14), rnd(-3.0, -1.0));
+            addIslandCluster(1, rnd(-6, -4), rnd(4, 6), rnd(-5.0, -3.0));
+            addIslandCluster(1, rnd(14, 16), rnd(24, 26), rnd(-3.0, -1.0));
 
-            // Bottom Layer
-            addIslandCluster(2, rnd(-25, -23), rnd(-18, -16), rnd(-16.0, -14.0));
-            addIslandCluster(2, rnd(-13, -11), rnd(-3, -1), rnd(-19.0, -17.0));
-            addIslandCluster(2, rnd(3, 5), rnd(14, 16), rnd(-16.0, -14.0));
-            addIslandCluster(2, rnd(18, 20), rnd(23, 25), rnd(-19.0, -17.0));
+            // Bottom Layer (2층) - 1층과 지그재그가 되도록 사이사이에 배치 (총 3개)
+            addIslandCluster(2, rnd(-36, -34), rnd(-26, -24), rnd(-16.0, -14.0)); // 1층 좌측의 더 왼쪽
+            addIslandCluster(2, rnd(-15, -13), rnd(-6, -4), rnd(-19.0, -17.0)); // 1층 좌측과 중앙 사이
+            addIslandCluster(2, rnd(4, 6), rnd(14, 16), rnd(-16.0, -14.0)); // 1층 중앙과 우측 사이
         },
         layers: [
             (x) => {
