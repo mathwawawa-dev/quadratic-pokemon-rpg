@@ -53,22 +53,18 @@ function setupMathInput() {
     mf.style.imeMode = 'disabled';
     mf.setAttribute('inputmode', 'url'); // 모바일 등에서 영문 키보드를 띄우기 위함
 
-    // 한글 IME 완전 차단 (자동 영문 변환 제거, 단순히 입력 무시)
+    // 한글 IME 완전 차단 (blur/focus 편법 제거로 입력 끊김 해결)
     const blockKorean = (e) => {
-        if (e.type === 'keydown' && (e.keyCode === 229 || e.key === 'Process' || /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key))) {
+        // 한글 키 입력 차단 (keyCode 229를 막으면 모바일 영문 입력도 끊기므로 명시적 한글만 차단)
+        if (e.type === 'keydown' && /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.key)) {
             e.preventDefault(); 
             e.stopPropagation();
-            
-            // IME 조합 상태를 즉시 파괴
-            mf.blur();
-            setTimeout(() => {
-                mf.focus();
-            }, 0);
             return;
         }
 
-        if (e.type === 'beforeinput' && /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
-            e.preventDefault(); e.stopPropagation();
+        if (e.type === 'beforeinput' && e.data && /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(e.data)) {
+            e.preventDefault(); 
+            e.stopPropagation();
         }
     };
     mf.addEventListener('keydown',     blockKorean, { capture: true });
