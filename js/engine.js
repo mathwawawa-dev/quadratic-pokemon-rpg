@@ -2343,17 +2343,7 @@ function drawEntity(ent) {
     const srcImg = (domImg && domImg.complete && domImg.naturalWidth > 0) ? domImg : ent.img;
     if (srcImg && srcImg.complete && srcImg.naturalWidth > 0) {
         ctx.imageSmoothingEnabled = false;
-        if (ent.hasAura === 'red') {
-            ctx.save();
-            ctx.globalAlpha = 0.6 + Math.sin(Date.now()/150)*0.2;
-            ctx.shadowColor = '#ff4500';
-            ctx.shadowBlur = 20;
-            ctx.fillStyle = 'rgba(255, 69, 0, 0.3)';
-            ctx.beginPath();
-            ctx.arc(0, 0, Math.max(drawW, drawH)*0.55, 0, Math.PI*2);
-            ctx.fill();
-            ctx.restore();
-        }
+        // Aura circle removed as requested
         ctx.drawImage(srcImg, -drawW/2, -drawH/2, drawW, drawH);
     } else {
         // 이미지가 로드 실패(에러) 상태이거나 아예 이미지가 없는 경우에만 대체 도형을 그립니다.
