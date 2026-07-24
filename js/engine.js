@@ -622,7 +622,8 @@ function initStage() {
                 rx = side === 'L'
                     ? player.x - 5 - Math.random() * spread
                     : player.x + 5 + Math.random() * spread;
-                rx = Math.max(-35, Math.min(35, rx));
+                const spawnLimitX = isFloatingMapLocal ? 18 : 35;
+                rx = Math.max(-spawnLimitX, Math.min(spawnLimitX, rx));
                 
                 if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
@@ -671,6 +672,8 @@ function initStage() {
         // 2차 실패 시 (혹은 처음부터 공중이었는데 실패): 최후의 수단으로 겹치지 않게 강제 분산 배치
         if (!valid) {
             rx = side === 'L' ? player.x - 10 - idx*6 : player.x + 10 + idx*6;
+            const spawnLimitX = isFloatingMapLocal ? 18 : 35;
+            rx = Math.max(-spawnLimitX, Math.min(spawnLimitX, rx));
             const terrainYAtRx = getTerrainY(rx);
             if (e.isFlying) {
                 ry = terrainYAtRx > -50 ? terrainYAtRx + 2.8 : 15 + idx * 4;
