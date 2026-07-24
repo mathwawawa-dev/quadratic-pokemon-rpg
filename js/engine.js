@@ -1597,7 +1597,7 @@ function updateGame() {
         for (let i = effects.length - 1; i >= 0; i--) {
         const e = effects[i];
         e.life--;
-        if (e.type === 'text')     { e.y += 0.03; }
+        if (e.type === 'text')     { /* do nothing, stay in place */ }
         if (e.type === 'particle') { e.x += e.vx; e.y += e.vy; e.vy -= 0.02; }
         if (e.type === 'ring')     { /* life 감소 */ }
         
