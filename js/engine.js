@@ -1923,21 +1923,28 @@ function updateGame() {
                 hitY = hitPoint.y;
             }
             
-            // 치트 미사일: 지형은 통과하지만 적 직격 시 데미지 처리
+            // 치트 미사일: 적 직격 시 데미지 + 미사일 정지
             if (missile.isCheat && directHitTarget && directHitTarget.hp > 0) {
-                applyDamageAndEffects(directHitTarget, missile.x, missile.y);
-                // 추가 반경 내 대상도 처리
-                const explosionRadius2 = 2.5;
+                missile.active = false; GAME_STATE = 'IDLE';
+                const chtX = missile.x, chtY = missile.y;
+                createExplosion(chtX, chtY, getMissileColor());
+                createCrater(chtX, chtY, explosionRadius);
+                applyDamageAndEffects(directHitTarget, chtX, chtY);
+                // 폭발 반경 내 추가 대상도 처리
                 const allChtTargets = [player, ...enemies];
                 allChtTargets.forEach(ent => {
                     if (ent === directHitTarget || ent.hp <= 0) return;
-                    const edx = ent.x - missile.x, edy = ent.y - missile.y;
-                    if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius2) {
-                        applyDamageAndEffects(ent, missile.x, missile.y);
+                    const edx = ent.x - chtX, edy = ent.y - chtY;
+                    if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
+                        applyDamageAndEffects(ent, chtX, chtY);
                     }
                 });
-                // 치트 미사일은 계속 날아감 (관통)
-                directHitTarget = null;
+                if (enemies.filter(e => e.hp <= 0).length >= 2) {
+                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
+                } else {
+                    setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 1000);
+                }
+                return;
             }
 
             if (hitY !== -100 && !missile.isCheat) {
