@@ -1980,7 +1980,7 @@ function updateGame() {
                             createCrater(chtX, chtY, explosionRadius);
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
-                                if (ent.hp > 0 && Math.abs(ent.x - chtX) <= explosionRadius) {
+                                if (ent.hp > 0 && Math.hypot(ent.x - chtX, ent.y - chtY) <= explosionRadius + 1.5) {
                                     applyDamageAndEffects(ent, chtX, chtY);
                                 }
                             });
@@ -2053,7 +2053,7 @@ function updateGame() {
                             createCrater(targetX, targetY, explosionRadius);
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
-                                if (ent.hp > 0 && Math.abs(ent.x - targetX) <= explosionRadius) {
+                                if (ent.hp > 0 && Math.hypot(ent.x - targetX, ent.y - targetY) <= explosionRadius + 1.5) {
                                     applyDamageAndEffects(ent, targetX, targetY);
                                 }
                             });
