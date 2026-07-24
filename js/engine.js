@@ -877,20 +877,70 @@ window.addEventListener('keydown', (e) => {
         if (GAME_STATE !== 'IDLE' || aliveEnemies.length === 0) return;
 
         const p1 = { x: player.x, y: player.y };
-        let p2, p3;
+
+        const fit3 = (pt1, pt2, pt3) => {
+            const denom = (pt1.x - pt2.x) * (pt1.x - pt3.x) * (pt2.x - pt3.x);
+            if (Math.abs(denom) < 0.001) return null;
+            const a = (pt3.x * (pt2.y - pt1.y) + pt2.x * (pt1.y - pt3.y) + pt1.x * (pt3.y - pt2.y)) / denom;
+            const b = (pt3.x**2 * (pt1.y - pt2.y) + pt2.x**2 * (pt3.y - pt1.y) + pt1.x**2 * (pt2.y - pt3.y)) / denom;
+            const c = (pt2.x * pt3.x * (pt2.x - pt3.x) * pt1.y + pt3.x * pt1.x * (pt3.x - pt1.x) * pt2.y + pt1.x * pt2.x * (pt1.x - pt2.x) * pt3.y) / denom;
+            return { a, b, c };
+        };
+
+        const isParabolaSafe = (a, b, c, minX, maxX, deathY) => {
+            if (a >= -0.0001) return false; // 음수 가속도 (위로 오목한 포물선 금지)
+            const step = 0.5;
+            for (let x = minX; x <= maxX; x += step) {
+                const y = a * x * x + b * x + c;
+                if (y >= 37.0) return false; // y=40 천장 천장아웃 방지
+                if (y <= deathY + 0.5) return false; // 데스존 침범 방지
+            }
+            return true;
+        };
+
+        let result = null;
+
+        // 1. 적 2명이 모두 살아있는 경우, 둘을 동시에 지나는 포물선 우선 시도
         if (aliveEnemies.length >= 2) {
-            p2 = { x: aliveEnemies[0].x, y: aliveEnemies[0].y };
-            p3 = { x: aliveEnemies[1].x, y: aliveEnemies[1].y };
-        } else {
-            p2 = { x: aliveEnemies[0].x, y: aliveEnemies[0].y };
-            p3 = { x: (p1.x + p2.x) / 2, y: Math.max(p1.y, p2.y) + 4.0 };
+            const pt2 = { x: aliveEnemies[0].x, y: aliveEnemies[0].y };
+            const pt3 = { x: aliveEnemies[1].x, y: aliveEnemies[1].y };
+            const res = fit3(p1, pt2, pt3);
+            if (res) {
+                const minX = Math.min(p1.x, pt2.x, pt3.x);
+                const maxX = Math.max(p1.x, pt2.x, pt3.x);
+                if (isParabolaSafe(res.a, res.b, res.c, minX, maxX, deathZoneY)) {
+                    result = res;
+                }
+            }
         }
 
-        const denom = (p1.x - p2.x) * (p1.x - p3.x) * (p2.x - p3.x);
-        if (Math.abs(denom) < 0.001) return;
-        const a = (p3.x * (p2.y - p1.y) + p2.x * (p1.y - p3.y) + p1.x * (p3.y - p2.y)) / denom;
-        const b = (p3.x**2 * (p1.y - p2.y) + p2.x**2 * (p3.y - p1.y) + p1.x**2 * (p2.y - p3.y)) / denom;
-        const c = (p2.x * p3.x * (p2.x - p3.x) * p1.y + p3.x * p1.x * (p3.x - p1.x) * p2.y + p1.x * p2.x * (p1.x - p2.x) * p3.y) / denom;
+        // 2. 적 2명 동시 타격 포물선이 천장/데스존을 침범하거나 적이 1명인 경우: 첫번째 생존 적을 안전한 호로 타격
+        if (!result) {
+            for (const tgt of aliveEnemies) {
+                const pt2 = { x: tgt.x, y: tgt.y };
+                const apexY = Math.min(32.0, Math.max(p1.y, pt2.y) + 4.0);
+                const pt3 = { x: (p1.x + pt2.x) / 2, y: apexY };
+                const res = fit3(p1, pt2, pt3);
+                if (res) {
+                    const minX = Math.min(p1.x, pt2.x);
+                    const maxX = Math.max(p1.x, pt2.x);
+                    if (isParabolaSafe(res.a, res.b, res.c, minX, maxX, deathZoneY)) {
+                        result = res;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 3. 최후의 보루: 가장 낮은 안정된 호로 생성
+        if (!result) {
+            const tgt = aliveEnemies[0];
+            const pt2 = { x: tgt.x, y: tgt.y };
+            const pt3 = { x: (p1.x + pt2.x) / 2, y: Math.max(p1.y, pt2.y) + 2.0 };
+            result = fit3(p1, pt2, pt3) || { a: -0.05, b: 0, c: p1.y + 0.05 * p1.x * p1.x };
+        }
+
+        const { a, b, c } = result;
         let eq = `${a.toFixed(3)}x^2 + ${b.toFixed(3)}x + ${c.toFixed(3)}`.replace(/\+ -/g, '- ');
         document.getElementById('math-input').value = eq;
         fireMissile(true);
