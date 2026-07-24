@@ -622,13 +622,7 @@ function initStage() {
                 rx = side === 'L'
                     ? player.x - 5 - Math.random() * spread
                     : player.x + 5 + Math.random() * spread;
-                if (!isFloatingMapLocal && !isSkyMap) {
-                    rx = Math.max(-19, Math.min(19, rx));
-                } else if (isSkyMap) {
-                    rx = Math.max(-20, Math.min(20, rx));
-                } else {
-                    rx = Math.max(-25, Math.min(35, rx));
-                }
+                rx = Math.max(-35, Math.min(35, rx));
                 
                 if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
@@ -1616,7 +1610,7 @@ function updateGame() {
             ent.rotation += ent.angularVelocity;
             ent.vy -= 0.02; // 이 중력 코드가 삭제되지 않도록 주의
             const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-            const limitX = isFloatingMapLocal ? 60 : 20;
+            const limitX = 60;
             if (ent.x - ent.w/2 < -limitX) { ent.x = -limitX + ent.w/2; ent.vx *= -0.8; }
             if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
             const groundY = getTerrainY(ent.x, ent.y) + 0.75;
