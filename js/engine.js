@@ -1924,27 +1924,76 @@ function updateGame() {
                 hitY = hitPoint.y;
             }
             
-            // 치트 미사일: 적 직격 시 데미지 + 미사일 정지
+            // 치트 미사일: 적 직격 시 데미지 + 미사일 정지 (위성탄/그물탄 특수효과 지원)
             if (missile.isCheat && directHitTarget && directHitTarget.hp > 0) {
                 missile.active = false; GAME_STATE = 'IDLE';
                 const chtX = missile.x, chtY = missile.y;
-                createExplosion(chtX, chtY, getMissileColor());
-                createCrater(chtX, chtY, explosionRadius);
-                applyDamageAndEffects(directHitTarget, chtX, chtY);
-                // 폭발 반경 내 추가 대상도 처리
-                const allChtTargets = [player, ...enemies];
-                allChtTargets.forEach(ent => {
-                    if (ent === directHitTarget || ent.hp <= 0) return;
-                    const edx = ent.x - chtX, edy = ent.y - chtY;
-                    if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
-                        applyDamageAndEffects(ent, chtX, chtY);
+                
+                if (missile.type === 'satellite') {
+                    document.getElementById('fire-btn').disabled = true;
+                    for (let i = 0; i < 4; i++) {
+                        setTimeout(() => {
+                            if (GAME_STATE === 'OVER') return;
+                            effects.push({ type: 'laser', x: chtX, y: chtY, life: 15 });
+                            screenShake = 15;
+                            createCrater(chtX, chtY, explosionRadius);
+                            const targets = [player, ...enemies];
+                            targets.forEach(ent => {
+                                if (ent.hp > 0 && Math.abs(ent.x - chtX) <= explosionRadius) {
+                                    applyDamageAndEffects(ent, chtX, chtY);
+                                }
+                            });
+                            if (i === 3 && GAME_STATE !== 'OVER') {
+                                setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
+                            }
+                        }, i * 250);
                     }
-                });
-                // applyDamageAndEffects가 이미 STAGE CLEAR 처리 → GAME_STATE가 'IDLE'인 경우만 버튼 복구
-                if (GAME_STATE !== 'OVER') {
-                    setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 1000);
+                    return;
+                } else if (missile.type === 'net') {
+                    document.getElementById('fire-btn').disabled = true;
+                    const netRadius = 3;
+                    effects.push({ type: 'netPull', x: chtX, y: chtY, life: 40, maxLife: 40 });
+                    screenShake = 8;
+                    let pulled = [];
+                    enemies.forEach(ent => {
+                        if (ent.hp <= 0) return;
+                        if (Math.hypot(ent.x - chtX, ent.y - chtY) <= netRadius) pulled.push(ent);
+                    });
+                    setTimeout(() => {
+                        pulled.forEach(ent => {
+                            if (ent.hp <= 0) return;
+                            ent.x = chtX;
+                            ent.y = Math.max(getTerrainY(chtX) + 0.75, chtY);
+                            ent.isKnockedBack = false; ent.vx = 0; ent.vy = 0;
+                            applyDamageAndEffects(ent, chtX, chtY);
+                        });
+                        if (player.hp > 0 && Math.hypot(player.x - chtX, player.y - chtY) <= netRadius) {
+                            applyDamageAndEffects(player, chtX, chtY);
+                        }
+                        createExplosion(chtX, chtY, '#2dd4bf');
+                        createCrater(chtX, chtY - 0.5, explosionRadius);
+                        if (GAME_STATE !== 'OVER') {
+                            setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
+                        }
+                    }, 400);
+                    return;
+                } else {
+                    createExplosion(chtX, chtY, getMissileColor());
+                    createCrater(chtX, chtY, explosionRadius);
+                    applyDamageAndEffects(directHitTarget, chtX, chtY);
+                    const allChtTargets = [player, ...enemies];
+                    allChtTargets.forEach(ent => {
+                        if (ent === directHitTarget || ent.hp <= 0) return;
+                        const edx = ent.x - chtX, edy = ent.y - chtY;
+                        if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
+                            applyDamageAndEffects(ent, chtX, chtY);
+                        }
+                    });
+                    if (GAME_STATE !== 'OVER') {
+                        setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 1000);
+                    }
+                    return;
                 }
-                return;
             }
 
             if (hitY !== -100 && !missile.isCheat) {
