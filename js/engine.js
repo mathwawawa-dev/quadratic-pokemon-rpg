@@ -1899,6 +1899,9 @@ function updateGame() {
                         if (missile.type === 'pierce') {
                             if (!missile.hitTargets.has(e)) {
                                 missile.hitTargets.add(e);
+                                // 지하 적(디그다 등) 표면 스냅
+                                const pierceSurfY = getTerrainY(e.x) + 0.75;
+                                if (e.y < pierceSurfY - 0.1) { e.y = pierceSurfY; e.vy = 0; }
                                 applyDamageAndEffects(e, tx, ty);
                                 effects.push({ type: 'text', x: e.x, y: e.y + 1.8, text: 'PIERCE!', color: '#00e5ff', life: 120 });
                                 effects.push({ type: 'ring', x: e.x, y: e.y, color: '#00e5ff', life: 25, maxLife: 25 });
@@ -2125,6 +2128,9 @@ function updateGame() {
                     let hitSomeone = false;
                     // 직격(공중 포켓몬 포함) 처리: directHitTarget이 있으면 우선 적용
                     if (directHitTarget && directHitTarget.hp > 0) {
+                        // 지하 적 표면 스냅
+                        const dtSurfY = getTerrainY(directHitTarget.x) + 0.75;
+                        if (directHitTarget.y < dtSurfY - 0.1) { directHitTarget.y = dtSurfY; directHitTarget.vy = 0; }
                         applyDamageAndEffects(directHitTarget, targetX, targetY);
                         hitSomeone = true;
                         const allTargets = [player, ...enemies];
@@ -2132,6 +2138,8 @@ function updateGame() {
                             if (ent === directHitTarget || ent.hp <= 0) return;
                             const edx = ent.x - targetX, edy = ent.y - targetY;
                             if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
+                                const sfY = getTerrainY(ent.x) + 0.75;
+                                if (ent.y < sfY - 0.1) { ent.y = sfY; ent.vy = 0; }
                                 applyDamageAndEffects(ent, targetX, targetY);
                             }
                         });
@@ -2141,6 +2149,8 @@ function updateGame() {
                             if (ent.hp <= 0) return;
                             const edx = ent.x - targetX, edy = ent.y - targetY;
                             if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
+                                const sfY = getTerrainY(ent.x) + 0.75;
+                                if (ent.y < sfY - 0.1) { ent.y = sfY; ent.vy = 0; }
                                 applyDamageAndEffects(ent, targetX, targetY); hitSomeone = true;
                             }
                         });
