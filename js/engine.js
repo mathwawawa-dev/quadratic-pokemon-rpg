@@ -1518,14 +1518,16 @@ function updateGame() {
             e.x = e.startX + (e.targetX - e.startX) * p;
             e.y = e.startY + (e.targetY - e.startY) * p + e.height * 4 * p * (1 - p);
             
-            // 트레일 파티클 생성
-            if (e.life % 2 === 0) {
+            // 화려한 불꽃 꼬리 파티클 생성
+            for(let pt = 0; pt < 2; pt++) {
                 effects.push({
                     type: 'particle',
-                    x: e.x + (Math.random()-0.5)*0.5,
-                    y: e.y + (Math.random()-0.5)*0.5,
-                    vx: 0, vy: 0, life: 15,
-                    color: '#ea580c'
+                    x: e.x + (Math.random()-0.5)*0.7,
+                    y: e.y + (Math.random()-0.5)*0.7,
+                    vx: (e.startX - e.targetX) * 0.002 + (Math.random()-0.5)*0.1,
+                    vy: Math.random() * 0.15,
+                    life: 12 + Math.random() * 10,
+                    color: Math.random() > 0.5 ? '#ea580c' : '#fef08a' // 주황, 노랑 혼합
                 });
             }
 
@@ -3169,11 +3171,42 @@ function render() {
             ctx.globalAlpha = 1;
         } else if (e.type === 'lava_rock') {
             const sc = gridToScreen(e.x, e.y);
-            ctx.fillStyle = '#dc2626';
-            ctx.shadowBlur = 15;
+            const rot = (e.maxLife - e.life) * 0.25;
+            const r = scaleLength(0.65); // 둥근 원보다 조금 더 큰 크기
+
+            ctx.save();
+            ctx.translate(sc.x, sc.y);
+            ctx.rotate(rot);
+
+            // 외곽 붉은 발광 효과
+            ctx.shadowBlur = 18;
             ctx.shadowColor = '#ea580c';
-            ctx.beginPath(); ctx.arc(sc.x, sc.y, scaleLength(0.5), 0, Math.PI*2); ctx.fill();
-            ctx.shadowBlur = 0;
+
+            // 불규칙한 칠각형 (화산암 형태)
+            ctx.fillStyle = '#270808'; // 검붉은 암석 색
+            ctx.beginPath();
+            const sides = 7;
+            for (let s = 0; s < sides; s++) {
+                const angle = (s / sides) * Math.PI * 2;
+                const rad = r * (0.65 + 0.35 * Math.sin(s * 1.8 + (e.startX||0)));
+                if (s === 0) ctx.moveTo(Math.cos(angle) * rad, Math.sin(angle) * rad);
+                else ctx.lineTo(Math.cos(angle) * rad, Math.sin(angle) * rad);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.shadowBlur = 0; // 안쪽은 글로우 없이
+
+            // 바위 틈새 용암 텍스처(선)
+            ctx.strokeStyle = '#f97316';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.3, -r * 0.4);
+            ctx.lineTo(r * 0.1, -r * 0.1);
+            ctx.lineTo(r * 0.4, r * 0.3);
+            ctx.stroke();
+
+            ctx.restore();
         } else if (e.type === 'particle') {
             const sc = gridToScreen(e.x, e.y);
             ctx.globalAlpha = Math.max(0, e.life / 40);
