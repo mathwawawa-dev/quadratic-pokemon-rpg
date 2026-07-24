@@ -1443,6 +1443,47 @@ function updateGame() {
         }
     }
 
+    // 화산 용암('lava') 맵 기믹: 15초마다 화산 폭발로 인한 용암 피해 (넉백 없음)
+    if (currentTerrainKey === 'lava' && player.hp > 0 && GAME_STATE !== 'OVER') {
+        const now = Date.now();
+        if (!window.lastLavaEruptionTime) window.lastLavaEruptionTime = now;
+        if (now - window.lastLavaEruptionTime >= 15000) { // 15초마다 분출
+            window.lastLavaEruptionTime = now;
+            
+            // 플레이어 발밑에서 용암이 솟구치는 파티클 효과
+            for (let pi = 0; pi < 15; pi++) {
+                effects.push({
+                    type: 'particle',
+                    x: player.x + (Math.random() - 0.5) * 2.5,
+                    y: player.y - 0.5,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: Math.random() * 0.7 + 0.3, // 위로 솟구침
+                    life: 45,
+                    color: (pi % 2 === 0) ? '#ea580c' : '#dc2626' // 짙은 주황, 빨강
+                });
+            }
+            
+            // 텍스트, 화면 흔들림 및 5 데미지 처리 (넉백 미적용)
+            effects.push({
+                type: 'text',
+                x: player.x,
+                y: player.y + 2.8,
+                text: '🔥용암 분출! -5HP',
+                color: '#ea580c',
+                life: 180
+            });
+            player.hp -= 5;
+            player.shake = 18;
+            screenShake = 15;
+            updateHPUI();
+            
+            if (player.hp <= 0) {
+                GAME_STATE = 'OVER';
+                showMessage('GAME OVER', '뜨거운 용암에 쓰러졌습니다...');
+            }
+        }
+    }
+
     // 플레이어 발사 모션 (점프 + 한바퀴 회전)
     if (player.animFrame > 0) {
         player.animFrame--;
