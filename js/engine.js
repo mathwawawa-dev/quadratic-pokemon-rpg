@@ -1309,8 +1309,9 @@ function applyDamageAndEffects(target, mx, my) {
     const totalDamage = Math.floor((30 + fallHeight * 1.7) * mult * baseDamageBoost * boostMult * firstTurnMult);
     if (isFirstTurn && enemies.includes(target)) {
         isFirstTurn = false;
-        player.w *= 1.2; player.h *= 1.2; effects.push({ type: 'text', x: player.x, y: player.y + 3.0, text: '💥 기선 제압!', color: '#a78bfa', life: 240 });
-        
+        player.visualScale = 1.4;
+        player.hasAura = 'red';
+        effects.push({ type: 'text', x: player.x, y: player.y - 1.5, text: '💥 기선 제압!', color: '#ff4500', life: 240 });
     }
 
     target.hp -= totalDamage;
@@ -2038,7 +2039,8 @@ function updateGame() {
 // ---------- Rendering ----------
 function drawEntity(ent) {
     const sc = gridToScreen(ent.x, ent.y);
-    const drawW = scaleLength(ent.w * 1.5), drawH = scaleLength(ent.h * 1.5);
+    const vScale = ent.visualScale || 1.0;
+    const drawW = scaleLength(ent.w * 1.5 * vScale), drawH = scaleLength(ent.h * 1.5 * vScale);
     const sw = scaleLength(ent.w), sh = scaleLength(ent.h);
     ctx.save();
     if (ent.shake > 0) { sc.x += (Math.random()-0.5)*10; sc.y += (Math.random()-0.5)*10; }
@@ -2050,9 +2052,11 @@ function drawEntity(ent) {
         bobY = Math.sin(Date.now() / 400 + ph) * scaleLength(0.12);
     }
 
-    const yOff = ent.isFlying ? -sh * 0.1 : sh * 0.35;
-    const animY = ent.yOffAnim ? -ent.yOffAnim : 0; // 발사 모션 (위로 뜀)
-    ctx.translate(sc.x, sc.y + yOff + animY + bobY);
+        const yOff = ent.isFlying ? -sh * 0.1 : sh * 0.35;
+    const animY = ent.yOffAnim ? -ent.yOffAnim : 0;
+    let visualYOffset = 0;
+    if (ent.name === '파이리') visualYOffset = scaleLength(0.2); // 파이리 전체(오라 포함) 오프셋
+    ctx.translate(sc.x, sc.y + yOff + animY + bobY - visualYOffset);
     // 적들은 플레이어를 바라보게 (자동), 플레이어는 수동 방향
     if (ent !== player) {
         if (ent.x < player.x) ctx.scale(-1, 1);
@@ -2175,6 +2179,17 @@ function drawEntity(ent) {
     const srcImg = (domImg && domImg.complete && domImg.naturalWidth > 0) ? domImg : ent.img;
     if (srcImg && srcImg.complete && srcImg.naturalWidth > 0) {
         ctx.imageSmoothingEnabled = false;
+        if (ent.hasAura === 'red') {
+            ctx.save();
+            ctx.globalAlpha = 0.6 + Math.sin(Date.now()/150)*0.2;
+            ctx.shadowColor = '#ff4500';
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = 'rgba(255, 69, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(0, 0, Math.max(drawW, drawH)*0.55, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        }
         ctx.drawImage(srcImg, -drawW/2, -drawH/2, drawW, drawH);
     } else {
         // 이미지가 로드 실패(에러) 상태이거나 아예 이미지가 없는 경우에만 대체 도형을 그립니다.
@@ -3091,6 +3106,7 @@ function render() {
 
     // Player radius (발사 가능 반경 표시 - 맥박 뛰듯 은은하게)
     const pCenter = gridToScreen(player.x, player.y - 0.525), pRad = scaleLength(0.7);
+    if (player.name === '파이리') pCenter.y -= scaleLength(0.2);
     ctx.save();
     ctx.globalAlpha = 0.15 + Math.sin(Date.now() / 300) * 0.08; // 은은한 뒷배경 채우기
     ctx.fillStyle = getMissileColor();
