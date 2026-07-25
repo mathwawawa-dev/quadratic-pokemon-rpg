@@ -2335,12 +2335,11 @@ function drawEntity(ent) {
         const hue = 140 + Math.sin(t * 0.4 + ph) * 35;
         ctx.filter = `brightness(85%) saturate(220%) hue-rotate(${hue.toFixed(0)}deg) blur(0.7px)`;
 
-        // 위아래 둥실 (이중 주파수) + 좌우 미세 흔들림 + 사망 후 서서히 위로 떠오름
+        // 위아래 둥실 (이중 주파수) + 좌우 미세 흔들림
         const floatY = Math.sin(t * 2.0 + ph) * scaleLength(0.22)
                      + Math.sin(t * 0.85 + ph) * scaleLength(0.10);
         const floatX = Math.sin(t * 1.4 + ph * 0.8) * scaleLength(0.06);
-        const driftUp = Math.min(lived * scaleLength(0.12), scaleLength(2.5)); // 최대 2.5 unit 위로
-        ctx.translate(floatX, floatY - driftUp);
+        ctx.translate(floatX, floatY);
 
         // 회전 흔들림 (이중 주파수)
         ctx.rotate(Math.sin(t * 1.8 + ph) * 0.10 + Math.sin(t * 0.6 + ph) * 0.04);
