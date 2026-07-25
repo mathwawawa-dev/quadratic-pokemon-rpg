@@ -291,6 +291,7 @@ function getTerrainY(x, currentY) {
                 }
             }
             if (bestY !== -100) return bestY;
+            return -100; // No valid ground found below or near currentY; unit is falling into the void
         }
     }
     return Math.max(...ys);
@@ -970,10 +971,15 @@ window.addEventListener('keydown', (e) => {
             ? sameDir.reduce((a, b) => Math.abs(a.x - player.x) < Math.abs(b.x - player.x) ? a : b)  // 같은 방향 중 가장 가까운 적
             : aliveEnemies.reduce((a, b) => Math.abs(a.x - player.x) < Math.abs(b.x - player.x) ? a : b); // 없으면 전방향 중 가장 가까운 적
 
-        let result = null;
         const tgt = chosenEnemy;
+        // 선택된 적 방향으로 강제 전환 (반대 방향 발사로 인한 궤도 이탈 방지)
+        player.facing = Math.sign(tgt.x - player.x) || 1;
+        if (window.updateDirectionUI) window.updateDirectionUI();
+
+        let result = null;
         const pt2 = { x: tgt.x, y: tgt.y };
-        for (let h = 6.0; h >= 1.5; h -= 0.5) {
+        // H 탐색 범위를 높여 훨씬 명확하고 예쁜 '위로 볼록(∩)' 포물선이 나오도록 조정
+        for (let h = 15.0; h >= 1.5; h -= 0.5) {
             const res = fit2Apex(p1, pt2, h);
             if (!res) continue;
             // 궤적 전체 스캔: 천장(y≥35) 및 데스존 침범 여부 확인
