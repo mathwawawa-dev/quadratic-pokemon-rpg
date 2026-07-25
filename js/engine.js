@@ -553,8 +553,8 @@ function initStage() {
     let px = 0;
     let attempts = 0;
     do {
-        if (stage.terrain === 'garden') {
-            const midIslands = TERRAINS.garden.islands[1];
+        if (['garden', 'cloud_garden'].includes(stage.terrain)) {
+            const midIslands = TERRAINS[stage.terrain].islands[1];
             // 중앙부(-15 ~ 15)에 가까운 2층 섬을 우선 선택하여 2층에 확정 스폰
             const centerIslands = midIslands.filter(s => s.cx >= -15 && s.cx <= 15);
             const targetIsland = centerIslands.length > 0 ? centerIslands[Math.floor(Math.random() * centerIslands.length)] : midIslands[0];
@@ -736,7 +736,7 @@ function initStage() {
         const barrierType = isPsychic ? barrierTypes[idx % barrierTypes.length] : null;
 
         // 최종 안전 보정: 생성 Y가 death zone보다 낮으면 즉시 추락하므로 강제로 올려줌
-        const spawnDeathZoneY = ['garden', 'sky'].includes(stage.terrain) ? -30 : -8;
+        const spawnDeathZoneY = ['garden', 'sky', 'cloud_garden'].includes(stage.terrain) ? -30 : -8;
         if (ry <= spawnDeathZoneY + 2.0) {
             // 해당 X 위치 지형 위, 없으면 공중으로 올려 배치
             const safeTerrainY = getTerrainY(rx);
@@ -1762,7 +1762,7 @@ function updateGame() {
             if (ent.y > groundY + 0.1) { ent.vy -= 0.03; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
-        const deathZoneY = ['garden', 'sky'].includes(LEVELS[currentStage % LEVELS.length].terrain) ? -30 : -8;
+        const deathZoneY = ['garden', 'sky', 'cloud_garden'].includes(LEVELS[currentStage % LEVELS.length].terrain) ? -30 : -8;
         if (ent.y < deathZoneY && ent.hp > 0) {
             ent.hp = 0;
             createExplosion(ent.x, deathZoneY, '#ffffff');
@@ -3293,7 +3293,7 @@ function render() {
     ctx.fillStyle = gridColor; ctx.fillText('O', origin.x - 15, origin.y + 15);
 
     // Death Zone
-    const isDeepDeathZoneMap = ['garden', 'sky'].includes(LEVELS[currentStage % LEVELS.length].terrain);
+    const isDeepDeathZoneMap = ['garden', 'sky', 'cloud_garden'].includes(LEVELS[currentStage % LEVELS.length].terrain);
     const dzValue = isDeepDeathZoneMap ? -30 : -8;
     const dTop = gridToScreen(0, dzValue);
     if (Y_MIN < dzValue) {

@@ -8,6 +8,7 @@ const LEVELS = [
     { title: "Stage 7", terrain: 'ocean',    count: 4, flyingCount: 1 },
     { title: "Stage 8", terrain: 'psychic',  count: 4, flyingCount: 2 },
     { title: "Stage 9", terrain: 'garden',   count: 4, flyingCount: 2 },
+    { title: "Stage 10", terrain: 'cloud_garden', count: 4, flyingCount: 3 },
 ];
 
 let terrainSeed = 0;
@@ -193,6 +194,115 @@ const TERRAINS = {
                 let maxY = -100;
                 if (!TERRAINS.garden.islands || !TERRAINS.garden.islands[2]) return maxY;
                 for (let s of TERRAINS.garden.islands[2]) {
+                    const dx = Math.abs(x - s.cx);
+                    if (dx <= s.rx) {
+                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
+                        if (topY > maxY) maxY = topY;
+                    }
+                }
+                return maxY;
+            }
+        ],
+        func: (x) => -100
+    },
+    cloud_garden: {
+        name: "구름 공중정원",
+        bg: ["#0284c7", "#38bdf8", "#bae6fd"], // 맑고 아련한 하늘 파스텔 그라데이션
+        color: "rgba(255, 255, 255, 0.92)",   // 반투명 뽀송한 흰색 구름 섬
+        outColor: "rgba(186, 230, 253, 0.95)", // 아쿠아 블루 구름 테두리 (사진 참조)
+        isFloating: true,
+        deathZoneY: -15,
+        init: function(seed) {
+            this.islands = [[], [], []];
+            const rnd = (min, max) => Math.random() * (max - min) + min;
+
+            const addCloudCluster = (layer, startX, endX, baseY) => {
+                const width = endX - startX;
+                const midX = (startX + endX) / 2;
+                
+                // 중심 타원
+                this.islands[layer].push({
+                    type: 'ellipse',
+                    cx: midX,
+                    cy: baseY,
+                    rx: width / 2 + 0.5,
+                    ry: 1.8 + (Math.abs(Math.sin(midX * 0.7 + seed)) * 0.4),
+                    rot: 0
+                });
+                
+                // 폭신폭신 원형 구름 뭉치 배치
+                for (let x = startX; x <= endX; x += 1.6) {
+                    const progress = (x - startX) / Math.max(1, width);
+                    const edgeFactor = Math.sin(progress * Math.PI);
+                    
+                    const rTop = 1.5 + edgeFactor * 1.3 + (Math.cos(x * 1.5 + seed) * 0.4);
+                    const yOff = Math.sin(x * 1.1 + seed) * 0.4;
+                    this.islands[layer].push({
+                        type: 'circle',
+                        cx: x,
+                        cy: baseY + yOff,
+                        rx: rTop,
+                        ry: rTop,
+                        rot: 0
+                    });
+
+                    if (Math.random() > 0.3) {
+                        const rxSub = 1.8 + Math.random() * 1.2;
+                        const rySub = 0.9 + Math.random() * 1.5;
+                        this.islands[layer].push({
+                            type: 'ellipse',
+                            cx: x + (Math.random() - 0.5) * 1.2,
+                            cy: baseY - 0.6 + (Math.random() - 0.5) * 0.8,
+                            rx: rxSub,
+                            ry: rySub,
+                            rot: 0
+                        });
+                    }
+                }
+            };
+
+            // 사진 형태 상단/중단/하단 지그재그 구름섬 6개 무작위 생성
+            // Top Layer (1개)
+            addCloudCluster(0, rnd(-12, -8), rnd(10, 14), rnd(11, 13));
+
+            // Middle Layer (3개)
+            addCloudCluster(1, rnd(-32, -30), rnd(-18, -16), rnd(1, 3));
+            addCloudCluster(1, rnd(-6, -4), rnd(6, 8), rnd(-1, 1));
+            addCloudCluster(1, rnd(16, 18), rnd(30, 32), rnd(3, 5));
+
+            // Bottom Layer (2개)
+            addCloudCluster(2, rnd(-24, -22), rnd(-6, -4), rnd(-12, -10));
+            addCloudCluster(2, rnd(8, 10), rnd(26, 28), rnd(-14, -12));
+        },
+        layers: [
+            (x) => {
+                let maxY = -100;
+                if (!TERRAINS.cloud_garden.islands || !TERRAINS.cloud_garden.islands[0]) return maxY;
+                for (let s of TERRAINS.cloud_garden.islands[0]) {
+                    const dx = Math.abs(x - s.cx);
+                    if (dx <= s.rx) {
+                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
+                        if (topY > maxY) maxY = topY;
+                    }
+                }
+                return maxY;
+            },
+            (x) => {
+                let maxY = -100;
+                if (!TERRAINS.cloud_garden.islands || !TERRAINS.cloud_garden.islands[1]) return maxY;
+                for (let s of TERRAINS.cloud_garden.islands[1]) {
+                    const dx = Math.abs(x - s.cx);
+                    if (dx <= s.rx) {
+                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
+                        if (topY > maxY) maxY = topY;
+                    }
+                }
+                return maxY;
+            },
+            (x) => {
+                let maxY = -100;
+                if (!TERRAINS.cloud_garden.islands || !TERRAINS.cloud_garden.islands[2]) return maxY;
+                for (let s of TERRAINS.cloud_garden.islands[2]) {
                     const dx = Math.abs(x - s.cx);
                     if (dx <= s.rx) {
                         const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
