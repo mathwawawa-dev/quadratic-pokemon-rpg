@@ -3335,29 +3335,68 @@ function render() {
             offCtxGround.stroke();
         }
 
-        // 나무 옹이 (Wood Knots / Burls) 배치 (세로 눈금선 대신 자연스러운 나무 옹이 마크)
+        // 2-B. 나무 옹이 (Wood Knots / Burls) — 중심 회오리 나이테 + 나뭇결 휘어짐 + 나무 균열(Crack) 디테일
         const knotPositions = [-36, -28, -19, -10, -2, 7, 16, 25, 34, 41];
         knotPositions.forEach((kx, kIdx) => {
             const ky = getOrigY(kx) - getThick(kx) * (0.3 + (kIdx % 3) * 0.2);
             const kp = gridToScreen(kx, ky);
-            const krx = scaleLength(0.8 + (kIdx % 2) * 0.3);
-            const kry = scaleLength(0.45 + (kIdx % 2) * 0.2);
+            const krx = scaleLength(0.85 + (kIdx % 2) * 0.25);
+            const kry = scaleLength(0.5 + (kIdx % 2) * 0.15);
+            const angle = 0.18 * (kIdx % 2 === 0 ? 1 : -1);
 
             offCtxGround.save();
+
+            // 1) 옹이 주변 나뭇결 휘어짐 파동 (Grain Warp Lines)
             offCtxGround.beginPath();
-            offCtxGround.ellipse(kp.x, kp.y, krx, kry, 0.15 * (kIdx % 2 === 0 ? 1 : -1), 0, Math.PI * 2);
-            offCtxGround.fillStyle = '#3a1304';
-            offCtxGround.fill();
-            offCtxGround.strokeStyle = '#240a02';
-            offCtxGround.lineWidth = 2;
+            const warpR = krx * 2.2;
+            for (let t = -Math.PI; t <= Math.PI; t += 0.2) {
+                const wx = kp.x + Math.cos(t) * warpR * (1 + Math.sin(t * 2) * 0.15);
+                const wy = kp.y + Math.sin(t) * (kry * 2.2) * (1 + Math.cos(t) * 0.1);
+                if (t === -Math.PI) offCtxGround.moveTo(wx, wy);
+                else offCtxGround.lineTo(wx, wy);
+            }
+            offCtxGround.strokeStyle = 'rgba(40, 12, 4, 0.4)';
+            offCtxGround.lineWidth = 1.8;
             offCtxGround.stroke();
 
-            // 옹이 나이테 대곡선 파동
+            // 2) 옹이 본체 방사형 3D 그라데이션 (중심 짙은 갈색 -> 외곽 유기적 적갈색)
+            const knotGrad = offCtxGround.createRadialGradient(kp.x - krx * 0.2, kp.y - kry * 0.2, 2, kp.x, kp.y, krx);
+            knotGrad.addColorStop(0.0, '#1c0701'); // 중심 깊은 음영
+            knotGrad.addColorStop(0.55, '#3a1304'); // 중간 적갈색
+            knotGrad.addColorStop(1.0, '#240a02'); // 외곽 테두리
+
             offCtxGround.beginPath();
-            offCtxGround.ellipse(kp.x, kp.y, krx * 1.6, kry * 1.6, 0.15 * (kIdx % 2 === 0 ? 1 : -1), 0, Math.PI * 2);
-            offCtxGround.strokeStyle = 'rgba(61, 21, 6, 0.6)';
+            offCtxGround.ellipse(kp.x, kp.y, krx, kry, angle, 0, Math.PI * 2);
+            offCtxGround.fillStyle = knotGrad;
+            offCtxGround.fill();
+            offCtxGround.strokeStyle = '#170501';
+            offCtxGround.lineWidth = 2.2;
+            offCtxGround.stroke();
+
+            // 3) 회오리 나이테 (Spiral Ring)
+            offCtxGround.beginPath();
+            const rings = 3;
+            for (let r = 1; r <= rings; r++) {
+                const ringRatio = r / (rings + 0.5);
+                const rx = krx * ringRatio;
+                const ry = kry * ringRatio;
+                offCtxGround.moveTo(kp.x + rx, kp.y);
+                offCtxGround.ellipse(kp.x, kp.y, rx, ry, angle, 0, Math.PI * 2);
+            }
+            offCtxGround.strokeStyle = 'rgba(20, 5, 1, 0.55)';
+            offCtxGround.lineWidth = 1.2;
+            offCtxGround.stroke();
+
+            // 4) 세밀한 나무 균열 (Wood Crack)
+            offCtxGround.beginPath();
+            const crackDir = (kIdx % 2 === 0) ? 1 : -1;
+            offCtxGround.moveTo(kp.x, kp.y);
+            offCtxGround.lineTo(kp.x + krx * 0.7 * crackDir, kp.y - kry * 0.3);
+            offCtxGround.lineTo(kp.x + krx * 0.9 * crackDir, kp.y - kry * 0.1);
+            offCtxGround.strokeStyle = '#0d0300';
             offCtxGround.lineWidth = 1.5;
             offCtxGround.stroke();
+
             offCtxGround.restore();
         });
 
