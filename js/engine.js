@@ -3450,14 +3450,14 @@ function render() {
         offCtxGround.fillStyle = grassGrad;
         offCtxGround.fill();
 
-        // [추가] 잔디 최상단 테두리 짙은 녹색 Dot Rim (표면 상단의 단조로움을 깨는 촘촘한 숲색 픽셀/도트 묘사)
-        for (let x = skyStartX; x <= skyEndX; x += 0.25) {
+        // [수정] 초미세 마이크로 Dot Rim (확대해야만 아주 미세한 짙은 녹색 점이 살짝 보이는 수준으로 티 안 나게 연출)
+        for (let x = skyStartX; x <= skyEndX; x += 0.2) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY);
-            const dotR = scaleLength(0.08 + Math.abs(Math.sin(x * 4.1)) * 0.05);
+            const microDotR = scaleLength(0.02 + Math.abs(Math.sin(x * 6.3)) * 0.02); // 초미세 0.4~0.8px 반경
             offCtxGround.beginPath();
-            offCtxGround.arc(p.x, p.y + (Math.sin(x * 7) > 0 ? 0.5 : -0.5), dotR, 0, Math.PI * 2);
-            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? '#14532d' : '#166534';
+            offCtxGround.arc(p.x, p.y + (Math.sin(x * 11) > 0 ? 0.3 : -0.3), microDotR, 0, Math.PI * 2);
+            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(20, 83, 45, 0.45)' : 'rgba(22, 101, 52, 0.35)';
             offCtxGround.fill();
         }
 
