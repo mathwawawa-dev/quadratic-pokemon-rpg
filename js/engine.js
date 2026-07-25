@@ -3372,7 +3372,7 @@ function render() {
             if (x >= skyEndX) break;
         }
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
-            const p = gridToScreen(x, getOrigY(x) - 0.75);
+            const p = gridToScreen(x, getOrigY(x) - 0.375);
             offCtxGround.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
@@ -3380,31 +3380,31 @@ function render() {
 
         // 3색 수직 그라데이션 (상단 차분한 연두 올리브 -> 중앙 딥 그린 -> 하단 짙은 숲색)
         const topScreenP = gridToScreen(0, 0);
-        const botScreenP = gridToScreen(0, -0.75);
-        const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 12, 0, botScreenP.y + 12);
+        const botScreenP = gridToScreen(0, -0.375);
+        const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 6, 0, botScreenP.y + 6);
         grassGrad.addColorStop(0.0, '#4a8f62'); // 상단 차분한 올리브 그린
         grassGrad.addColorStop(0.4, '#2d6a4f'); // 중앙 편안한 딥 그린
         grassGrad.addColorStop(1.0, '#1b4332'); // 하단 짙은 숲색
         offCtxGround.fillStyle = grassGrad;
         offCtxGround.fill();
 
-        // 이끼(Moss) 하이라이트 패치 (차분한 녹음 패치)
+        // 이끼(Moss) 하이라이트 패치 (차분한 녹음 패치 - 잔디 두께 절반에 맞춘 크기/위치)
         for (let x = skyStartX; x <= skyEndX; x += 0.8) {
             const topY = getOrigY(x);
-            const p = gridToScreen(x, topY - 0.35);
-            const mossR = scaleLength(0.3 + Math.sin(x * 2.3) * 0.15);
+            const p = gridToScreen(x, topY - 0.18);
+            const mossR = scaleLength(0.18 + Math.sin(x * 2.3) * 0.08);
             offCtxGround.beginPath();
-            offCtxGround.arc(p.x, p.y + Math.cos(x * 1.7) * 2, mossR, 0, Math.PI * 2);
+            offCtxGround.arc(p.x, p.y + Math.cos(x * 1.7) * 1, mossR, 0, Math.PI * 2);
             offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(74, 143, 98, 0.3)' : 'rgba(45, 106, 79, 0.25)';
             offCtxGround.fill();
         }
 
-        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링 (투톤: 짙은 숲색 + 차분한 그린)
+        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링 (높이 절반 축소: 3.5 ~ 5.5px)
         for (let x = skyStartX; x <= skyEndX; x += 0.35) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY);
-            const h = 7 + Math.sin(x * 3.7) * 4;
-            const bend = Math.sin(x * 4.3) * 5;
+            const h = 3.5 + Math.sin(x * 3.7) * 2;
+            const bend = Math.sin(x * 4.3) * 2.5;
 
             // 뒤쪽 짙은 풀잎
             offCtxGround.beginPath();
