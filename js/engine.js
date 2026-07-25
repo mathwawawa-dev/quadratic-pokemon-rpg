@@ -3361,7 +3361,8 @@ function render() {
             offCtxGround.restore();
         });
 
-        // 3. 통나무 상단 잔디 풀밭 레이어 (초록색 텍스처 + 풀잎 데코)
+        // 3. 통나무 상단 잔디 풀밭 레이어 (3색 수직 그라데이션 + 이끼 패치 + 투톤 풀잎 & 작은 들꽃)
+        offCtxGround.save();
         offCtxGround.beginPath();
         const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
         offCtxGround.moveTo(gStartP.x, gStartP.y);
@@ -3371,27 +3372,77 @@ function render() {
             if (x >= skyEndX) break;
         }
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
-            const p = gridToScreen(x, getOrigY(x) - 0.65);
+            const p = gridToScreen(x, getOrigY(x) - 0.75);
             offCtxGround.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
         offCtxGround.closePath();
-        offCtxGround.fillStyle = '#22c55e';
+
+        // 3색 수직 그라데이션 (상단 햇살 연두 -> 중앙 싱그러운 잔디 -> 하단 짙은 이끼 숲색)
+        const topScreenP = gridToScreen(0, 0);
+        const botScreenP = gridToScreen(0, -0.75);
+        const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 12, 0, botScreenP.y + 12);
+        grassGrad.addColorStop(0.0, '#bbf7d0'); // 상단 햇빛 화사한 연두
+        grassGrad.addColorStop(0.35, '#22c55e'); // 중앙 메인 싱그러운 초록
+        grassGrad.addColorStop(1.0, '#14532d'); // 하단 짙은 이끼 숲색
+        offCtxGround.fillStyle = grassGrad;
         offCtxGround.fill();
 
-        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링
-        offCtxGround.strokeStyle = '#15803d';
-        offCtxGround.lineWidth = 2.5;
-        for (let x = skyStartX; x <= skyEndX; x += 0.4) {
+        // 이끼(Moss) 하이라이트 패치 (부드러운 도트 얼룩 무늬)
+        for (let x = skyStartX; x <= skyEndX; x += 0.8) {
             const topY = getOrigY(x);
-            const p = gridToScreen(x, topY);
-            const h = 8 + Math.sin(x * 3) * 5;
+            const p = gridToScreen(x, topY - 0.35);
+            const mossR = scaleLength(0.3 + Math.sin(x * 2.3) * 0.15);
             offCtxGround.beginPath();
-            offCtxGround.moveTo(p.x, p.y);
-            offCtxGround.lineTo(p.x + Math.sin(x * 5) * 4, p.y - h);
-            offCtxGround.stroke();
+            offCtxGround.arc(p.x, p.y + Math.cos(x * 1.7) * 2, mossR, 0, Math.PI * 2);
+            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(187, 247, 208, 0.35)' : 'rgba(74, 222, 128, 0.3)';
+            offCtxGround.fill();
         }
 
+        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링 (투톤: 짙은 그린 + 밝은 연두)
+        for (let x = skyStartX; x <= skyEndX; x += 0.35) {
+            const topY = getOrigY(x);
+            const p = gridToScreen(x, topY);
+            const h = 7 + Math.sin(x * 3.7) * 4;
+            const bend = Math.sin(x * 4.3) * 5;
+
+            // 뒤쪽 짙은 풀잎
+            offCtxGround.beginPath();
+            offCtxGround.moveTo(p.x - 1, p.y + 1);
+            offCtxGround.lineTo(p.x + bend - 2, p.y - h - 1);
+            offCtxGround.strokeStyle = '#15803d';
+            offCtxGround.lineWidth = 2.0;
+            offCtxGround.stroke();
+
+            // 앞쪽 밝은 풀잎
+            offCtxGround.beginPath();
+            offCtxGround.moveTo(p.x, p.y);
+            offCtxGround.lineTo(p.x + bend, p.y - h);
+            offCtxGround.strokeStyle = '#4ade80';
+            offCtxGround.lineWidth = 2.0;
+            offCtxGround.stroke();
+
+            // 5. 아기자기한 작은 들꽃 (노란색 민들레 & 흰색 들꽃)
+            if (Math.abs(Math.sin(x * 7.1)) > 0.72) {
+                const flowerP = gridToScreen(x, topY);
+                const flowerY = flowerP.y - h + 1;
+                const flowerX = flowerP.x + bend;
+                const isYellow = Math.sin(x * 13.3) > 0;
+
+                offCtxGround.beginPath();
+                offCtxGround.arc(flowerX, flowerY, 2.2, 0, Math.PI * 2);
+                offCtxGround.fillStyle = isYellow ? '#facc15' : '#ffffff';
+                offCtxGround.fill();
+
+                // 꽃수술
+                offCtxGround.beginPath();
+                offCtxGround.arc(flowerX, flowerY, 0.9, 0, Math.PI * 2);
+                offCtxGround.fillStyle = isYellow ? '#ea580c' : '#f59e0b';
+                offCtxGround.fill();
+            }
+        }
+
+        offCtxGround.restore();
         offCtxGround.restore();
 
         // 5. 폭발 구멍(craters) 타공
