@@ -3450,11 +3450,11 @@ function render() {
         offCtxGround.fillStyle = grassGrad;
         offCtxGround.fill();
 
-        // [수정] 초미세 마이크로 Dot Rim (확대해야만 아주 미세한 짙은 녹색 점이 살짝 보이는 수준으로 티 안 나게 연출)
+        // [수정] Dot Rim 크기 현재의 절반으로 축소 (0.2~0.4px 반경 초미세 마이크로 도트)
         for (let x = skyStartX; x <= skyEndX; x += 0.2) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY);
-            const microDotR = scaleLength(0.02 + Math.abs(Math.sin(x * 6.3)) * 0.02); // 초미세 0.4~0.8px 반경
+            const microDotR = scaleLength(0.01 + Math.abs(Math.sin(x * 6.3)) * 0.01); // 절반 크기
             offCtxGround.beginPath();
             offCtxGround.arc(p.x, p.y + (Math.sin(x * 11) > 0 ? 0.3 : -0.3), microDotR, 0, Math.PI * 2);
             offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(20, 83, 45, 0.45)' : 'rgba(22, 101, 52, 0.35)';
@@ -3474,7 +3474,7 @@ function render() {
 
         offCtxGround.restore(); // 클리핑 해제
 
-        // 5. 폭발 구멍(craters) 타공
+        // 5. 폭발 구멍(craters) 타공 — 모든 지형 요소(통나무, 잔디, Dot Rim, 흙 띠)를 그리고 난 후 일괄 타공하여 뚫린 구멍 위 잔상 완벽 제거
         if (typeof craters !== 'undefined' && craters.length > 0) {
             offCtxGround.globalCompositeOperation = 'destination-out';
             for (const crater of craters) {
@@ -3487,79 +3487,8 @@ function render() {
             offCtxGround.globalCompositeOperation = 'source-over';
         }
 
-        // 베이스 오프스크린 지형 그리기
+        // 베이스 오프스크린 지형을 메인 ctx에 복사 (동적 풀잎/들꽃/파티클 렌더링 전면 삭제하여 랙 완벽 방지)
         ctx.drawImage(offCanvasGround, 0, 0);
-
-        // 6. 메인 ctx 직접 렌더링: 듬성듬성 아담하게 배치된 풀잎, 들꽃 🟡⚪️, 흩날리는 꽃잎 파티클 🌸 (크레이터 파괴 반응)
-        ctx.save();
-        const tNow = Date.now() / 350;
-        for (let x = skyStartX + 0.5; x <= skyEndX - 0.5; x += 1.25) {
-            const origY = getOrigY(x);
-            const curTerrainY = getTerrainY(x);
-
-            // [파괴 검사 1] 지형이 뚫렸거나(-50 이하) 원본 높이보다 깎여나간 지점이면 파괴되어 미표시
-            if (curTerrainY <= -50 || (origY - curTerrainY > 0.15)) continue;
-
-            // [파괴 검사 2] 크레이터(폭발 구멍) 범위 안이면 파괴 처리되어 미표시
-            if (typeof craters !== 'undefined' && craters.length > 0) {
-                const isDestroyed = craters.some(c => Math.hypot(x - c.x, origY - c.y) <= c.r + 0.2);
-                if (isDestroyed) continue;
-            }
-
-            const p = gridToScreen(x, curTerrainY);
-            const h = 3.5 + Math.sin(x * 3.7) * 1.5; // 아담한 풀잎 높이
-            // 바람 흔들림 변위 (Date.now() 기반 동적 휘어짐)
-            const wind = Math.sin(tNow + x * 0.75) * 2.6 + Math.cos(tNow * 0.5 + x) * 1.1;
-
-            // 1) 뒤쪽 짙은 풀잎
-            ctx.beginPath();
-            ctx.moveTo(p.x - 1, p.y + 1);
-            ctx.lineTo(p.x + wind - 1.2, p.y - h - 0.8);
-            ctx.strokeStyle = '#15803d';
-            ctx.lineWidth = 1.6;
-            ctx.stroke();
-
-            // 2) 앞쪽 상큼한 그린 풀잎
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p.x + wind, p.y - h);
-            ctx.strokeStyle = '#4ade80';
-            ctx.lineWidth = 1.6;
-            ctx.stroke();
-
-            // 3) 바람에 살랑살랑 흔들리는 아기자기한 작은 들꽃 (노란 민들레 🟡 / 하얀 들꽃 ⚪️)
-            if (Math.abs(Math.sin(x * 4.3)) > 0.45) {
-                const flowerX = p.x + wind;
-                const flowerY = p.y - h - 0.5;
-                const isYellow = Math.sin(x * 11.7) > 0;
-
-                // 꽃잎
-                ctx.beginPath();
-                ctx.arc(flowerX, flowerY, 2.0, 0, Math.PI * 2);
-                ctx.fillStyle = isYellow ? '#fde047' : '#ffffff';
-                ctx.fill();
-
-                // 꽃수술
-                ctx.beginPath();
-                ctx.arc(flowerX, flowerY, 0.8, 0, Math.PI * 2);
-                ctx.fillStyle = isYellow ? '#ea580c' : '#f59e0b';
-                ctx.fill();
-
-                // 4) 바람을 타고 흩날리는 미세 꽃잎 파티클 (Swaying Petal Particles)
-                if (Math.sin(x * 17.3 + tNow * 0.8) > 0.35) {
-                    const petalCycle = (tNow * 1.2 + Math.abs(x)) % 4; // 0 ~ 4 초 주기 흩날림
-                    const floatX = flowerX + Math.sin(tNow * 1.5 + x) * 10 + petalCycle * 6;
-                    const floatY = flowerY - (petalCycle * 5) + Math.cos(tNow + x) * 2.2;
-                    const petalAlpha = Math.max(0, 1 - (petalCycle / 4));
-
-                    ctx.beginPath();
-                    ctx.arc(floatX, floatY, 1.1, 0, Math.PI * 2);
-                    ctx.fillStyle = isYellow ? `rgba(253, 224, 71, ${petalAlpha * 0.85})` : `rgba(255, 241, 242, ${petalAlpha * 0.9})`;
-                    ctx.fill();
-                }
-            }
-        }
-        ctx.restore();
     } else {
         const offCanvasGround = document.createElement('canvas');
         offCanvasGround.width = canvas.width;
