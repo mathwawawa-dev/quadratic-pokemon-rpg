@@ -3447,8 +3447,7 @@ function render() {
             offCtxGround.restore();
         });
 
-        // 3. 통나무 상단 잔디 풀밭 레이어 (3색 수직 그라데이션 + 이끼 패치 + 투톤 풀잎 & 작은 들꽃)
-        offCtxGround.save();
+        // 3. 통나무 상단 잔디 풀밭 레이어 (이전 버전의 심플하고 맑은 초록 잔디 #22c55e + 풀잎 데코)
         offCtxGround.beginPath();
         const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
         offCtxGround.moveTo(gStartP.x, gStartP.y);
@@ -3458,74 +3457,25 @@ function render() {
             if (x >= skyEndX) break;
         }
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
-            const p = gridToScreen(x, getOrigY(x) - 0.375);
+            const p = gridToScreen(x, getOrigY(x) - 0.65);
             offCtxGround.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
         offCtxGround.closePath();
-
-        // 3색 수직 그라데이션 (상단 차분한 연두 올리브 -> 중앙 딥 그린 -> 하단 짙은 숲색)
-        const topScreenP = gridToScreen(0, 0);
-        const botScreenP = gridToScreen(0, -0.375);
-        const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 6, 0, botScreenP.y + 6);
-        grassGrad.addColorStop(0.0, '#4a8f62'); // 상단 차분한 올리브 그린
-        grassGrad.addColorStop(0.4, '#2d6a4f'); // 중앙 편안한 딥 그린
-        grassGrad.addColorStop(1.0, '#1b4332'); // 하단 짙은 숲색
-        offCtxGround.fillStyle = grassGrad;
+        offCtxGround.fillStyle = '#22c55e';
         offCtxGround.fill();
 
-        // 이끼(Moss) 하이라이트 패치 (차분한 녹음 패치 - 잔디 두께 절반에 맞춘 크기/위치)
-        for (let x = skyStartX; x <= skyEndX; x += 0.8) {
-            const topY = getOrigY(x);
-            const p = gridToScreen(x, topY - 0.18);
-            const mossR = scaleLength(0.18 + Math.sin(x * 2.3) * 0.08);
-            offCtxGround.beginPath();
-            offCtxGround.arc(p.x, p.y + Math.cos(x * 1.7) * 1, mossR, 0, Math.PI * 2);
-            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(74, 143, 98, 0.3)' : 'rgba(45, 106, 79, 0.25)';
-            offCtxGround.fill();
-        }
-
-        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링 (높이 절반 축소: 3.5 ~ 5.5px)
-        for (let x = skyStartX; x <= skyEndX; x += 0.35) {
+        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링 (이전 버전 스타일)
+        offCtxGround.strokeStyle = '#15803d';
+        offCtxGround.lineWidth = 2.5;
+        for (let x = skyStartX; x <= skyEndX; x += 0.4) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY);
-            const h = 3.5 + Math.sin(x * 3.7) * 2;
-            const bend = Math.sin(x * 4.3) * 2.5;
-
-            // 뒤쪽 짙은 풀잎
-            offCtxGround.beginPath();
-            offCtxGround.moveTo(p.x - 1, p.y + 1);
-            offCtxGround.lineTo(p.x + bend - 2, p.y - h - 1);
-            offCtxGround.strokeStyle = '#1b4332';
-            offCtxGround.lineWidth = 2.0;
-            offCtxGround.stroke();
-
-            // 앞쪽 차분한 풀잎
+            const h = 8 + Math.sin(x * 3) * 5;
             offCtxGround.beginPath();
             offCtxGround.moveTo(p.x, p.y);
-            offCtxGround.lineTo(p.x + bend, p.y - h);
-            offCtxGround.strokeStyle = '#4a8f62';
-            offCtxGround.lineWidth = 2.0;
+            offCtxGround.lineTo(p.x + Math.sin(x * 5) * 4, p.y - h);
             offCtxGround.stroke();
-
-            // 5. 아기자기한 작은 들꽃 (은은한 파스텔 옐로우 & 아이보리 흰색)
-            if (Math.abs(Math.sin(x * 7.1)) > 0.72) {
-                const flowerP = gridToScreen(x, topY);
-                const flowerY = flowerP.y - h + 1;
-                const flowerX = flowerP.x + bend;
-                const isYellow = Math.sin(x * 13.3) > 0;
-
-                offCtxGround.beginPath();
-                offCtxGround.arc(flowerX, flowerY, 2.0, 0, Math.PI * 2);
-                offCtxGround.fillStyle = isYellow ? '#fef08a' : '#f8fafc';
-                offCtxGround.fill();
-
-                // 꽃수술
-                offCtxGround.beginPath();
-                offCtxGround.arc(flowerX, flowerY, 0.8, 0, Math.PI * 2);
-                offCtxGround.fillStyle = isYellow ? '#d97706' : '#e2e8f0';
-                offCtxGround.fill();
-            }
         }
 
         offCtxGround.restore();
