@@ -320,7 +320,7 @@ function createCrater(cx, cy, radius) {
             // 폭발 구체 범위(craterBottomY ~ craterTopY) 내에 위치한 표면 지형만 파괴되도록 정밀 검증 (상단 천장 언덕 유지를 통해 순간이동 슬라이딩 버그 예방)
             if (y !== -100 && y >= craterBottomY && y <= craterTopY + 0.3) {
                 terrainHeights[key][i] = Math.min(y, craterBottomY);
-                if (isFloating || stage.terrain === 'sky') {
+                if (isFloating || stage.terrain === 'sky' || stage.terrain === 'log_bridge') {
                     if (terrainBottoms[key] && terrainHeights[key][i] < terrainBottoms[key][i]) {
                         terrainHeights[key][i] = -100;
                     }
@@ -2003,7 +2003,7 @@ function updateGame() {
                             for (let i = 0; i < origYs.length; i++) {
                                 const origY = origYs[i];
                                 if (ty <= origY && origY !== -100) {
-                                    if (isFloatingMapLocal || stage.terrain === 'sky') {
+                                    if (isFloatingMapLocal || stage.terrain === 'sky' || stage.terrain === 'log_bridge') {
                                         const bottomY = origY - 5.0; 
                                         if (ty >= bottomY) { insideTerrain = true; break; }
                                     } else {
