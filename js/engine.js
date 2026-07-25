@@ -1455,7 +1455,7 @@ function applyDamageAndEffects(target, mx, my) {
         isFirstTurn = false;
         player.visualScale = 1.4;
         player.hasAura = 'red';
-        effects.push({ type: 'text', x: player.x, y: player.y - 0.8, text: '💥 기선 제압!', color: '#ff4500', life: 240 });
+        effects.push({ type: 'text', x: player.x, y: player.y - 3.0, text: '💥 기선 제압!', color: '#ff4500', life: 240 });
     }
 
     target.hp -= totalDamage;
