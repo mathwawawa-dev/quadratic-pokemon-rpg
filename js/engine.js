@@ -3276,16 +3276,26 @@ function render() {
     }
 
     // Grid & Axes
-    const isBright = ['sky', 'ice'].includes(LEVELS[currentStage % LEVELS.length].terrain);
-    const gridColor = isBright ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)';
-    const thickLine = isBright ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.4)';
-    const thinLine  = isBright ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)';
-    const axisLine  = isBright ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.9)';
+    const isBright = ['sky', 'ice', 'cloud_garden'].includes(LEVELS[currentStage % LEVELS.length].terrain);
+    const gridColor = isBright ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.9)';
+    const thickLine = isBright ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)';
+    const thinLine  = isBright ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.25)';
+    const axisLine  = isBright ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)';
     ctx.font = "16px 'Cambria Math','Times New Roman',serif";
     ctx.fillStyle = gridColor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     // isFiring 플래그 갱신 (모듈 레벨 변수 - drawEntity에서도 참조)
     isFiring = GAME_STATE === 'FIRING' || effects.length > 0;
     ctx.shadowBlur = 0; // 그리드 레이블 shadowBlur 제거 (상시 부하 원인)
+
+    const drawGridTextWithOutline = (txt, gx, gy) => {
+        if (isBright) {
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+            ctx.strokeText(txt, gx, gy);
+        }
+        ctx.fillStyle = gridColor;
+        ctx.fillText(txt, gx, gy);
+    };
 
     for (let x = Math.ceil(X_MIN); x <= Math.floor(X_MAX); x++) {
         const p0 = gridToScreen(x, Y_MIN), p1 = gridToScreen(x, Y_MAX);
@@ -3293,7 +3303,7 @@ function render() {
         ctx.lineWidth = (x % 5 === 0 && x !== 0) ? 2.5 : 1.5;
         ctx.strokeStyle = (x % 5 === 0 && x !== 0) ? thickLine : thinLine;
         ctx.stroke();
-        if (x % 5 === 0 && x !== 0) ctx.fillText(x < 0 ? '−' + Math.abs(x) : x, p0.x, gridToScreen(x, 0).y + 20);
+        if (x % 5 === 0 && x !== 0) drawGridTextWithOutline(x < 0 ? '−' + Math.abs(x) : String(x), p0.x, gridToScreen(x, 0).y + 20);
     }
     for (let y = Math.ceil(Y_MIN); y <= Math.floor(Y_MAX); y++) {
         const p0 = gridToScreen(X_MIN, y), p1 = gridToScreen(X_MAX, y);
@@ -3301,7 +3311,7 @@ function render() {
         ctx.lineWidth = (y % 5 === 0 && y !== 0) ? 2.5 : 1.5;
         ctx.strokeStyle = (y % 5 === 0 && y !== 0) ? thickLine : thinLine;
         ctx.stroke();
-        if (y % 5 === 0 && y !== 0) ctx.fillText(y < 0 ? '−' + Math.abs(y) : y, gridToScreen(0, y).x - 20, p0.y);
+        if (y % 5 === 0 && y !== 0) drawGridTextWithOutline(y < 0 ? '−' + Math.abs(y) : String(y), gridToScreen(0, y).x - 20, p0.y);
     }
     ctx.shadowBlur = 0; // 축 렌더 후 초기화
 

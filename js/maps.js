@@ -207,9 +207,9 @@ const TERRAINS = {
     },
     cloud_garden: {
         name: "구름 정원",
-        bg: ["#0284c7", "#38bdf8", "#bae6fd"], // 맑고 아련한 하늘 파스텔 그라데이션 (v1.4.156 복구)
-        color: "rgba(255, 255, 255, 0.92)",   // 반투명 뽀송한 흰색 구름 섬 (v1.4.156 복구)
-        outColor: "rgba(186, 230, 253, 0.95)", // 아쿠아 블루 구름 테두리 (v1.4.156 복구)
+        bg: ["#0284c7", "#38bdf8", "#bae6fd"],
+        color: "rgba(245, 240, 230, 0.95)",   // 소프트 크림 / 연베이지 톤 (눈부심 방지)
+        outColor: "rgba(215, 200, 180, 0.95)", // 차분한 베이지 샌드 테두리
         isFloating: true,
         deathZoneY: -25,
         init: function(seed) {
