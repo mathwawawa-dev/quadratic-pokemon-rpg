@@ -1707,7 +1707,7 @@ function updateGame() {
             }
             ent.y += ent.vy;
             ent.rotation += ent.angularVelocity;
-            ent.vy -= 0.02; // 이 중력 코드가 삭제되지 않도록 주의
+            ent.vy -= 0.03; // 중력 가속도 1.5배 상향 (-0.02 -> -0.03)
             const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
             const limitX = 60;
             if (ent.x - ent.w/2 < -limitX) { ent.x = -limitX + ent.w/2; ent.vx *= -0.8; }
@@ -1722,7 +1722,7 @@ function updateGame() {
                 } else {
                     // 일반적인 바닥 충돌 (얼음 설산 지형은 넉백 시 더 많이 미끄러짐)
                     ent.y = groundY; 
-                    ent.vy *= -0.5; 
+                    ent.vy *= -0.4; 
                     
                     const slopeRightY = getTerrainY(ent.x + 0.2, ent.y) + 0.75;
                     const slopeLeftY = getTerrainY(ent.x - 0.2, ent.y) + 0.75;
@@ -1737,12 +1737,12 @@ function updateGame() {
                         ent.vx += -safeSlopeDiff * 0.15; 
                     }
                     
-                    const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.88 : 0.7;
+                    const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.80 : 0.55;
                     ent.vx *= iceFriction; 
-                    ent.angularVelocity *= 0.6;
+                    ent.angularVelocity *= 0.5;
                     
-                    if (Math.abs(ent.vy) < 0.05 && Math.abs(ent.vx) < 0.05) {
-                        if (isLocalMin || Math.abs(slopeDiff) <= 0.05) {
+                    if (Math.abs(ent.vy) < 0.15 && Math.abs(ent.vx) < 0.15) {
+                        if (isLocalMin || Math.abs(slopeDiff) <= 0.2) {
                             ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
                         }
                     }
@@ -1751,7 +1751,7 @@ function updateGame() {
         } else if (!ent.isFlying) {
             const isGroundType = ent.type === 'ground' && !ent.isSurfaced;
             const groundY = getTerrainY(ent.x, ent.y) + (isGroundType ? -1.3 : 0.75);
-            if (ent.y > groundY + 0.1) { ent.vy -= 0.02; ent.y += ent.vy; }
+            if (ent.y > groundY + 0.1) { ent.vy -= 0.03; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
         const deathZoneY = ['garden', 'sky'].includes(LEVELS[currentStage % LEVELS.length].terrain) ? -30 : -8;
