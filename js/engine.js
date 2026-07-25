@@ -1447,7 +1447,10 @@ function applyDamageAndEffects(target, mx, my) {
         showMessage('GAME OVER', '자폭했습니다...');
     } else if (deadEnemies >= 2 && GAME_STATE !== 'OVER') {
         GAME_STATE = 'OVER';
-        showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false);
+        if (window.stageClearTimeout) clearTimeout(window.stageClearTimeout);
+        window.stageClearTimeout = setTimeout(() => {
+            showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false);
+        }, 1500);
     } else if (missile.type !== 'pierce' && !missile.active) {
         GAME_STATE = 'IDLE';
         document.getElementById('fire-btn').disabled = false;
