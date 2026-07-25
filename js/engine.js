@@ -1939,43 +1939,45 @@ function updateGame() {
                 const tx = prevStepX + (stepVx * step) / steps;
                 const ty = prevStepY + (stepVy * step) / steps;
                 
-                // 1. 지형 충돌 검사 (섬/지형 뒤에 숨은 적보다 지형 타격을 먼저 검사)
+                // 1. 지형 충돌 검사 (치트 미사일은 지형에 묻힌 적도 타격 가능하도록 지형 충돌 우회)
                 let insideTerrain = false;
-                if (tData.islands) {
-                    for (let l = 0; l < tData.islands.length; l++) {
-                        for (const s of tData.islands[l]) {
-                            const dx0 = tx - s.cx;
-                            const dy0 = ty - s.cy;
-                            const rot = s.rot || 0;
-                            const cosR = Math.cos(-rot);
-                            const sinR = Math.sin(-rot);
-                            const dx = dx0 * cosR - dy0 * sinR;
-                            const dy = dx0 * sinR + dy0 * cosR;
-                            if ((dx*dx)/(s.rx*s.rx) + (dy*dy)/(s.ry*s.ry) <= 1.0) { insideTerrain = true; break; }
+                if (!missile.isCheat) {
+                    if (tData.islands) {
+                        for (let l = 0; l < tData.islands.length; l++) {
+                            for (const s of tData.islands[l]) {
+                                const dx0 = tx - s.cx;
+                                const dy0 = ty - s.cy;
+                                const rot = s.rot || 0;
+                                const cosR = Math.cos(-rot);
+                                const sinR = Math.sin(-rot);
+                                const dx = dx0 * cosR - dy0 * sinR;
+                                const dy = dx0 * sinR + dy0 * cosR;
+                                if ((dx*dx)/(s.rx*s.rx) + (dy*dy)/(s.ry*s.ry) <= 1.0) { insideTerrain = true; break; }
+                            }
+                            if (insideTerrain) break;
                         }
-                        if (insideTerrain) break;
-                    }
-                } else {
-                    const key = (Math.round(tx * 10) / 10).toFixed(1);
-                    
-                    if (tData.hasCaveWall && typeof ceilHeights !== 'undefined') {
-                        if (ceilHeights[key] !== undefined) {
-                            if (ty >= ceilHeights[key]) { insideTerrain = true; }
-                        } else if (tData.ceilFunc) {
-                            if (ty >= tData.ceilFunc(tx)) { insideTerrain = true; }
+                    } else {
+                        const key = (Math.round(tx * 10) / 10).toFixed(1);
+                        
+                        if (tData.hasCaveWall && typeof ceilHeights !== 'undefined') {
+                            if (ceilHeights[key] !== undefined) {
+                                if (ty >= ceilHeights[key]) { insideTerrain = true; }
+                            } else if (tData.ceilFunc) {
+                                if (ty >= tData.ceilFunc(tx)) { insideTerrain = true; }
+                            }
                         }
-                    }
 
-                    if (!insideTerrain) {
-                        const origYs = originalTerrainHeights[key] || [];
-                        for (let i = 0; i < origYs.length; i++) {
-                            const origY = origYs[i];
-                            if (ty <= origY && origY !== -100) {
-                                if (isFloatingMapLocal || stage.terrain === 'sky') {
-                                    const bottomY = origY - 5.0; 
-                                    if (ty >= bottomY) { insideTerrain = true; break; }
-                                } else {
-                                    insideTerrain = true; break;
+                        if (!insideTerrain) {
+                            const origYs = originalTerrainHeights[key] || [];
+                            for (let i = 0; i < origYs.length; i++) {
+                                const origY = origYs[i];
+                                if (ty <= origY && origY !== -100) {
+                                    if (isFloatingMapLocal || stage.terrain === 'sky') {
+                                        const bottomY = origY - 5.0; 
+                                        if (ty >= bottomY) { insideTerrain = true; break; }
+                                    } else {
+                                        insideTerrain = true; break;
+                                    }
                                 }
                             }
                         }
