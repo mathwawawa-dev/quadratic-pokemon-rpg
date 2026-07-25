@@ -460,11 +460,11 @@ function initStage() {
         else                    approxPx = 0;
     }
 
-    // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 1~3개의 뾰족한 언덕 배치
+    // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 최대 1개의 뾰족한 언덕 배치 (높이도 3~6으로 완화)
     // 내 포켓몬(approxPx) 주변 반경 8.0 이내에는 스파이크가 절대 생성되지 않도록 제한 (자폭 방지)
     terrainSpikes = [];
     const spikeProb = stage.terrain === 'ice' ? 0.5 : 0.3;
-    const spikeCount = Math.random() < spikeProb ? Math.floor(Math.random() * 3) + 1 : 0;
+    const spikeCount = Math.random() < spikeProb ? 1 : 0;
     for (let s = 0; s < spikeCount; s++) {
         let scx = 0;
         let tryCount = 0;
@@ -475,8 +475,8 @@ function initStage() {
 
         terrainSpikes.push({
             cx: scx,
-            height: 6 + Math.random() * 10,        // 솟아오르는 높이 (6~16)
-            width:  0.8 + Math.random() * 1.2      // 스파이크 너비 (좁을수록 뾰족)
+            height: 3 + Math.random() * 3,         // 솟아오르는 높이 완화 (3~6)
+            width:  1.0 + Math.random() * 1.0      // 스파이크 너비
         });
     }
 

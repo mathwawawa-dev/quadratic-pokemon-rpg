@@ -28,7 +28,7 @@ const TERRAINS = {
         func: (x) => Math.sin((x + terrainSeed) / 4) * 2 + Math.sin((x - terrainSeed) / 1.5) * 0.5 - 2
     },
     lava: {
-        name: "화산 용암",
+        name: "화산",
         bg: ["#2a0000", "#5c0000", "#a52a2a"],
         color: "#1a0505", outColor: "#0a0202",
         func: (x) => Math.cos((x + terrainSeed) / 2.5) * 2.5 + Math.sin((x - terrainSeed) / 1.2) * 1 - 3
@@ -206,7 +206,7 @@ const TERRAINS = {
         func: (x) => -100
     },
     cloud_garden: {
-        name: "구름 정원",
+        name: "솜사탕",
         bg: ["#0284c7", "#38bdf8", "#bae6fd"],
         color: "rgba(255, 228, 235, 0.95)",   // 파스텔 솜사탕 핑크 구름 (흰색 축/숫자와 뚜렷이 구별됨)
         outColor: "rgba(244, 114, 182, 0.95)", // 아련한 파스텔 핑크 테두리
