@@ -49,7 +49,9 @@ const TERRAINS = {
         name: "어두운 동굴",
         bg: ["#0d0d0d", "#262626", "#404040"],
         color: "#595959", outColor: "#0d0d0d",
-        func: (x) => Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2
+        hasCaveWall: true,
+        func: (x) => Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2,
+        ceilFunc: (x) => -(Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2) + 35
     },
     electric: {
         name: "발전소",

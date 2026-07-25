@@ -53,6 +53,7 @@ let screenShake = 0;
 let terrainHeights = {};
 let originalTerrainHeights = {};
 let terrainBottoms = {};
+let ceilHeights = {};
 let explosionRadius = 0.7; // 폭발 반경 (0.7로 축소)
 let playerGold = 0;
 let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
@@ -405,6 +406,7 @@ function initStage() {
     terrainHeights = {};
     originalTerrainHeights = {};
     terrainBottoms = {};
+    ceilHeights = {};
     terrainSpikes = [];
     craters = [];
     window.lastElectricLightningTime = Date.now();
