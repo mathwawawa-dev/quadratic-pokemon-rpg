@@ -2664,6 +2664,23 @@ function drawEntity(ent) {
     ctx.restore();
 }
 
+// ---------------------------------------------------------
+// 지형 렌더링용 고정 재사용 오프스크린 캔버스 (매 프레임 createElement 랙 완벽 방지)
+// ---------------------------------------------------------
+let sharedTerrainCanvas = null;
+function getSharedTerrainCtx() {
+    if (!sharedTerrainCanvas) {
+        sharedTerrainCanvas = document.createElement('canvas');
+    }
+    if (sharedTerrainCanvas.width !== canvas.width || sharedTerrainCanvas.height !== canvas.height) {
+        sharedTerrainCanvas.width = canvas.width;
+        sharedTerrainCanvas.height = canvas.height;
+    }
+    const offCtxGround = sharedTerrainCanvas.getContext('2d');
+    offCtxGround.clearRect(0, 0, sharedTerrainCanvas.width, sharedTerrainCanvas.height);
+    return { offCanvasGround: sharedTerrainCanvas, offCtxGround };
+}
+
 function render() {
     ctx.save();
     if (screenShake > 0) ctx.translate((Math.random()-0.5)*10, (Math.random()-0.5)*10);
@@ -3194,10 +3211,7 @@ function render() {
         const skyEndX = 30;
         const thickness = 5.0;
 
-        const offCanvasGround = document.createElement('canvas');
-        offCanvasGround.width = canvas.width;
-        offCanvasGround.height = canvas.height;
-        const offCtxGround = offCanvasGround.getContext('2d');
+        const { offCanvasGround, offCtxGround } = getSharedTerrainCtx();
 
         const getOrigY = (x) => {
             const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -3257,10 +3271,7 @@ function render() {
         const skyStartX = -45;
         const skyEndX = 45;
 
-        const offCanvasGround = document.createElement('canvas');
-        offCanvasGround.width = canvas.width;
-        offCanvasGround.height = canvas.height;
-        const offCtxGround = offCanvasGround.getContext('2d');
+        const { offCanvasGround, offCtxGround } = getSharedTerrainCtx();
 
         const getOrigY = (x) => {
             const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -3490,10 +3501,7 @@ function render() {
         // 베이스 오프스크린 지형을 메인 ctx에 복사 (동적 풀잎/들꽃/파티클 렌더링 전면 삭제하여 랙 완벽 방지)
         ctx.drawImage(offCanvasGround, 0, 0);
     } else {
-        const offCanvasGround = document.createElement('canvas');
-        offCanvasGround.width = canvas.width;
-        offCanvasGround.height = canvas.height;
-        const offCtxGround = offCanvasGround.getContext('2d');
+        const { offCanvasGround, offCtxGround } = getSharedTerrainCtx();
 
         offCtxGround.beginPath();
         const getOrigY = (x) => {
