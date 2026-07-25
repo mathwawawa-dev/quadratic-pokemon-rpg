@@ -3327,27 +3327,59 @@ function render() {
         offCtxGround.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
         offCtxGround.closePath();
 
-        // 1. 통나무 기본 바탕색 (짙은 통나무 적갈색)
-        offCtxGround.fillStyle = '#5c220c';
+        // 1. 통나무 기본 바탕 3D 원통 그라데이션 (상단 원통 빛 입체감 #9a4823 -> 메인 적갈색 #5c220c -> 하단 그림자 #240c03)
+        const logTopScreen = gridToScreen(0, 0);
+        const logBotScreen = gridToScreen(0, -5.5); // 평균 통나무 두께 기준
+        const logBodyGrad = offCtxGround.createLinearGradient(0, logTopScreen.y, 0, logBotScreen.y);
+        logBodyGrad.addColorStop(0.0, '#9a4823'); // 상단 입체 웜브라운 하이라이트
+        logBodyGrad.addColorStop(0.35, '#5c220c'); // 메인 딥 적갈색
+        logBodyGrad.addColorStop(1.0, '#240c03'); // 하단 짙은 그림자 음영
+        offCtxGround.fillStyle = logBodyGrad;
         offCtxGround.fill();
 
-        // 2. 나무 껍질 및 결 패턴 렌더링 (검은 세로 눈금선 제거 → 유기적인 나뭇결 및 옹이 렌더링)
+        // 2. 나무 껍질 및 결 패턴 렌더링
         offCtxGround.save();
         offCtxGround.clip();
 
-        // 수평 나뭇결 흐름선 (유기적인 무늬)
-        for (let relRatio = 0.15; relRatio < 0.95; relRatio += 0.18) {
+        // 2-A. 세밀한 7레이어 수평 나뭇결 입체 결무늬 (Multi-Layer Wood Grain)
+        const grainRatios = [0.08, 0.20, 0.34, 0.48, 0.62, 0.76, 0.88];
+        grainRatios.forEach((relRatio, rIdx) => {
             offCtxGround.beginPath();
-            for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.4) {
+            for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.3) {
                 const curThick = getThick(x);
-                const yVal = getOrigY(x) - curThick * relRatio + Math.sin(x * 0.7 + relRatio * 10) * 0.2;
+                const waveOff = Math.sin(x * 0.75 + relRatio * 12) * 0.22 + Math.cos(x * 1.3 - relRatio * 5) * 0.08;
+                const yVal = getOrigY(x) - curThick * relRatio + waveOff;
                 const p = gridToScreen(x, yVal);
                 if (x === skyStartX - 2) offCtxGround.moveTo(p.x, p.y);
                 else offCtxGround.lineTo(p.x, p.y);
             }
-            offCtxGround.strokeStyle = (Math.round(relRatio * 100) % 2 === 0) ? 'rgba(61, 21, 6, 0.45)' : 'rgba(122, 47, 18, 0.35)';
-            offCtxGround.lineWidth = 2.5;
+            const isDark = (rIdx % 2 === 0);
+            offCtxGround.strokeStyle = isDark ? 'rgba(32, 10, 2, 0.55)' : 'rgba(154, 72, 35, 0.35)';
+            offCtxGround.lineWidth = isDark ? 2.2 : 1.6;
             offCtxGround.stroke();
+        });
+
+        // 2-B. 세밀한 나무 껍질 얼룩 패치 및 이끼 흔적 (Bark Spots & Subtle Moss Patches)
+        for (let bx = skyStartX - 2; bx <= skyEndX + 2; bx += 2.5) {
+            const curThick = getThick(bx);
+            const spotY = getOrigY(bx) - curThick * (0.2 + (Math.abs(Math.sin(bx * 3.3)) * 0.6));
+            const sp = gridToScreen(bx, spotY);
+            const srx = scaleLength(0.6 + Math.abs(Math.cos(bx * 1.7)) * 0.8);
+            const sry = scaleLength(0.25 + Math.abs(Math.sin(bx * 2.1)) * 0.3);
+
+            // 어두운 나무 껍질 결 반점
+            offCtxGround.beginPath();
+            offCtxGround.ellipse(sp.x, sp.y, srx, sry, Math.sin(bx) * 0.3, 0, Math.PI * 2);
+            offCtxGround.fillStyle = (Math.round(bx) % 2 === 0) ? 'rgba(30, 8, 2, 0.35)' : 'rgba(120, 48, 18, 0.25)';
+            offCtxGround.fill();
+
+            // 은은한 자연 이끼/녹움 얼룩 (랜덤 배치)
+            if (Math.abs(Math.sin(bx * 5.7)) > 0.65) {
+                offCtxGround.beginPath();
+                offCtxGround.ellipse(sp.x + Math.sin(bx) * 6, sp.y + Math.cos(bx) * 3, srx * 0.8, sry * 0.7, 0, 0, Math.PI * 2);
+                offCtxGround.fillStyle = 'rgba(45, 106, 79, 0.22)';
+                offCtxGround.fill();
+            }
         }
 
         // 2-B. 나무 옹이 (Wood Knots / Burls) — 중심 회오리 나이테 + 나뭇결 휘어짐 + 나무 균열(Crack) 디테일
