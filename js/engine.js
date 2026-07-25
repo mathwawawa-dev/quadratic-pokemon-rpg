@@ -3329,7 +3329,7 @@ function render() {
         for (let relRatio = 0.15; relRatio < 0.95; relRatio += 0.18) {
             offCtxGround.beginPath();
             for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.4) {
-                const curThick = getThick(x);
+                const curThick = thickness;
                 const yVal = getOrigY(x) - curThick * relRatio + Math.sin(x * 0.7 + relRatio * 10) * 0.2;
                 const p = gridToScreen(x, yVal);
                 if (x === skyStartX - 2) offCtxGround.moveTo(p.x, p.y);
@@ -3343,7 +3343,7 @@ function render() {
         // 2-B. 나무 옹이 (Wood Knots) — 개수를 대폭 축소하여 3개만 드문드문 자연스럽게 배치
         const knotPositions = [-22, 2, 26];
         knotPositions.forEach((kx, kIdx) => {
-            const ky = getOrigY(kx) - getThick(kx) * (0.3 + (kIdx % 3) * 0.2);
+            const ky = getOrigY(kx) - thickness * (0.3 + (kIdx % 3) * 0.2);
             const kp = gridToScreen(kx, ky);
             const krx = scaleLength(0.85 + (kIdx % 2) * 0.25);
             const kry = scaleLength(0.5 + (kIdx % 2) * 0.15);
@@ -3479,21 +3479,18 @@ function render() {
             const key = (Math.round(x * 10) / 10).toFixed(1);
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : getTerrainY(x);
         };
-                const isBoundedTerrain = stage.terrain === 'grass' || stage.terrain === 'ice' || stage.terrain === 'lava' || stage.terrain === 'cave' || stage.terrain === 'electric' || stage.terrain === 'ocean' || stage.terrain === 'psychic';
-          const drawMinX = isBoundedTerrain ? Math.max(X_MIN, -25) : X_MIN;
-          const drawMaxX = isBoundedTerrain ? Math.min(X_MAX, 25) : X_MAX;
           
-          if (drawMinX <= drawMaxX) {
-              const startP = gridToScreen(drawMinX, getOrigY(drawMinX));
+          if (X_MIN <= X_MAX) {
+              const startP = gridToScreen(X_MIN, getOrigY(X_MIN));
               offCtxGround.moveTo(startP.x, startP.y);
               
-              for (let x = drawMinX; x <= drawMaxX; x += 0.2) { 
+              for (let x = X_MIN; x <= X_MAX; x += 0.2) { 
                   const p = gridToScreen(x, getOrigY(x)); 
                   offCtxGround.lineTo(p.x, p.y); 
               }
               
-              const br = gridToScreen(drawMaxX, -100);
-              const bl = gridToScreen(drawMinX, -100);
+              const br = gridToScreen(X_MAX, -100);
+              const bl = gridToScreen(X_MIN, -100);
               offCtxGround.lineTo(br.x, br.y); 
               offCtxGround.lineTo(bl.x, bl.y); 
           }
