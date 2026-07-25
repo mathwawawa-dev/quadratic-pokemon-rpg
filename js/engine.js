@@ -2014,7 +2014,7 @@ function updateGame() {
                             if (!missile.hitTargets.has(e)) {
                                 missile.hitTargets.add(e);
                                 // 지하 적(디그다 등) 표면 스냅
-                                const pierceSurfY = getTerrainY(e.x) + 0.75;
+                                const pierceSurfY = getTerrainY(e.x, e.y) + 0.75;
                                 if (e.y < pierceSurfY - 0.1) { e.y = pierceSurfY; e.vy = 0; }
                                 applyDamageAndEffects(e, tx, ty);
                                 effects.push({ type: 'text', x: e.x, y: e.y + 1.8, text: 'PIERCE!', color: '#00e5ff', life: 120 });
@@ -2067,7 +2067,7 @@ function updateGame() {
                                 const inColumn = Math.abs(ent.x - chtX) <= explosionRadius + 0.5 && ent.y >= chtY;
                                 if (ent.hp > 0 && (inRadius || inColumn)) {
                                     // 지하에 있는 적(디그다 등)은 지면 위로 먼저 올려줌
-                                    const surfaceY = getTerrainY(ent.x) + 0.75;
+                                    const surfaceY = getTerrainY(ent.x, ent.y) + 0.75;
                                     if (ent.y < surfaceY - 0.1) { ent.y = surfaceY; ent.vy = 0; }
                                     applyDamageAndEffects(ent, chtX, chtY);
                                 }
@@ -2153,7 +2153,7 @@ function updateGame() {
                                 const inColumn = Math.abs(ent.x - targetX) <= explosionRadius + 0.5 && ent.y >= targetY;
                                 if (ent.hp > 0 && (inRadius || inColumn)) {
                                     // 지하에 있는 적(디그다 등)은 지면 위로 먼저 올려줌
-                                    const surfaceY = getTerrainY(ent.x) + 0.75;
+                                    const surfaceY = getTerrainY(ent.x, ent.y) + 0.75;
                                     if (ent.y < surfaceY - 0.1) { ent.y = surfaceY; ent.vy = 0; }
                                     applyDamageAndEffects(ent, targetX, targetY);
                                 }
@@ -2211,7 +2211,7 @@ function updateGame() {
                     // 직격(공중 포켓몬 포함) 처리: directHitTarget이 있으면 우선 적용
                     if (directHitTarget && directHitTarget.hp > 0) {
                         // 지하 적 표면 스냅
-                        const dtSurfY = getTerrainY(directHitTarget.x) + 0.75;
+                        const dtSurfY = getTerrainY(directHitTarget.x, directHitTarget.y) + 0.75;
                         if (directHitTarget.y < dtSurfY - 0.1) { directHitTarget.y = dtSurfY; directHitTarget.vy = 0; }
                         applyDamageAndEffects(directHitTarget, targetX, targetY);
                         hitSomeone = true;
@@ -2220,7 +2220,7 @@ function updateGame() {
                             if (ent === directHitTarget || ent.hp <= 0) return;
                             const edx = ent.x - targetX, edy = ent.y - targetY;
                             if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
-                                const sfY = getTerrainY(ent.x) + 0.75;
+                                const sfY = getTerrainY(ent.x, ent.y) + 0.75;
                                 if (ent.y < sfY - 0.1) { ent.y = sfY; ent.vy = 0; }
                                 applyDamageAndEffects(ent, targetX, targetY);
                             }
@@ -2231,7 +2231,7 @@ function updateGame() {
                             if (ent.hp <= 0) return;
                             const edx = ent.x - targetX, edy = ent.y - targetY;
                             if (Math.sqrt(edx*edx + edy*edy) <= explosionRadius) {
-                                const sfY = getTerrainY(ent.x) + 0.75;
+                                const sfY = getTerrainY(ent.x, ent.y) + 0.75;
                                 if (ent.y < sfY - 0.1) { ent.y = sfY; ent.vy = 0; }
                                 applyDamageAndEffects(ent, targetX, targetY); hitSomeone = true;
                             }
