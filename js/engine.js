@@ -3273,11 +3273,22 @@ function render() {
         const rightBotP = gridToScreen(skyEndX, rightTopY - rightThick);
         offCtxGround.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
 
-        // 하단 껍질 라인 (들쭉날쭉한 두께 적용)
-        for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
-            const p = gridToScreen(x, getOrigY(x) - getThick(x));
-            offCtxGround.lineTo(p.x, p.y);
-            if (x <= skyStartX) break;
+        // 하단 껍질 라인 (블록 단위 계단식 두께 - 파도 너울 방지)
+        {
+            const BLOCK = 4.0;
+            let bx = skyEndX;
+            while (bx > skyStartX) {
+                const nextBx = Math.max(skyStartX, bx - BLOCK);
+                const midX = (bx + nextBx) / 2;
+                const thick = getThick(midX);
+                // 현재 x에서 수직으로 하단에 도달
+                const pRight = gridToScreen(bx, getOrigY(bx) - thick);
+                offCtxGround.lineTo(pRight.x, pRight.y);
+                // 다음 블록까지 수평선
+                const pLeft = gridToScreen(nextBx, getOrigY(nextBx) - thick);
+                offCtxGround.lineTo(pLeft.x, pLeft.y);
+                bx = nextBx;
+            }
         }
 
         // 좌측 둥근 나이테 단면 캡 마감
