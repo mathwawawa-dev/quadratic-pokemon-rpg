@@ -3474,8 +3474,13 @@ function render() {
             const key = (Math.round(x * 10) / 10).toFixed(1);
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : getTerrainY(x);
         };
-          const drawMinX = X_MIN;
-          const drawMaxX = X_MAX;
+          // 지형 데이터는 -60~60 범위에서만 초기화됨.
+          // 드래그로 카메라가 범위 밖으로 벗어나면 getOrigY가 -100을 리턴해 폴리곤이 붕괴되므로
+          // 렌더 범위를 데이터 유효 범위(TERRAIN_DATA_MIN~MAX)와 교집합으로 클램핑.
+          const TERRAIN_DATA_MIN = -60;
+          const TERRAIN_DATA_MAX = 60;
+          const drawMinX = Math.max(X_MIN, TERRAIN_DATA_MIN);
+          const drawMaxX = Math.min(X_MAX, TERRAIN_DATA_MAX);
           
           if (drawMinX <= drawMaxX) {
               const startP = gridToScreen(drawMinX, getOrigY(drawMinX));
