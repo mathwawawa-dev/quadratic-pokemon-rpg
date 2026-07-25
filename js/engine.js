@@ -434,6 +434,7 @@ function initStage() {
     ceilHeights = {};
     terrainSpikes = [];
     craters = [];
+    window.caveCeilOffset = 5.0 + Math.random() * 5.0; // 동굴 천장 높이 5~10 무작위 상승 오프셋
     window.lastElectricLightningTime = Date.now();
 
     // 플레이어 스폰 위치 사전 산출 (스파이크가 플레이어 주변 8.0 이내에 생기는 것 방지)

@@ -52,7 +52,8 @@ const TERRAINS = {
         hasCaveWall: true,
         func: (x) => Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2,
         ceilFunc: (x) => {
-            let y = -(Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2) + 19;
+            const offset = (typeof window !== 'undefined' && window.caveCeilOffset !== undefined) ? window.caveCeilOffset : 7.5;
+            let y = -(Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2) + 19 + offset;
             if (x < -20) {
                 const dx = -20 - x;
                 y -= dx * dx * 0.08;
