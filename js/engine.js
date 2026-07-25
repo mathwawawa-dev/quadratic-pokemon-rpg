@@ -3327,59 +3327,27 @@ function render() {
         offCtxGround.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
         offCtxGround.closePath();
 
-        // 1. 통나무 기본 바탕 3D 원통 그라데이션 (상단 원통 빛 입체감 #9a4823 -> 메인 적갈색 #5c220c -> 하단 그림자 #240c03)
-        const logTopScreen = gridToScreen(0, 0);
-        const logBotScreen = gridToScreen(0, -5.5); // 평균 통나무 두께 기준
-        const logBodyGrad = offCtxGround.createLinearGradient(0, logTopScreen.y, 0, logBotScreen.y);
-        logBodyGrad.addColorStop(0.0, '#9a4823'); // 상단 입체 웜브라운 하이라이트
-        logBodyGrad.addColorStop(0.35, '#5c220c'); // 메인 딥 적갈색
-        logBodyGrad.addColorStop(1.0, '#240c03'); // 하단 짙은 그림자 음영
-        offCtxGround.fillStyle = logBodyGrad;
+        // 1. 통나무 기본 바탕색 (짙은 통나무 적갈색)
+        offCtxGround.fillStyle = '#5c220c';
         offCtxGround.fill();
 
-        // 2. 나무 껍질 및 결 패턴 렌더링
+        // 2. 나무 껍질 및 결 패턴 렌더링 (검은 세로 눈금선 제거 → 유기적인 나뭇결 및 옹이 렌더링)
         offCtxGround.save();
         offCtxGround.clip();
 
-        // 2-A. 세밀한 7레이어 수평 나뭇결 입체 결무늬 (Multi-Layer Wood Grain)
-        const grainRatios = [0.08, 0.20, 0.34, 0.48, 0.62, 0.76, 0.88];
-        grainRatios.forEach((relRatio, rIdx) => {
+        // 수평 나뭇결 흐름선 (유기적인 무늬)
+        for (let relRatio = 0.15; relRatio < 0.95; relRatio += 0.18) {
             offCtxGround.beginPath();
-            for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.3) {
+            for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.4) {
                 const curThick = getThick(x);
-                const waveOff = Math.sin(x * 0.75 + relRatio * 12) * 0.22 + Math.cos(x * 1.3 - relRatio * 5) * 0.08;
-                const yVal = getOrigY(x) - curThick * relRatio + waveOff;
+                const yVal = getOrigY(x) - curThick * relRatio + Math.sin(x * 0.7 + relRatio * 10) * 0.2;
                 const p = gridToScreen(x, yVal);
                 if (x === skyStartX - 2) offCtxGround.moveTo(p.x, p.y);
                 else offCtxGround.lineTo(p.x, p.y);
             }
-            const isDark = (rIdx % 2 === 0);
-            offCtxGround.strokeStyle = isDark ? 'rgba(32, 10, 2, 0.55)' : 'rgba(154, 72, 35, 0.35)';
-            offCtxGround.lineWidth = isDark ? 2.2 : 1.6;
+            offCtxGround.strokeStyle = (Math.round(relRatio * 100) % 2 === 0) ? 'rgba(61, 21, 6, 0.45)' : 'rgba(122, 47, 18, 0.35)';
+            offCtxGround.lineWidth = 2.5;
             offCtxGround.stroke();
-        });
-
-        // 2-B. 세밀한 나무 껍질 얼룩 패치 및 이끼 흔적 (Bark Spots & Subtle Moss Patches)
-        for (let bx = skyStartX - 2; bx <= skyEndX + 2; bx += 2.5) {
-            const curThick = getThick(bx);
-            const spotY = getOrigY(bx) - curThick * (0.2 + (Math.abs(Math.sin(bx * 3.3)) * 0.6));
-            const sp = gridToScreen(bx, spotY);
-            const srx = scaleLength(0.6 + Math.abs(Math.cos(bx * 1.7)) * 0.8);
-            const sry = scaleLength(0.25 + Math.abs(Math.sin(bx * 2.1)) * 0.3);
-
-            // 어두운 나무 껍질 결 반점
-            offCtxGround.beginPath();
-            offCtxGround.ellipse(sp.x, sp.y, srx, sry, Math.sin(bx) * 0.3, 0, Math.PI * 2);
-            offCtxGround.fillStyle = (Math.round(bx) % 2 === 0) ? 'rgba(30, 8, 2, 0.35)' : 'rgba(120, 48, 18, 0.25)';
-            offCtxGround.fill();
-
-            // 은은한 자연 이끼/녹움 얼룩 (랜덤 배치)
-            if (Math.abs(Math.sin(bx * 5.7)) > 0.65) {
-                offCtxGround.beginPath();
-                offCtxGround.ellipse(sp.x + Math.sin(bx) * 6, sp.y + Math.cos(bx) * 3, srx * 0.8, sry * 0.7, 0, 0, Math.PI * 2);
-                offCtxGround.fillStyle = 'rgba(45, 106, 79, 0.22)';
-                offCtxGround.fill();
-            }
         }
 
         // 2-B. 나무 옹이 (Wood Knots / Burls) — 중심 회오리 나이테 + 나뭇결 휘어짐 + 나무 균열(Crack) 디테일
@@ -3447,7 +3415,8 @@ function render() {
             offCtxGround.restore();
         });
 
-        // 3. 통나무 상단 잔디 풀밭 레이어 (이전 버전의 심플하고 맑은 초록 잔디 #22c55e + 풀잎 데코)
+        // 3. 통나무 상단 잔디 풀밭 레이어 (3색 수직 그라데이션 + 이끼 패치 + 투톤 풀잎 & 작은 들꽃)
+        offCtxGround.save();
         offCtxGround.beginPath();
         const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
         offCtxGround.moveTo(gStartP.x, gStartP.y);
@@ -3457,25 +3426,74 @@ function render() {
             if (x >= skyEndX) break;
         }
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
-            const p = gridToScreen(x, getOrigY(x) - 0.65);
+            const p = gridToScreen(x, getOrigY(x) - 0.375);
             offCtxGround.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
         offCtxGround.closePath();
-        offCtxGround.fillStyle = '#22c55e';
+
+        // 3색 수직 그라데이션 (상단 차분한 연두 올리브 -> 중앙 딥 그린 -> 하단 짙은 숲색)
+        const topScreenP = gridToScreen(0, 0);
+        const botScreenP = gridToScreen(0, -0.375);
+        const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 6, 0, botScreenP.y + 6);
+        grassGrad.addColorStop(0.0, '#4a8f62'); // 상단 차분한 올리브 그린
+        grassGrad.addColorStop(0.4, '#2d6a4f'); // 중앙 편안한 딥 그린
+        grassGrad.addColorStop(1.0, '#1b4332'); // 하단 짙은 숲색
+        offCtxGround.fillStyle = grassGrad;
         offCtxGround.fill();
 
-        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링 (이전 버전 스타일)
-        offCtxGround.strokeStyle = '#15803d';
-        offCtxGround.lineWidth = 2.5;
-        for (let x = skyStartX; x <= skyEndX; x += 0.4) {
+        // 이끼(Moss) 하이라이트 패치 (차분한 녹음 패치 - 잔디 두께 절반에 맞춘 크기/위치)
+        for (let x = skyStartX; x <= skyEndX; x += 0.8) {
+            const topY = getOrigY(x);
+            const p = gridToScreen(x, topY - 0.18);
+            const mossR = scaleLength(0.18 + Math.sin(x * 2.3) * 0.08);
+            offCtxGround.beginPath();
+            offCtxGround.arc(p.x, p.y + Math.cos(x * 1.7) * 1, mossR, 0, Math.PI * 2);
+            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(74, 143, 98, 0.3)' : 'rgba(45, 106, 79, 0.25)';
+            offCtxGround.fill();
+        }
+
+        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링 (높이 절반 축소: 3.5 ~ 5.5px)
+        for (let x = skyStartX; x <= skyEndX; x += 0.35) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY);
-            const h = 8 + Math.sin(x * 3) * 5;
+            const h = 3.5 + Math.sin(x * 3.7) * 2;
+            const bend = Math.sin(x * 4.3) * 2.5;
+
+            // 뒤쪽 짙은 풀잎
+            offCtxGround.beginPath();
+            offCtxGround.moveTo(p.x - 1, p.y + 1);
+            offCtxGround.lineTo(p.x + bend - 2, p.y - h - 1);
+            offCtxGround.strokeStyle = '#1b4332';
+            offCtxGround.lineWidth = 2.0;
+            offCtxGround.stroke();
+
+            // 앞쪽 차분한 풀잎
             offCtxGround.beginPath();
             offCtxGround.moveTo(p.x, p.y);
-            offCtxGround.lineTo(p.x + Math.sin(x * 5) * 4, p.y - h);
+            offCtxGround.lineTo(p.x + bend, p.y - h);
+            offCtxGround.strokeStyle = '#4a8f62';
+            offCtxGround.lineWidth = 2.0;
             offCtxGround.stroke();
+
+            // 5. 아기자기한 작은 들꽃 (은은한 파스텔 옐로우 & 아이보리 흰색)
+            if (Math.abs(Math.sin(x * 7.1)) > 0.72) {
+                const flowerP = gridToScreen(x, topY);
+                const flowerY = flowerP.y - h + 1;
+                const flowerX = flowerP.x + bend;
+                const isYellow = Math.sin(x * 13.3) > 0;
+
+                offCtxGround.beginPath();
+                offCtxGround.arc(flowerX, flowerY, 2.0, 0, Math.PI * 2);
+                offCtxGround.fillStyle = isYellow ? '#fef08a' : '#f8fafc';
+                offCtxGround.fill();
+
+                // 꽃수술
+                offCtxGround.beginPath();
+                offCtxGround.arc(flowerX, flowerY, 0.8, 0, Math.PI * 2);
+                offCtxGround.fillStyle = isYellow ? '#d97706' : '#e2e8f0';
+                offCtxGround.fill();
+            }
         }
 
         offCtxGround.restore();
