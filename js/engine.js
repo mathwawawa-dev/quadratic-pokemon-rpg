@@ -3423,7 +3423,8 @@ function render() {
             offCtxGround.restore();
         });
 
-        // 3. 통나무 상단 잔디 풀밭 레이어 (두께 절반 0.325, 초록 단색 #22c55e 기반)
+        // 3. 통나무 상단 잔디 풀밭 레이어 (#22c55e -> #15803d 2색 수직 그라데이션 + 두께 0.325)
+        offCtxGround.save();
         offCtxGround.beginPath();
         const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
         offCtxGround.moveTo(gStartP.x, gStartP.y);
@@ -3438,10 +3439,28 @@ function render() {
             if (x <= skyStartX) break;
         }
         offCtxGround.closePath();
-        offCtxGround.fillStyle = '#22c55e';
+
+        // 현재 초록(#22c55e) -> 조금 어두운 숲색(#15803d) 2색 수직 그라데이션
+        const topScreenP = gridToScreen(0, 0);
+        const botScreenP = gridToScreen(0, -0.325);
+        const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 4, 0, botScreenP.y + 4);
+        grassGrad.addColorStop(0.0, '#22c55e'); // 상단 싱그러운 그린
+        grassGrad.addColorStop(1.0, '#15803d'); // 하단 차분하게 어두운 숲색
+        offCtxGround.fillStyle = grassGrad;
         offCtxGround.fill();
 
-        // 4. 바람에 살랑살랑 흔들거리는 투톤 풀잎 및 아기자기한 들꽃 렌더링
+        // 단조로움 방지 1: 은은한 잔디 음영 도트 패치 (자연스러운 숲 텍스처)
+        for (let x = skyStartX; x <= skyEndX; x += 0.75) {
+            const topY = getOrigY(x);
+            const p = gridToScreen(x, topY - 0.16);
+            const dotR = scaleLength(0.16 + Math.sin(x * 2.1) * 0.06);
+            offCtxGround.beginPath();
+            offCtxGround.arc(p.x, p.y + Math.cos(x * 1.5) * 1, dotR, 0, Math.PI * 2);
+            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(21, 128, 61, 0.35)' : 'rgba(16, 185, 129, 0.2)';
+            offCtxGround.fill();
+        }
+
+        // 4. 바람에 살랑살랑 흔들거리는 투톤 풀잎, 들꽃, 흩날리는 꽃잎 파티클 렌더링
         const tNow = Date.now() / 350;
         for (let x = skyStartX; x <= skyEndX; x += 0.35) {
             const topY = getOrigY(x);
@@ -3483,9 +3502,23 @@ function render() {
                 offCtxGround.arc(flowerX, flowerY, 0.8, 0, Math.PI * 2);
                 offCtxGround.fillStyle = isYellow ? '#ea580c' : '#f59e0b';
                 offCtxGround.fill();
+
+                // 단조로움 방지 2: 바람을 타고 흩날리는 미세 꽃잎 파티클 (Swaying Petal Particles)
+                if (Math.sin(x * 17.3 + tNow * 0.8) > 0.3) {
+                    const petalCycle = (tNow * 1.2 + Math.abs(x)) % 4; // 0 ~ 4 초 주기 흩날림
+                    const floatX = flowerX + Math.sin(tNow * 1.5 + x) * 12 + petalCycle * 8;
+                    const floatY = flowerY - (petalCycle * 7) + Math.cos(tNow + x) * 3;
+                    const petalAlpha = Math.max(0, 1 - (petalCycle / 4));
+
+                    offCtxGround.beginPath();
+                    offCtxGround.arc(floatX, floatY, 1.2, 0, Math.PI * 2);
+                    offCtxGround.fillStyle = isYellow ? `rgba(253, 224, 71, ${petalAlpha * 0.85})` : `rgba(255, 241, 242, ${petalAlpha * 0.9})`;
+                    offCtxGround.fill();
+                }
             }
         }
 
+        offCtxGround.restore();
         offCtxGround.restore();
 
         // 5. 폭발 구멍(craters) 타공
