@@ -404,6 +404,10 @@ function resetTurn() {
 
 // ---------- Init Stage ----------
 function initStage() {
+    if (window.stageClearTimeout) {
+        clearTimeout(window.stageClearTimeout);
+        window.stageClearTimeout = null;
+    }
     // 오버레이를 맨 먼저 띄워서 다음 스테이지가 슬쩍 보이는 현상 방지
     const overlay = document.getElementById('loading-overlay');
     if (overlay) overlay.classList.remove('hidden');
@@ -1757,7 +1761,7 @@ function updateGame() {
             effects.push({ type: 'text', x: ent.x, y: deathZoneY + 2, text: 'FALL!', color: '#ef4444', life: 60 });
             updateHPUI();
             if (ent === player) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('GAME OVER', '플레이어가 추락했습니다!'), 1500); }
-            else if (GAME_STATE !== 'OVER' && enemies.length > 0 && enemies.filter(e => e.hp <= 0).length >= enemies.length) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '모든 적 처치 완료!', false), 1500); }
+            else if (GAME_STATE !== 'OVER' && enemies.filter(e => e.hp <= 0).length >= 2) { GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500); }
         }
     });
 
@@ -2140,7 +2144,7 @@ function updateGame() {
                             });
                             if (i === 3) {
                                 if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
+                                    GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                                 } else {
                                     setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                                 }
@@ -2175,7 +2179,7 @@ function updateGame() {
                         createExplosion(targetX, targetY, '#2dd4bf');
                         createCrater(targetX, targetY - 0.5, explosionRadius);
                         if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                            GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
+                            GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                         } else {
                             setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                         }
@@ -2222,7 +2226,7 @@ function updateGame() {
                         screenShake = 10;
                     }
                     if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                        GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
+                        GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                     } else {
                         setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 1000);
                     }
@@ -2236,7 +2240,7 @@ function updateGame() {
             if (Math.abs(missile.x) > limitX || missile.y < limitMinY) {
                 missile.active = false; GAME_STATE = 'IDLE';
                 if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
+                    GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                 } else {
                     document.getElementById('fire-btn').disabled = false;
                 }
