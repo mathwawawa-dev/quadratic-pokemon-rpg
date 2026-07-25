@@ -2598,9 +2598,14 @@ function render() {
 
     const stage = LEVELS[currentStage % LEVELS.length];
     const tData = TERRAINS[stage.terrain];
-    const grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
-    tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (stage.terrain === 'cave') {
+        ctx.fillStyle = '#0d0d0d';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else {
+        const grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
+        tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     // 화산 용암('lava') 지형 분위기: 가벼운 불티 파티클
     if (stage.terrain === 'lava') {
@@ -2922,9 +2927,9 @@ function render() {
         return (typeof ceilHeights !== 'undefined' && ceilHeights[key] !== undefined) ? ceilHeights[key] : (tData.ceilFunc ? tData.ceilFunc(x) : 1000);
     };
     if (tData.hasCaveWall && tData.ceilFunc) {
-        const caveMinX = -25, caveMaxX = 25;
+        const caveMinX = -60, caveMaxX = 60;
 
-        // 1. 외곽 어두운 영역 (evenodd 방식 사용)
+        // 1. 외곽 어두운 영역 (evenodd 방식 사용) - 단색 #0d0d0d 배경 처리
         ctx.save();
         ctx.beginPath();
         ctx.rect(-10, -10, canvas.width + 20, canvas.height + 20); // 전체 화면
