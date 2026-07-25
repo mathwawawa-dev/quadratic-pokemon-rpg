@@ -546,8 +546,9 @@ function initStage() {
                       terrainHeights[key] = [-100];
                       terrainBottoms[key] = [-100];
                   } else {
+                      const thick = tData.getThickness ? tData.getThickness(x) : 5.0;
                       terrainHeights[key] = [y];
-                      terrainBottoms[key] = [y - 5.0];
+                      terrainBottoms[key] = [y - thick];
                   }
               } else if (stage.terrain === 'grass' || stage.terrain === 'ice' || stage.terrain === 'lava' || stage.terrain === 'cave' || stage.terrain === 'electric' || stage.terrain === 'ocean' || stage.terrain === 'psychic') {
                   const roundedX = Math.round(x * 10) / 10;
@@ -3240,7 +3241,6 @@ function render() {
     } else if (stage.terrain === 'log_bridge') {
         const skyStartX = -45;
         const skyEndX = 45;
-        const thickness = 5.0;
 
         const offCanvasGround = document.createElement('canvas');
         offCanvasGround.width = canvas.width;
@@ -3252,7 +3252,11 @@ function render() {
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
         };
 
-        // 통나무 전체 외형 패스 (두께 5.0)
+        const getThick = (x) => {
+            return tData.getThickness ? tData.getThickness(x) : 5.0;
+        };
+
+        // 통나무 전체 외형 패스 (dynamic thickness 4~7)
         offCtxGround.beginPath();
         const startP = gridToScreen(skyStartX, getOrigY(skyStartX));
         offCtxGround.moveTo(startP.x, startP.y);
@@ -3264,20 +3268,22 @@ function render() {
 
         // 우측 둥근 나이테 단면 캡 마감
         const rightTopY = getOrigY(skyEndX);
-        const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - thickness / 2);
-        const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
+        const rightThick = getThick(skyEndX);
+        const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - rightThick / 2);
+        const rightBotP = gridToScreen(skyEndX, rightTopY - rightThick);
         offCtxGround.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
 
-        // 하단 껍질 라인
+        // 하단 껍질 라인 (들쭉날쭉한 두께 적용)
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
-            const p = gridToScreen(x, getOrigY(x) - thickness);
+            const p = gridToScreen(x, getOrigY(x) - getThick(x));
             offCtxGround.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
 
         // 좌측 둥근 나이테 단면 캡 마감
         const leftTopY = getOrigY(skyStartX);
-        const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - thickness / 2);
+        const leftThick = getThick(skyStartX);
+        const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - leftThick / 2);
         const leftTopP = gridToScreen(skyStartX, leftTopY);
         offCtxGround.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
         offCtxGround.closePath();
@@ -3286,33 +3292,50 @@ function render() {
         offCtxGround.fillStyle = '#5c220c';
         offCtxGround.fill();
 
-        // 2. 나무 껍질 및 결 패턴 렌더링
+        // 2. 나무 껍질 및 결 패턴 렌더링 (검은 세로 눈금선 제거 → 유기적인 나뭇결 및 옹이 렌더링)
         offCtxGround.save();
         offCtxGround.clip();
-        for (let x = skyStartX - 2; x <= skyEndX + 2; x += 1.2) {
-            const pTop = gridToScreen(x, getOrigY(x));
-            const pBot = gridToScreen(x, getOrigY(x) - thickness);
-            offCtxGround.beginPath();
-            offCtxGround.moveTo(pTop.x, pTop.y);
-            offCtxGround.lineTo(pBot.x, pBot.y);
-            offCtxGround.strokeStyle = (Math.round(x * 10) % 2 === 0) ? '#3d1506' : '#7a2f12';
-            offCtxGround.lineWidth = 4;
-            offCtxGround.stroke();
-        }
 
-        // 수평 나뭇결 선
-        for (let dy = 0.8; dy < thickness; dy += 0.9) {
+        // 수평 나뭇결 흐름선 (유기적인 무늬)
+        for (let relRatio = 0.15; relRatio < 0.95; relRatio += 0.18) {
             offCtxGround.beginPath();
-            for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.5) {
-                const yVal = getOrigY(x) - dy + Math.sin(x * 0.8) * 0.15;
+            for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.4) {
+                const curThick = getThick(x);
+                const yVal = getOrigY(x) - curThick * relRatio + Math.sin(x * 0.7 + relRatio * 10) * 0.2;
                 const p = gridToScreen(x, yVal);
                 if (x === skyStartX - 2) offCtxGround.moveTo(p.x, p.y);
                 else offCtxGround.lineTo(p.x, p.y);
             }
-            offCtxGround.strokeStyle = 'rgba(40, 15, 5, 0.4)';
-            offCtxGround.lineWidth = 3;
+            offCtxGround.strokeStyle = (Math.round(relRatio * 100) % 2 === 0) ? 'rgba(61, 21, 6, 0.45)' : 'rgba(122, 47, 18, 0.35)';
+            offCtxGround.lineWidth = 2.5;
             offCtxGround.stroke();
         }
+
+        // 나무 옹이 (Wood Knots / Burls) 배치 (세로 눈금선 대신 자연스러운 나무 옹이 마크)
+        const knotPositions = [-36, -28, -19, -10, -2, 7, 16, 25, 34, 41];
+        knotPositions.forEach((kx, kIdx) => {
+            const ky = getOrigY(kx) - getThick(kx) * (0.3 + (kIdx % 3) * 0.2);
+            const kp = gridToScreen(kx, ky);
+            const krx = scaleLength(0.8 + (kIdx % 2) * 0.3);
+            const kry = scaleLength(0.45 + (kIdx % 2) * 0.2);
+
+            offCtxGround.save();
+            offCtxGround.beginPath();
+            offCtxGround.ellipse(kp.x, kp.y, krx, kry, 0.15 * (kIdx % 2 === 0 ? 1 : -1), 0, Math.PI * 2);
+            offCtxGround.fillStyle = '#3a1304';
+            offCtxGround.fill();
+            offCtxGround.strokeStyle = '#240a02';
+            offCtxGround.lineWidth = 2;
+            offCtxGround.stroke();
+
+            // 옹이 나이테 대곡선 파동
+            offCtxGround.beginPath();
+            offCtxGround.ellipse(kp.x, kp.y, krx * 1.6, kry * 1.6, 0.15 * (kIdx % 2 === 0 ? 1 : -1), 0, Math.PI * 2);
+            offCtxGround.strokeStyle = 'rgba(61, 21, 6, 0.6)';
+            offCtxGround.lineWidth = 1.5;
+            offCtxGround.stroke();
+            offCtxGround.restore();
+        });
 
         // 3. 통나무 상단 잔디 풀밭 레이어 (초록색 텍스처 + 풀잎 데코)
         offCtxGround.beginPath();

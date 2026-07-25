@@ -26,7 +26,8 @@ const TERRAINS = {
         bg: ["#38bdf8", "#7dd3fc", "#bae6fd"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -25,
-        func: (x) => Math.sin((x + terrainSeed) / 5) * 0.8 + Math.cos((x - terrainSeed) / 3) * 0.4 - 1
+        func: (x) => Math.sin((x + terrainSeed) / 5) * 0.8 + Math.cos((x - terrainSeed) / 3) * 0.4 - 1,
+        getThickness: (x) => 5.5 + Math.sin((x + terrainSeed) * 0.7) * 1.5 // 4.0 ~ 7.0 범위의 들쭉날쭉한 굵기
     },
     sky: {
         name: "성층권",
