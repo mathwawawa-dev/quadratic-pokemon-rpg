@@ -360,7 +360,7 @@ function createCrater(cx, cy, radius) {
             if (ent.hp > 0 && ent.type === 'ground' && !ent.isSurfaced && Math.abs(ent.x - cx) <= 1.0) {
                 ent.isSurfaced = true;
                 if (typeof effects !== 'undefined') {
-                    effects.push({ type: 'text', x: ent.x, y: ent.y + 2, text: '파헤치기 성공!', color: '#fbbf24', life: 60 });
+                    effects.push({ type: 'text', x: ent.x, y: ent.y + 2, text: '파헤치기 성공!', color: '#fbbf24', life: 200 });
                 }
             }
         });
@@ -1420,7 +1420,7 @@ function createCloudPop(x, y) {
 function applyDamageAndEffects(target, mx, my) {
     if (target.type === 'ground' && !target.isSurfaced) {
         target.isSurfaced = true;
-        effects.push({ type: 'text', x: target.x, y: target.y + 2, text: '파헤치기 성공!', color: '#fbbf24', life: 60 });
+        effects.push({ type: 'text', x: target.x, y: target.y + 2, text: '파헤치기 성공!', color: '#fbbf24', life: 200 });
     }
     
     if (target.hasCloud) {
