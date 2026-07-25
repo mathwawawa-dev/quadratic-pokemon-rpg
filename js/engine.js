@@ -1428,7 +1428,7 @@ function applyDamageAndEffects(target, mx, my) {
     } else {
         Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.02+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
     }
-    if (missile.type !== 'pierce') {
+    if (missile.type !== 'pierce' && missile.type !== 'satellite') {
         createCrater(target.x, target.y - 0.75, explosionRadius);
         createExplosion(target.x, target.y, getMissileColor());
     }
