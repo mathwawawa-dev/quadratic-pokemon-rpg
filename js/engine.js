@@ -1741,8 +1741,8 @@ function updateGame() {
                     ent.vx *= iceFriction; 
                     ent.angularVelocity *= 0.5;
                     
-                    if (Math.abs(ent.vy) < 0.15 && Math.abs(ent.vx) < 0.15) {
-                        if (isLocalMin || Math.abs(slopeDiff) <= 0.2) {
+                    if (Math.abs(ent.vy) < 0.1 && Math.abs(ent.vx) < 0.1) {
+                        if (isLocalMin || Math.abs(slopeDiff) <= 0.15) {
                             ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
                         }
                     }
