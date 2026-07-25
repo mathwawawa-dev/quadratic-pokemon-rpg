@@ -940,21 +940,23 @@ window.addEventListener('keydown', (e) => {
     // Ctrl+Shift+Q: 정답 함수 자동 계산 & 즉시 발사 (스타팅 화면 Q 3회 연타 치트 해금 시만 작동)
     if (e.ctrlKey && e.shiftKey && (e.key === 'q' || e.key === 'Q')) {
         if (!window.isCheatUnlocked) return;
-        const deathZoneY = ['garden', 'sky'].includes(LEVELS[currentStage % LEVELS.length].terrain) ? -30 : -8;
+        const deathZoneY = ['garden', 'sky', 'cloud_garden'].includes(LEVELS[currentStage % LEVELS.length].terrain) ? -30 : -8;
         const aliveEnemies = enemies.filter(ent => ent.hp > 0 && ent.y >= deathZoneY);
         if (GAME_STATE !== 'IDLE' || aliveEnemies.length === 0) return;
 
         const p1 = { x: player.x, y: player.y };
 
         // a < 0 (위로 볼록) 수학적 100% 보장: 2점 + 정점 높이 공식
-        // a = -((√(H-y1)+√(H-y2))/(x1-x2))^2 → 항상 음수
+        // a = -((√(H-y1)+√(H-y2))/(x1-x2))^2 → 항상 음수 (위로 볼록 ∩ 모양)
         const fit2Apex = (pt1, pt2, extraHeight = 5.0) => {
             if (Math.abs(pt1.x - pt2.x) < 0.001) return null;
-            const H = Math.min(33.0, Math.max(pt1.y, pt2.y) + extraHeight);
+            // 최고점 H는 플레이어와 적 중 더 높은 Y위치보다 항상 최소 extraHeight 이상 높게 정함 (y1, y2보다 높은 위치)
+            const maxY = Math.max(pt1.y, pt2.y);
+            const H = Math.min(38.0, maxY + Math.max(1.5, extraHeight));
             const d1 = Math.sqrt(Math.max(0.001, H - pt1.y));
             const d2 = Math.sqrt(Math.max(0.001, H - pt2.y));
             const xv = (d1 * pt2.x + d2 * pt1.x) / (d1 + d2);
-            const a = -Math.pow((d1 + d2) / (pt1.x - pt2.x), 2); // 항상 < 0
+            const a = -Math.pow((d1 + d2) / (pt1.x - pt2.x), 2); // 항상 < 0 (위로 볼록)
             const b = -2 * a * xv;
             const c = H + a * xv * xv;
             return { a, b, c };
