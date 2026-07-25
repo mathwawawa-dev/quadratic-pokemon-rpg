@@ -460,11 +460,12 @@ function initStage() {
         else                    approxPx = 0;
     }
 
-    // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 최대 1개의 뾰족한 언덕 배치 (높이도 3~6으로 완화)
+    // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 최대 1개의 뾰족한 언덕 배치 ('log_bridge' 외나무다리 맵은 제외)
     // 내 포켓몬(approxPx) 주변 반경 8.0 이내에는 스파이크가 절대 생성되지 않도록 제한 (자폭 방지)
     terrainSpikes = [];
+    const isNoSpikeTerrain = stage.terrain === 'log_bridge';
     const spikeProb = stage.terrain === 'ice' ? 0.5 : 0.3;
-    const spikeCount = Math.random() < spikeProb ? 1 : 0;
+    const spikeCount = (!isNoSpikeTerrain && Math.random() < spikeProb) ? 1 : 0;
     for (let s = 0; s < spikeCount; s++) {
         let scx = 0;
         let tryCount = 0;
