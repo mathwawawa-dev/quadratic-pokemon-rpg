@@ -3423,7 +3423,7 @@ function render() {
             offCtxGround.restore();
         });
 
-        // 3. 통나무 상단 잔디 풀밭 레이어 (#22c55e -> #15803d 2색 수직 그라데이션 + 두께 0.325)
+        // 3. 통나무 상단 잔디 풀밭 레이어 (두께 절반 0.1625 슬림화, #22c55e -> #15803d 2색 그라데이션)
         offCtxGround.save();
         offCtxGround.beginPath();
         const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
@@ -3434,47 +3434,58 @@ function render() {
             if (x >= skyEndX) break;
         }
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
-            const p = gridToScreen(x, getOrigY(x) - 0.325);
+            const p = gridToScreen(x, getOrigY(x) - 0.1625);
             offCtxGround.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
         offCtxGround.closePath();
 
-        // 현재 초록(#22c55e) -> 조금 어두운 숲색(#15803d) 2색 수직 그라데이션
+        // 2색 수직 그라데이션 (상단 #22c55e -> 하단 #15803d)
         const topScreenP = gridToScreen(0, 0);
-        const botScreenP = gridToScreen(0, -0.325);
-        const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 4, 0, botScreenP.y + 4);
+        const botScreenP = gridToScreen(0, -0.1625);
+        const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 2, 0, botScreenP.y + 2);
         grassGrad.addColorStop(0.0, '#22c55e'); // 상단 싱그러운 그린
-        grassGrad.addColorStop(1.0, '#15803d'); // 하단 차분하게 어두운 숲색
+        grassGrad.addColorStop(1.0, '#15803d'); // 하단 차분한 숲색
         offCtxGround.fillStyle = grassGrad;
         offCtxGround.fill();
 
-        // 단조로움 방지 1: 은은한 잔디 음영 도트 패치 (자연스러운 숲 텍스처)
+        // 통나무 경계 얇은 흙/이끼 띠 (Soil Border: 하단에 얇고 자연스럽게 이어진 토양 마감)
+        offCtxGround.beginPath();
+        for (let x = skyStartX; x <= skyEndX; x += 0.2) {
+            const bp = gridToScreen(x, getOrigY(x) - 0.1625);
+            if (x === skyStartX) offCtxGround.moveTo(bp.x, bp.y);
+            else offCtxGround.lineTo(bp.x, bp.y);
+        }
+        offCtxGround.strokeStyle = 'rgba(35, 15, 5, 0.45)';
+        offCtxGround.lineWidth = 1.2;
+        offCtxGround.stroke();
+
+        // 단조로움 방지 1: 은은한 잔디 음영 도트 패치
         for (let x = skyStartX; x <= skyEndX; x += 0.75) {
             const topY = getOrigY(x);
-            const p = gridToScreen(x, topY - 0.16);
-            const dotR = scaleLength(0.16 + Math.sin(x * 2.1) * 0.06);
+            const p = gridToScreen(x, topY - 0.08);
+            const dotR = scaleLength(0.09 + Math.sin(x * 2.1) * 0.04);
             offCtxGround.beginPath();
-            offCtxGround.arc(p.x, p.y + Math.cos(x * 1.5) * 1, dotR, 0, Math.PI * 2);
+            offCtxGround.arc(p.x, p.y + Math.cos(x * 1.5) * 0.5, dotR, 0, Math.PI * 2);
             offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(21, 128, 61, 0.35)' : 'rgba(16, 185, 129, 0.2)';
             offCtxGround.fill();
         }
 
-        // 4. 바람에 살랑살랑 흔들거리는 투톤 풀잎, 들꽃, 흩날리는 꽃잎 파티클 렌더링
+        // 4. 바람에 살랑살랑 흔들거리는 아담한 투톤 풀잎, 들꽃, 흩날리는 꽃잎 파티클 렌더링
         const tNow = Date.now() / 350;
         for (let x = skyStartX; x <= skyEndX; x += 0.35) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY);
-            const h = 5 + Math.sin(x * 3.7) * 2.5;
+            const h = 3.5 + Math.sin(x * 3.7) * 1.8; // 슬림 두께에 맞춘 아담한 높이
             // 바람 흔들림 변위 (Date.now() 기반 동적 휘어짐)
-            const wind = Math.sin(tNow + x * 0.75) * 3.5 + Math.cos(tNow * 0.5 + x) * 1.5;
+            const wind = Math.sin(tNow + x * 0.75) * 2.8 + Math.cos(tNow * 0.5 + x) * 1.2;
 
             // 1) 뒤쪽 짙은 풀잎
             offCtxGround.beginPath();
             offCtxGround.moveTo(p.x - 1, p.y + 1);
-            offCtxGround.lineTo(p.x + wind - 1.5, p.y - h - 1);
+            offCtxGround.lineTo(p.x + wind - 1.2, p.y - h - 0.8);
             offCtxGround.strokeStyle = '#15803d';
-            offCtxGround.lineWidth = 1.8;
+            offCtxGround.lineWidth = 1.6;
             offCtxGround.stroke();
 
             // 2) 앞쪽 상큼한 그린 풀잎
@@ -3482,7 +3493,7 @@ function render() {
             offCtxGround.moveTo(p.x, p.y);
             offCtxGround.lineTo(p.x + wind, p.y - h);
             offCtxGround.strokeStyle = '#4ade80';
-            offCtxGround.lineWidth = 1.8;
+            offCtxGround.lineWidth = 1.6;
             offCtxGround.stroke();
 
             // 3) 바람에 살랑살랑 흔들리는 아기자기한 작은 들꽃 (노란 민들레 🟡 / 하얀 들꽃 ⚪️)
@@ -3493,25 +3504,25 @@ function render() {
 
                 // 꽃잎
                 offCtxGround.beginPath();
-                offCtxGround.arc(flowerX, flowerY, 2.2, 0, Math.PI * 2);
+                offCtxGround.arc(flowerX, flowerY, 1.8, 0, Math.PI * 2);
                 offCtxGround.fillStyle = isYellow ? '#fde047' : '#ffffff';
                 offCtxGround.fill();
 
                 // 꽃수술
                 offCtxGround.beginPath();
-                offCtxGround.arc(flowerX, flowerY, 0.8, 0, Math.PI * 2);
+                offCtxGround.arc(flowerX, flowerY, 0.7, 0, Math.PI * 2);
                 offCtxGround.fillStyle = isYellow ? '#ea580c' : '#f59e0b';
                 offCtxGround.fill();
 
-                // 단조로움 방지 2: 바람을 타고 흩날리는 미세 꽃잎 파티클 (Swaying Petal Particles)
+                // 단조로움 방지 2: 바람을 타고 흩날리는 미세 꽃잎 파티클
                 if (Math.sin(x * 17.3 + tNow * 0.8) > 0.3) {
                     const petalCycle = (tNow * 1.2 + Math.abs(x)) % 4; // 0 ~ 4 초 주기 흩날림
-                    const floatX = flowerX + Math.sin(tNow * 1.5 + x) * 12 + petalCycle * 8;
-                    const floatY = flowerY - (petalCycle * 7) + Math.cos(tNow + x) * 3;
+                    const floatX = flowerX + Math.sin(tNow * 1.5 + x) * 10 + petalCycle * 6;
+                    const floatY = flowerY - (petalCycle * 5) + Math.cos(tNow + x) * 2.5;
                     const petalAlpha = Math.max(0, 1 - (petalCycle / 4));
 
                     offCtxGround.beginPath();
-                    offCtxGround.arc(floatX, floatY, 1.2, 0, Math.PI * 2);
+                    offCtxGround.arc(floatX, floatY, 1.0, 0, Math.PI * 2);
                     offCtxGround.fillStyle = isYellow ? `rgba(253, 224, 71, ${petalAlpha * 0.85})` : `rgba(255, 241, 242, ${petalAlpha * 0.9})`;
                     offCtxGround.fill();
                 }
