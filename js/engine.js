@@ -2664,6 +2664,23 @@ function drawEntity(ent) {
     ctx.restore();
 }
 
+// ---------------------------------------------------------
+// 지형 렌더링용 고정 재사용 오프스크린 캔버스 (매 프레임 createElement 랙 완벽 방지)
+// ---------------------------------------------------------
+let sharedTerrainCanvas = null;
+function getSharedTerrainCtx() {
+    if (!sharedTerrainCanvas) {
+        sharedTerrainCanvas = document.createElement('canvas');
+    }
+    if (sharedTerrainCanvas.width !== canvas.width || sharedTerrainCanvas.height !== canvas.height) {
+        sharedTerrainCanvas.width = canvas.width;
+        sharedTerrainCanvas.height = canvas.height;
+    }
+    const offCtxGround = sharedTerrainCanvas.getContext('2d');
+    offCtxGround.clearRect(0, 0, sharedTerrainCanvas.width, sharedTerrainCanvas.height);
+    return { offCanvasGround: sharedTerrainCanvas, offCtxGround };
+}
+
 function render() {
     ctx.save();
     if (screenShake > 0) ctx.translate((Math.random()-0.5)*10, (Math.random()-0.5)*10);
@@ -3194,10 +3211,7 @@ function render() {
         const skyEndX = 30;
         const thickness = 5.0;
 
-        const offCanvasGround = document.createElement('canvas');
-        offCanvasGround.width = canvas.width;
-        offCanvasGround.height = canvas.height;
-        const offCtxGround = offCanvasGround.getContext('2d');
+        const { offCanvasGround, offCtxGround } = getSharedTerrainCtx();
 
         const getOrigY = (x) => {
             const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -3256,26 +3270,20 @@ function render() {
     } else if (stage.terrain === 'log_bridge') {
         const skyStartX = -45;
         const skyEndX = 45;
+        const thickness = 5.0; // 고정 두께로 하단 라인을 x축과 평행하고 깔끔하게 렌더링 (연산 부하 제거)
 
-        const offCanvasGround = document.createElement('canvas');
-        offCanvasGround.width = canvas.width;
-        offCanvasGround.height = canvas.height;
-        const offCtxGround = offCanvasGround.getContext('2d');
+        const { offCanvasGround, offCtxGround } = getSharedTerrainCtx();
 
         const getOrigY = (x) => {
             const key = (Math.round(x * 10) / 10).toFixed(1);
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
         };
 
-        const getThick = (x) => {
-            return tData.getThickness ? tData.getThickness(x) : 5.0;
-        };
-
-        // 통나무 전체 외형 패스 (dynamic thickness 4~7)
+        // 통나무 전체 외형 패스 (상단 표면 -> 우측 캡 -> 평행 하단 라인 -> 좌측 캡)
         offCtxGround.beginPath();
         const startP = gridToScreen(skyStartX, getOrigY(skyStartX));
         offCtxGround.moveTo(startP.x, startP.y);
-        for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.2)) {
+        for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.4)) {
             const p = gridToScreen(x, getOrigY(x));
             offCtxGround.lineTo(p.x, p.y);
             if (x >= skyEndX) break;
@@ -3283,46 +3291,20 @@ function render() {
 
         // 우측 둥근 나이테 단면 캡 마감
         const rightTopY = getOrigY(skyEndX);
-        const rightThick = getThick(skyEndX);
-        const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - rightThick / 2);
-        const rightBotP = gridToScreen(skyEndX, rightTopY - rightThick);
+        const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - thickness / 2);
+        const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
         offCtxGround.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
 
-        // 하단 껍질 라인 (블록 경계 간 코사인 보간 - 파도 너울 없음 + 계단 없음)
-        {
-            const BLOCK = 4.0;
-            // 오른쪽→왼쪽 블록 경계 x 목록 사전 계산
-            const blockXs = [];
-            for (let bx = skyEndX; bx > skyStartX; bx -= BLOCK) {
-                blockXs.push(bx);
-            }
-            blockXs.push(skyStartX);
-            // 각 블록 경계에서 두께 계산
-            const blockThicks = blockXs.map(bx => getThick(bx));
-
-            // 블록 구간마다 코사인 보간으로 부드럽게 연결
-            for (let i = 0; i < blockXs.length - 1; i++) {
-                const x0 = blockXs[i];
-                const x1 = blockXs[i + 1];
-                const t0 = blockThicks[i];
-                const t1 = blockThicks[i + 1];
-                const steps = Math.max(6, Math.round(Math.abs(x0 - x1) / 0.4));
-                for (let s = 0; s <= steps; s++) {
-                    const frac = s / steps;
-                    // 코사인 보간: 구간 내 S-커브 (전역 주기성 없음)
-                    const cosInterp = (1 - Math.cos(frac * Math.PI)) / 2;
-                    const curX = x0 + (x1 - x0) * frac;
-                    const curThick = t0 + (t1 - t0) * cosInterp;
-                    const p = gridToScreen(curX, getOrigY(curX) - curThick);
-                    offCtxGround.lineTo(p.x, p.y);
-                }
-            }
+        // 하단 껍질 라인 (x축과 평행한 일직선 바닥, 고정 두께 5.0)
+        for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.4)) {
+            const p = gridToScreen(x, getOrigY(x) - thickness);
+            offCtxGround.lineTo(p.x, p.y);
+            if (x <= skyStartX) break;
         }
 
         // 좌측 둥근 나이테 단면 캡 마감
         const leftTopY = getOrigY(skyStartX);
-        const leftThick = getThick(skyStartX);
-        const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - leftThick / 2);
+        const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - thickness / 2);
         const leftTopP = gridToScreen(skyStartX, leftTopY);
         offCtxGround.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
         offCtxGround.closePath();
@@ -3490,10 +3472,7 @@ function render() {
         // 베이스 오프스크린 지형을 메인 ctx에 복사 (동적 풀잎/들꽃/파티클 렌더링 전면 삭제하여 랙 완벽 방지)
         ctx.drawImage(offCanvasGround, 0, 0);
     } else {
-        const offCanvasGround = document.createElement('canvas');
-        offCanvasGround.width = canvas.width;
-        offCanvasGround.height = canvas.height;
-        const offCtxGround = offCanvasGround.getContext('2d');
+        const { offCanvasGround, offCtxGround } = getSharedTerrainCtx();
 
         offCtxGround.beginPath();
         const getOrigY = (x) => {
