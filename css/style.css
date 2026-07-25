@@ -425,10 +425,11 @@ math-field {
     /* MathLive 선택 영역 및 배경 문제 수정 CSS 변수 */
     --selection-background-color: rgba(59, 130, 246, 0.4);
     --selection-color: #ffffff;
-    --placeholder-color: rgba(255, 255, 255, 0.3);
-    --placeholder-opacity: 0;
+    --placeholder-color: transparent !important;
+    --placeholder-opacity: 0 !important;
     --contains-highlight-background-color: transparent;
 }
+math-field::part(placeholder) { display: none !important; opacity: 0 !important; visibility: hidden !important; width: 0 !important; height: 0 !important; overflow: hidden !important; }
 math-field:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
 math-field::part(virtual-keyboard-toggle) { display: none !important; pointer-events: none; }
 math-field::part(menu-toggle) { display: none !important; pointer-events: none; }

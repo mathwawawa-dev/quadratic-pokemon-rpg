@@ -10,6 +10,14 @@ function setupMathInput() {
 
     // 지수에 연속으로 숫자를 쓸 때 자동으로 지수 밖으로 커서가 빠져나가는 기본 동작 방지
     mf.smartSuperscript = false;
+    mf.placeholder = "";
+    try {
+        if (mf.shadowRoot) {
+            const style = document.createElement('style');
+            style.textContent = '.ML__placeholder, [part*="placeholder"] { display: none !important; opacity: 0 !important; visibility: hidden !important; }';
+            mf.shadowRoot.appendChild(style);
+        }
+    } catch(e) {}
 
     // 우클릭 금지 (강제 차단)
     mf.addEventListener('contextmenu', e => {

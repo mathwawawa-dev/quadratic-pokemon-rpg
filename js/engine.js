@@ -3378,28 +3378,28 @@ function render() {
         }
         offCtxGround.closePath();
 
-        // 3색 수직 그라데이션 (상단 햇살 연두 -> 중앙 싱그러운 잔디 -> 하단 짙은 이끼 숲색)
+        // 3색 수직 그라데이션 (상단 차분한 연두 올리브 -> 중앙 딥 그린 -> 하단 짙은 숲색)
         const topScreenP = gridToScreen(0, 0);
         const botScreenP = gridToScreen(0, -0.75);
         const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 12, 0, botScreenP.y + 12);
-        grassGrad.addColorStop(0.0, '#bbf7d0'); // 상단 햇빛 화사한 연두
-        grassGrad.addColorStop(0.35, '#22c55e'); // 중앙 메인 싱그러운 초록
-        grassGrad.addColorStop(1.0, '#14532d'); // 하단 짙은 이끼 숲색
+        grassGrad.addColorStop(0.0, '#4a8f62'); // 상단 차분한 올리브 그린
+        grassGrad.addColorStop(0.4, '#2d6a4f'); // 중앙 편안한 딥 그린
+        grassGrad.addColorStop(1.0, '#1b4332'); // 하단 짙은 숲색
         offCtxGround.fillStyle = grassGrad;
         offCtxGround.fill();
 
-        // 이끼(Moss) 하이라이트 패치 (부드러운 도트 얼룩 무늬)
+        // 이끼(Moss) 하이라이트 패치 (차분한 녹음 패치)
         for (let x = skyStartX; x <= skyEndX; x += 0.8) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY - 0.35);
             const mossR = scaleLength(0.3 + Math.sin(x * 2.3) * 0.15);
             offCtxGround.beginPath();
             offCtxGround.arc(p.x, p.y + Math.cos(x * 1.7) * 2, mossR, 0, Math.PI * 2);
-            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(187, 247, 208, 0.35)' : 'rgba(74, 222, 128, 0.3)';
+            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(74, 143, 98, 0.3)' : 'rgba(45, 106, 79, 0.25)';
             offCtxGround.fill();
         }
 
-        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링 (투톤: 짙은 그린 + 밝은 연두)
+        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링 (투톤: 짙은 숲색 + 차분한 그린)
         for (let x = skyStartX; x <= skyEndX; x += 0.35) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY);
@@ -3410,19 +3410,19 @@ function render() {
             offCtxGround.beginPath();
             offCtxGround.moveTo(p.x - 1, p.y + 1);
             offCtxGround.lineTo(p.x + bend - 2, p.y - h - 1);
-            offCtxGround.strokeStyle = '#15803d';
+            offCtxGround.strokeStyle = '#1b4332';
             offCtxGround.lineWidth = 2.0;
             offCtxGround.stroke();
 
-            // 앞쪽 밝은 풀잎
+            // 앞쪽 차분한 풀잎
             offCtxGround.beginPath();
             offCtxGround.moveTo(p.x, p.y);
             offCtxGround.lineTo(p.x + bend, p.y - h);
-            offCtxGround.strokeStyle = '#4ade80';
+            offCtxGround.strokeStyle = '#4a8f62';
             offCtxGround.lineWidth = 2.0;
             offCtxGround.stroke();
 
-            // 5. 아기자기한 작은 들꽃 (노란색 민들레 & 흰색 들꽃)
+            // 5. 아기자기한 작은 들꽃 (은은한 파스텔 옐로우 & 아이보리 흰색)
             if (Math.abs(Math.sin(x * 7.1)) > 0.72) {
                 const flowerP = gridToScreen(x, topY);
                 const flowerY = flowerP.y - h + 1;
@@ -3430,14 +3430,14 @@ function render() {
                 const isYellow = Math.sin(x * 13.3) > 0;
 
                 offCtxGround.beginPath();
-                offCtxGround.arc(flowerX, flowerY, 2.2, 0, Math.PI * 2);
-                offCtxGround.fillStyle = isYellow ? '#facc15' : '#ffffff';
+                offCtxGround.arc(flowerX, flowerY, 2.0, 0, Math.PI * 2);
+                offCtxGround.fillStyle = isYellow ? '#fef08a' : '#f8fafc';
                 offCtxGround.fill();
 
                 // 꽃수술
                 offCtxGround.beginPath();
-                offCtxGround.arc(flowerX, flowerY, 0.9, 0, Math.PI * 2);
-                offCtxGround.fillStyle = isYellow ? '#ea580c' : '#f59e0b';
+                offCtxGround.arc(flowerX, flowerY, 0.8, 0, Math.PI * 2);
+                offCtxGround.fillStyle = isYellow ? '#d97706' : '#e2e8f0';
                 offCtxGround.fill();
             }
         }
