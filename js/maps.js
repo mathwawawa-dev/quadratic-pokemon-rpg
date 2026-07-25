@@ -21,7 +21,7 @@ const TERRAINS = {
         func: (x) => Math.sin((x + terrainSeed) / 2) * 1.5 + Math.cos((x - terrainSeed) / 5) * 3 - 2
     },
     sky: {
-        name: "구름 위 하늘",
+        name: "성층권",
         bg: ["#4ca1af", "#c4e0e5"],
         color: "rgba(255,255,255,0.8)", outColor: "#4ca1af",
         deathZoneY: -30,
