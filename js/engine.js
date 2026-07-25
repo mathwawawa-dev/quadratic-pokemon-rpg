@@ -319,6 +319,31 @@ function createCrater(cx, cy, radius) {
                 }
             }
         }
+        
+        if (TERRAINS[stage.terrain].hasCaveWall && typeof ceilHeights !== 'undefined') {
+            if (ceilHeights[key] === undefined && TERRAINS[stage.terrain].ceilFunc) {
+                ceilHeights[key] = TERRAINS[stage.terrain].ceilFunc(x);
+            }
+            if (ceilHeights[key] !== undefined) {
+                if (ceilHeights[key] <= craterTopY && ceilHeights[key] >= craterBottomY - 0.3) {
+                    ceilHeights[key] = Math.max(ceilHeights[key], craterTopY);
+                    
+                    if (Math.random() < 0.6 && typeof effects !== 'undefined') {
+                        effects.push({
+                            type: 'rock',
+                            x: x + (Math.random()-0.5)*0.5,
+                            y: craterTopY,
+                            vx: (Math.random()-0.5)*2,
+                            vy: -Math.random()*2,
+                            life: 40 + Math.random()*20,
+                            maxLife: 60,
+                            size: 0.15 + Math.random()*0.15,
+                            color: Math.random() < 0.5 ? '#595959' : '#404040'
+                        });
+                    }
+                }
+            }
+        }
     }
 
     // 숨겨진 땅 포켓몬 근처(반경 1.0 이내)의 지형이 폭발로 파여질 때 즉시 파헤쳐짐 처리
@@ -1958,6 +1983,15 @@ function updateGame() {
                     }
                 } else {
                     const key = (Math.round(tx * 10) / 10).toFixed(1);
+                    
+                    if (tData.hasCaveWall && typeof ceilHeights !== 'undefined') {
+                        if (ceilHeights[key] !== undefined) {
+                            if (ty >= ceilHeights[key]) { insideTerrain = true; break; }
+                        } else if (tData.ceilFunc) {
+                            if (ty >= tData.ceilFunc(tx)) { insideTerrain = true; break; }
+                        }
+                    }
+
                     const origYs = originalTerrainHeights[key] || [];
                     for (let i = 0; i < origYs.length; i++) {
                         const origY = origYs[i];
