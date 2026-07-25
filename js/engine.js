@@ -3440,12 +3440,13 @@ function render() {
         }
         offCtxGround.closePath();
 
-        // 2색 수직 그라데이션 (상단 #22c55e -> 하단 #15803d)
+        // 부드러운 3단 수직 그라데이션 (상단 #22c55e -> 중앙 #16a34a -> 하단 #15803d)
         const topScreenP = gridToScreen(0, 0);
         const botScreenP = gridToScreen(0, -0.1625);
         const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 2, 0, botScreenP.y + 2);
-        grassGrad.addColorStop(0.0, '#22c55e'); // 상단 싱그러운 그린
-        grassGrad.addColorStop(1.0, '#15803d'); // 하단 차분한 숲색
+        grassGrad.addColorStop(0.0, '#22c55e');  // 상단 싱그러운 그린
+        grassGrad.addColorStop(0.5, '#16a34a');  // 중앙 중간 그린
+        grassGrad.addColorStop(1.0, '#15803d');  // 하단 차분한 딥 그린
         offCtxGround.fillStyle = grassGrad;
         offCtxGround.fill();
 
@@ -3459,17 +3460,6 @@ function render() {
         offCtxGround.strokeStyle = 'rgba(35, 15, 5, 0.45)';
         offCtxGround.lineWidth = 1.2;
         offCtxGround.stroke();
-
-        // 단조로움 방지 1: 은은한 잔디 음영 도트 패치
-        for (let x = skyStartX; x <= skyEndX; x += 0.75) {
-            const topY = getOrigY(x);
-            const p = gridToScreen(x, topY - 0.08);
-            const dotR = scaleLength(0.09 + Math.sin(x * 2.1) * 0.04);
-            offCtxGround.beginPath();
-            offCtxGround.arc(p.x, p.y + Math.cos(x * 1.5) * 0.5, dotR, 0, Math.PI * 2);
-            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(21, 128, 61, 0.35)' : 'rgba(16, 185, 129, 0.2)';
-            offCtxGround.fill();
-        }
 
         // 4. 바람에 살랑살랑 흔들거리는 아담한 투톤 풀잎, 들꽃, 흩날리는 꽃잎 파티클 렌더링
         const tNow = Date.now() / 350;
