@@ -3490,22 +3490,33 @@ function render() {
         // 베이스 오프스크린 지형 그리기
         ctx.drawImage(offCanvasGround, 0, 0);
 
-        // 6. 메인 ctx 직접 렌더링: 바람에 살랑살랑 흔들거리는 투톤 풀잎, 들꽃 🟡⚪️, 흩날리는 꽃잎 파티클 🌸
+        // 6. 메인 ctx 직접 렌더링: 듬성듬성 아담하게 배치된 풀잎, 들꽃 🟡⚪️, 흩날리는 꽃잎 파티클 🌸 (크레이터 파괴 반응)
         ctx.save();
         const tNow = Date.now() / 350;
-        for (let x = skyStartX; x <= skyEndX; x += 0.35) {
-            const topY = getOrigY(x);
-            const p = gridToScreen(x, topY);
-            const h = 4.0 + Math.sin(x * 3.7) * 2.0; // 아담한 풀잎 높이
+        for (let x = skyStartX + 0.5; x <= skyEndX - 0.5; x += 1.25) {
+            const origY = getOrigY(x);
+            const curTerrainY = getTerrainY(x);
+
+            // [파괴 검사 1] 지형이 뚫렸거나(-50 이하) 원본 높이보다 깎여나간 지점이면 파괴되어 미표시
+            if (curTerrainY <= -50 || (origY - curTerrainY > 0.15)) continue;
+
+            // [파괴 검사 2] 크레이터(폭발 구멍) 범위 안이면 파괴 처리되어 미표시
+            if (typeof craters !== 'undefined' && craters.length > 0) {
+                const isDestroyed = craters.some(c => Math.hypot(x - c.x, origY - c.y) <= c.r + 0.2);
+                if (isDestroyed) continue;
+            }
+
+            const p = gridToScreen(x, curTerrainY);
+            const h = 3.5 + Math.sin(x * 3.7) * 1.5; // 아담한 풀잎 높이
             // 바람 흔들림 변위 (Date.now() 기반 동적 휘어짐)
-            const wind = Math.sin(tNow + x * 0.75) * 3.0 + Math.cos(tNow * 0.5 + x) * 1.3;
+            const wind = Math.sin(tNow + x * 0.75) * 2.6 + Math.cos(tNow * 0.5 + x) * 1.1;
 
             // 1) 뒤쪽 짙은 풀잎
             ctx.beginPath();
             ctx.moveTo(p.x - 1, p.y + 1);
             ctx.lineTo(p.x + wind - 1.2, p.y - h - 0.8);
             ctx.strokeStyle = '#15803d';
-            ctx.lineWidth = 1.8;
+            ctx.lineWidth = 1.6;
             ctx.stroke();
 
             // 2) 앞쪽 상큼한 그린 풀잎
@@ -3513,37 +3524,37 @@ function render() {
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p.x + wind, p.y - h);
             ctx.strokeStyle = '#4ade80';
-            ctx.lineWidth = 1.8;
+            ctx.lineWidth = 1.6;
             ctx.stroke();
 
             // 3) 바람에 살랑살랑 흔들리는 아기자기한 작은 들꽃 (노란 민들레 🟡 / 하얀 들꽃 ⚪️)
-            if (Math.abs(Math.sin(x * 5.3)) > 0.65) {
+            if (Math.abs(Math.sin(x * 4.3)) > 0.45) {
                 const flowerX = p.x + wind;
                 const flowerY = p.y - h - 0.5;
                 const isYellow = Math.sin(x * 11.7) > 0;
 
                 // 꽃잎
                 ctx.beginPath();
-                ctx.arc(flowerX, flowerY, 2.2, 0, Math.PI * 2);
+                ctx.arc(flowerX, flowerY, 2.0, 0, Math.PI * 2);
                 ctx.fillStyle = isYellow ? '#fde047' : '#ffffff';
                 ctx.fill();
 
                 // 꽃수술
                 ctx.beginPath();
-                ctx.arc(flowerX, flowerY, 0.9, 0, Math.PI * 2);
+                ctx.arc(flowerX, flowerY, 0.8, 0, Math.PI * 2);
                 ctx.fillStyle = isYellow ? '#ea580c' : '#f59e0b';
                 ctx.fill();
 
                 // 4) 바람을 타고 흩날리는 미세 꽃잎 파티클 (Swaying Petal Particles)
-                if (Math.sin(x * 17.3 + tNow * 0.8) > 0.25) {
+                if (Math.sin(x * 17.3 + tNow * 0.8) > 0.35) {
                     const petalCycle = (tNow * 1.2 + Math.abs(x)) % 4; // 0 ~ 4 초 주기 흩날림
-                    const floatX = flowerX + Math.sin(tNow * 1.5 + x) * 12 + petalCycle * 7;
-                    const floatY = flowerY - (petalCycle * 6) + Math.cos(tNow + x) * 2.5;
+                    const floatX = flowerX + Math.sin(tNow * 1.5 + x) * 10 + petalCycle * 6;
+                    const floatY = flowerY - (petalCycle * 5) + Math.cos(tNow + x) * 2.2;
                     const petalAlpha = Math.max(0, 1 - (petalCycle / 4));
 
                     ctx.beginPath();
-                    ctx.arc(floatX, floatY, 1.2, 0, Math.PI * 2);
-                    ctx.fillStyle = isYellow ? `rgba(253, 224, 71, ${petalAlpha * 0.9})` : `rgba(255, 241, 242, ${petalAlpha * 0.95})`;
+                    ctx.arc(floatX, floatY, 1.1, 0, Math.PI * 2);
+                    ctx.fillStyle = isYellow ? `rgba(253, 224, 71, ${petalAlpha * 0.85})` : `rgba(255, 241, 242, ${petalAlpha * 0.9})`;
                     ctx.fill();
                 }
             }
