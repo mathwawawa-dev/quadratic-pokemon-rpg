@@ -528,7 +528,7 @@ function initStage() {
                     y = baseY + 20.0;
                 }
             }
-            if (stage.terrain === 'sky') {
+            if (stage.terrain === 'sky' || stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
                   if (roundedX < -30 || roundedX > 30) {
                       y = -100;
@@ -3209,6 +3209,130 @@ function render() {
         offCtxGround.fillStyle = tData.color;
         offCtxGround.fill();
         // 구름 위 하늘 맵은 흰 테두리 선(stroke)을 제거하여 x=38 부근 흰 선 완벽 삭제
+
+        // 5. 폭발 구멍(craters) 타공
+        if (typeof craters !== 'undefined' && craters.length > 0) {
+            offCtxGround.globalCompositeOperation = 'destination-out';
+            for (const crater of craters) {
+                const p = gridToScreen(crater.x, crater.y);
+                const pr = scaleLength(crater.r);
+                offCtxGround.beginPath();
+                offCtxGround.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                offCtxGround.fill();
+            }
+            offCtxGround.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.drawImage(offCanvasGround, 0, 0);
+    } else if (stage.terrain === 'log_bridge') {
+        const skyStartX = -30;
+        const skyEndX = 30;
+        const thickness = 5.0;
+
+        const offCanvasGround = document.createElement('canvas');
+        offCanvasGround.width = canvas.width;
+        offCanvasGround.height = canvas.height;
+        const offCtxGround = offCanvasGround.getContext('2d');
+
+        const getOrigY = (x) => {
+            const key = (Math.round(x * 10) / 10).toFixed(1);
+            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
+        };
+
+        // 통나무 전체 외형 패스 (두께 5.0)
+        offCtxGround.beginPath();
+        const startP = gridToScreen(skyStartX, getOrigY(skyStartX));
+        offCtxGround.moveTo(startP.x, startP.y);
+        for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.2)) {
+            const p = gridToScreen(x, getOrigY(x));
+            offCtxGround.lineTo(p.x, p.y);
+            if (x >= skyEndX) break;
+        }
+
+        // 우측 둥근 나이테 단면 캡 마감
+        const rightTopY = getOrigY(skyEndX);
+        const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - thickness / 2);
+        const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
+        offCtxGround.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
+
+        // 하단 껍질 라인
+        for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
+            const p = gridToScreen(x, getOrigY(x) - thickness);
+            offCtxGround.lineTo(p.x, p.y);
+            if (x <= skyStartX) break;
+        }
+
+        // 좌측 둥근 나이테 단면 캡 마감
+        const leftTopY = getOrigY(skyStartX);
+        const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - thickness / 2);
+        const leftTopP = gridToScreen(skyStartX, leftTopY);
+        offCtxGround.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
+        offCtxGround.closePath();
+
+        // 1. 통나무 기본 바탕색 (짙은 통나무 적갈색)
+        offCtxGround.fillStyle = '#5c220c';
+        offCtxGround.fill();
+
+        // 2. 나무 껍질 및 결 패턴 렌더링
+        offCtxGround.save();
+        offCtxGround.clip();
+        for (let x = skyStartX - 2; x <= skyEndX + 2; x += 1.2) {
+            const pTop = gridToScreen(x, getOrigY(x));
+            const pBot = gridToScreen(x, getOrigY(x) - thickness);
+            offCtxGround.beginPath();
+            offCtxGround.moveTo(pTop.x, pTop.y);
+            offCtxGround.lineTo(pBot.x, pBot.y);
+            offCtxGround.strokeStyle = (Math.round(x * 10) % 2 === 0) ? '#3d1506' : '#7a2f12';
+            offCtxGround.lineWidth = 4;
+            offCtxGround.stroke();
+        }
+
+        // 수평 나뭇결 선
+        for (let dy = 0.8; dy < thickness; dy += 0.9) {
+            offCtxGround.beginPath();
+            for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.5) {
+                const yVal = getOrigY(x) - dy + Math.sin(x * 0.8) * 0.15;
+                const p = gridToScreen(x, yVal);
+                if (x === skyStartX - 2) offCtxGround.moveTo(p.x, p.y);
+                else offCtxGround.lineTo(p.x, p.y);
+            }
+            offCtxGround.strokeStyle = 'rgba(40, 15, 5, 0.4)';
+            offCtxGround.lineWidth = 3;
+            offCtxGround.stroke();
+        }
+
+        // 3. 통나무 상단 잔디 풀밭 레이어 (초록색 텍스처 + 풀잎 데코)
+        offCtxGround.beginPath();
+        const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
+        offCtxGround.moveTo(gStartP.x, gStartP.y);
+        for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.2)) {
+            const p = gridToScreen(x, getOrigY(x));
+            offCtxGround.lineTo(p.x, p.y);
+            if (x >= skyEndX) break;
+        }
+        for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
+            const p = gridToScreen(x, getOrigY(x) - 0.65);
+            offCtxGround.lineTo(p.x, p.y);
+            if (x <= skyStartX) break;
+        }
+        offCtxGround.closePath();
+        offCtxGround.fillStyle = '#22c55e';
+        offCtxGround.fill();
+
+        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링
+        offCtxGround.strokeStyle = '#15803d';
+        offCtxGround.lineWidth = 2.5;
+        for (let x = skyStartX; x <= skyEndX; x += 0.4) {
+            const topY = getOrigY(x);
+            const p = gridToScreen(x, topY);
+            const h = 8 + Math.sin(x * 3) * 5;
+            offCtxGround.beginPath();
+            offCtxGround.moveTo(p.x, p.y);
+            offCtxGround.lineTo(p.x + Math.sin(x * 5) * 4, p.y - h);
+            offCtxGround.stroke();
+        }
+
+        offCtxGround.restore();
 
         // 5. 폭발 구멍(craters) 타공
         if (typeof craters !== 'undefined' && craters.length > 0) {

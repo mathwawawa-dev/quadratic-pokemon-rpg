@@ -1,14 +1,15 @@
 const LEVELS = [
     { title: "Stage 1", terrain: 'grass',    count: 3, flyingCount: 1 },
     { title: "Stage 2", terrain: 'ice',      count: 3, flyingCount: 1 },
-    { title: "Stage 3", terrain: 'sky',      count: 3, flyingCount: 3 },
-    { title: "Stage 4", terrain: 'lava',     count: 3, flyingCount: 1 },
-    { title: "Stage 5", terrain: 'cave',     count: 3, flyingCount: 2 },
-    { title: "Stage 6", terrain: 'electric', count: 4, flyingCount: 1 },
-    { title: "Stage 7", terrain: 'ocean',    count: 4, flyingCount: 1 },
-    { title: "Stage 8", terrain: 'psychic',  count: 4, flyingCount: 2 },
-    { title: "Stage 9", terrain: 'garden',   count: 4, flyingCount: 2 },
-    { title: "Stage 10", terrain: 'cloud_garden', count: 4, flyingCount: 3 },
+    { title: "Stage 3", terrain: 'log_bridge', count: 3, flyingCount: 1 },
+    { title: "Stage 4", terrain: 'sky',      count: 3, flyingCount: 3 },
+    { title: "Stage 5", terrain: 'lava',     count: 3, flyingCount: 1 },
+    { title: "Stage 6", terrain: 'cave',     count: 3, flyingCount: 2 },
+    { title: "Stage 7", terrain: 'electric', count: 4, flyingCount: 1 },
+    { title: "Stage 8", terrain: 'ocean',    count: 4, flyingCount: 1 },
+    { title: "Stage 9", terrain: 'psychic',  count: 4, flyingCount: 2 },
+    { title: "Stage 10", terrain: 'garden',   count: 4, flyingCount: 2 },
+    { title: "Stage 11", terrain: 'cloud_garden', count: 4, flyingCount: 3 },
 ];
 
 let terrainSeed = 0;
@@ -19,6 +20,13 @@ const TERRAINS = {
         bg: ["#1a4a2e", "#4a8f62", "#87ceeb"],
         color: "#2d6a4f", outColor: "#1a4a2e",
         func: (x) => Math.sin((x + terrainSeed) / 2) * 1.5 + Math.cos((x - terrainSeed) / 5) * 3 - 2
+    },
+    log_bridge: {
+        name: "외나무다리",
+        bg: ["#38bdf8", "#7dd3fc", "#bae6fd"],
+        color: "#652810", outColor: "#3d1708",
+        deathZoneY: -25,
+        func: (x) => Math.sin((x + terrainSeed) / 5) * 0.8 + Math.cos((x - terrainSeed) / 3) * 0.4 - 1
     },
     sky: {
         name: "성층권",
