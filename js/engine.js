@@ -3273,21 +3273,34 @@ function render() {
         const rightBotP = gridToScreen(skyEndX, rightTopY - rightThick);
         offCtxGround.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
 
-        // 하단 껍질 라인 (블록 단위 계단식 두께 - 파도 너울 방지)
+        // 하단 껍질 라인 (블록 경계 간 코사인 보간 - 파도 너울 없음 + 계단 없음)
         {
             const BLOCK = 4.0;
-            let bx = skyEndX;
-            while (bx > skyStartX) {
-                const nextBx = Math.max(skyStartX, bx - BLOCK);
-                const midX = (bx + nextBx) / 2;
-                const thick = getThick(midX);
-                // 현재 x에서 수직으로 하단에 도달
-                const pRight = gridToScreen(bx, getOrigY(bx) - thick);
-                offCtxGround.lineTo(pRight.x, pRight.y);
-                // 다음 블록까지 수평선
-                const pLeft = gridToScreen(nextBx, getOrigY(nextBx) - thick);
-                offCtxGround.lineTo(pLeft.x, pLeft.y);
-                bx = nextBx;
+            // 오른쪽→왼쪽 블록 경계 x 목록 사전 계산
+            const blockXs = [];
+            for (let bx = skyEndX; bx > skyStartX; bx -= BLOCK) {
+                blockXs.push(bx);
+            }
+            blockXs.push(skyStartX);
+            // 각 블록 경계에서 두께 계산
+            const blockThicks = blockXs.map(bx => getThick(bx));
+
+            // 블록 구간마다 코사인 보간으로 부드럽게 연결
+            for (let i = 0; i < blockXs.length - 1; i++) {
+                const x0 = blockXs[i];
+                const x1 = blockXs[i + 1];
+                const t0 = blockThicks[i];
+                const t1 = blockThicks[i + 1];
+                const steps = Math.max(6, Math.round(Math.abs(x0 - x1) / 0.4));
+                for (let s = 0; s <= steps; s++) {
+                    const frac = s / steps;
+                    // 코사인 보간: 구간 내 S-커브 (전역 주기성 없음)
+                    const cosInterp = (1 - Math.cos(frac * Math.PI)) / 2;
+                    const curX = x0 + (x1 - x0) * frac;
+                    const curThick = t0 + (t1 - t0) * cosInterp;
+                    const p = gridToScreen(curX, getOrigY(curX) - curThick);
+                    offCtxGround.lineTo(p.x, p.y);
+                }
             }
         }
 
