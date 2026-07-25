@@ -517,9 +517,14 @@ function initStage() {
                 // x = ±60 외곽 경계선에서 수직으로 뚝 떨어지지 않고 낭떠러지로 자연스럽게 부드럽게 깎이도록 하향 슬로프 적용
                 if (x < -45) { const dx = -45 - x; y -= dx * dx * 0.15; }
                 else if (x > 45) { const dx = x - 45; y -= dx * dx * 0.15; }
+                const baseY = tData.func(x) + stageHeightOffset;
                 for (const sp of terrainSpikes) {
                     const d = x - sp.cx;
                     y += sp.height * Math.exp(-(d * d) / (2 * sp.width * sp.width));
+                }
+                // 지형 최저점과의 높이차가 20을 넘지 않도록 안전 제한
+                if (y - baseY > 20.0) {
+                    y = baseY + 20.0;
                 }
             }
             if (stage.terrain === 'sky') {
