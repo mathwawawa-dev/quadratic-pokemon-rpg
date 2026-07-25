@@ -3467,56 +3467,73 @@ function render() {
         // 베이스 오프스크린 지형을 메인 ctx에 복사 (동적 풀잎/들꽃/파티클 렌더링 전면 삭제하여 랙 완벽 방지)
         ctx.drawImage(offCanvasGround, 0, 0);
     } else {
-        const { offCanvasGround, offCtxGround } = getSharedTerrainCtx();
-
-        offCtxGround.beginPath();
+        // 지형 데이터는 -60~60 범위에서만 초기화됨.
+        // 드래그로 카메라가 범위 밖으로 벗어나면 getOrigY가 -100을 리턴해 폴리곤이 붕괴되므로
+        // 렌더 범위를 데이터 유효 범위와 교집합으로 클램핑.
         const getOrigY = (x) => {
             const key = (Math.round(x * 10) / 10).toFixed(1);
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : getTerrainY(x);
         };
-          // 지형 데이터는 -60~60 범위에서만 초기화됨.
-          // 드래그로 카메라가 범위 밖으로 벗어나면 getOrigY가 -100을 리턴해 폴리곤이 붕괴되므로
-          // 렌더 범위를 데이터 유효 범위(TERRAIN_DATA_MIN~MAX)와 교집합으로 클램핑.
-          const TERRAIN_DATA_MIN = -60;
-          const TERRAIN_DATA_MAX = 60;
-          const drawMinX = Math.max(X_MIN, TERRAIN_DATA_MIN);
-          const drawMaxX = Math.min(X_MAX, TERRAIN_DATA_MAX);
-          
-          if (drawMinX <= drawMaxX) {
-              const startP = gridToScreen(drawMinX, getOrigY(drawMinX));
-              offCtxGround.moveTo(startP.x, startP.y);
-              
-              for (let x = drawMinX; x <= drawMaxX; x += 0.2) { 
-                  const p = gridToScreen(x, getOrigY(x)); 
-                  offCtxGround.lineTo(p.x, p.y); 
-              }
-              
-              const br = gridToScreen(drawMaxX, -1000);
-              const bl = gridToScreen(drawMinX, -1000);
-              offCtxGround.lineTo(br.x, br.y); 
-              offCtxGround.lineTo(bl.x, bl.y); 
-          }
-          offCtxGround.closePath();
-        
-        offCtxGround.fillStyle = tData.color;
-        offCtxGround.fill();
-        offCtxGround.lineWidth = 2;
-        offCtxGround.strokeStyle = 'rgba(255,255,255,0.2)';
-        offCtxGround.stroke();
+        const TERRAIN_DATA_MIN = -60;
+        const TERRAIN_DATA_MAX = 60;
+        const drawMinX = Math.max(X_MIN, TERRAIN_DATA_MIN);
+        const drawMaxX = Math.min(X_MAX, TERRAIN_DATA_MAX);
+
+        ctx.beginPath();
+        if (drawMinX <= drawMaxX) {
+            const startP = gridToScreen(drawMinX, getOrigY(drawMinX));
+            ctx.moveTo(startP.x, startP.y);
+            for (let x = drawMinX; x <= drawMaxX; x += 0.2) {
+                const p = gridToScreen(x, getOrigY(x));
+                ctx.lineTo(p.x, p.y);
+            }
+            const br = gridToScreen(drawMaxX, -1000);
+            const bl = gridToScreen(drawMinX, -1000);
+            ctx.lineTo(br.x, br.y);
+            ctx.lineTo(bl.x, bl.y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = tData.color;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.stroke();
 
         if (typeof craters !== 'undefined' && craters.length > 0) {
-            offCtxGround.globalCompositeOperation = 'destination-out';
+            // 크레이터는 destination-out 합성이 필요하므로 별도 오프스크린 캔버스 사용
+            const craterCanvas = document.createElement('canvas');
+            craterCanvas.width = canvas.width;
+            craterCanvas.height = canvas.height;
+            const craterCtx = craterCanvas.getContext('2d');
+            // 지형 다시 그리기
+            craterCtx.beginPath();
+            if (drawMinX <= drawMaxX) {
+                const startP = gridToScreen(drawMinX, getOrigY(drawMinX));
+                craterCtx.moveTo(startP.x, startP.y);
+                for (let x = drawMinX; x <= drawMaxX; x += 0.2) {
+                    const p = gridToScreen(x, getOrigY(x));
+                    craterCtx.lineTo(p.x, p.y);
+                }
+                const br = gridToScreen(drawMaxX, -1000);
+                const bl = gridToScreen(drawMinX, -1000);
+                craterCtx.lineTo(br.x, br.y);
+                craterCtx.lineTo(bl.x, bl.y);
+            }
+            craterCtx.closePath();
+            craterCtx.fillStyle = tData.color;
+            craterCtx.fill();
+            // 크레이터 타공
+            craterCtx.globalCompositeOperation = 'destination-out';
             for (const crater of craters) {
                 const p = gridToScreen(crater.x, crater.y);
                 const pr = scaleLength(crater.r);
-                offCtxGround.beginPath();
-                offCtxGround.arc(p.x, p.y, pr, 0, Math.PI * 2);
-                offCtxGround.fill();
+                craterCtx.beginPath();
+                craterCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                craterCtx.fill();
             }
-            offCtxGround.globalCompositeOperation = 'source-over';
+            craterCtx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(craterCanvas, 0, 0);
         }
-        
-        ctx.drawImage(offCanvasGround, 0, 0);
     }
 
     // Grid & Axes
