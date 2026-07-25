@@ -1,0 +1,491 @@
+// 🏆 [통합 백엔드 코어] 이차함수 포켓몬 포트리스 & 수학 게임 Apps Script (v5.4.0)
+// 이 코드를 복사하여 구글 스프레드시트의 [확장 프로그램] -> [Apps Script]의 코드 편집기에 붙여넣고 [배포]하세요.
+
+// ---------------------------------------------------------
+// [환경 설정] 전역 변수
+// ---------------------------------------------------------
+var SECURITY_TOKEN = "super_secret_key_2026!"; // 클라이언트(웹)와 일치해야 하는 보안 키
+var SYSTEM_CONFIG_SHEET = "시스템 설정";        // 입장 코드를 보관할 시트 이름
+
+// ---------------------------------------------------------
+// [1] 통합 doPost 함수 (데이터 기록 및 삭제 - 클라이언트가 POST로 요청할 때 작동)
+// ---------------------------------------------------------
+function doPost(e) {
+  var payload; 
+  try {
+    payload = JSON.parse(e.postData.contents);
+  } catch(err) {
+    return createJsonResponse({ success: false, message: "JSON Parse Error" });
+  }
+
+  // [보안 검증]
+  if (payload.token !== SECURITY_TOKEN) {
+    return createJsonResponse({ success: false, message: "Invalid Security Token" });
+  }
+
+  var action = payload.action; // 수행할 행동 ("login", "changePwd", "save", "delete")
+
+  // -------------------------------------------------------------
+  // [사전 로그인 검증 (login)] - 시트 생성 없이 즉시 반환!
+  // -------------------------------------------------------------
+  if (action === "login") {
+    var loginResult = verifyUserAuth(payload.userId, payload.userPwd);
+    return createJsonResponse(loginResult);
+  }
+
+  // -------------------------------------------------------------
+  // [비밀번호 변경 (changePwd)] - 시트 생성 없이 즉시 반환!
+  // -------------------------------------------------------------
+  if (action === "changePwd") {
+    var pwdResult = changeUserPassword(payload.userId, payload.oldPwd, payload.newPwd);
+    return createJsonResponse(pwdResult);
+  }
+
+  var gameId = payload.gameId; // 연동할 구글 시트 이름
+  if (!gameId || String(gameId).trim() === "" || String(gameId) === "undefined") {
+    return createJsonResponse({ success: false, message: "유효한 시트 이름(gameId)이 없습니다." });
+  }
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(gameId);
+    
+    // 💡 시트가 없으면 자동으로 생성하고 첫 행(헤더)을 작성합니다.
+    if (!sheet) {
+      sheet = ss.insertSheet(gameId);
+      sheet.appendRow([
+        "시간", 
+        "용사이름", 
+        "아이디", 
+        "비밀번호", 
+        "점수(처치)", 
+        "레벨", 
+        "경험치", 
+        "기타데이터1",
+        "기타데이터2",
+        "기타데이터3"
+      ]);
+      sheet.getRange("A1:J1").setFontWeight("bold").setBackground("#cfe2f3"); 
+    }
+
+    // 1. 데이터 저장 (save)
+    if (action === "save") {
+      // 보안 검증
+      var authCheck = verifyUserAuth(payload.userId, payload.userPwd);
+      if (!authCheck.success) {
+        return createJsonResponse({ success: false, message: authCheck.message });
+      }
+
+      // 도배 방지: 동일 아이디 기존 기록 검색 (C열: 아이디)
+      var data = sheet.getDataRange().getValues();
+      var existingRowIndex = -1;
+      var existingScore = 0;
+
+      for (var i = data.length - 1; i >= 1; i--) {
+        if (String(data[i][2]).trim() === String(payload.userId).trim()) {
+          existingRowIndex = i + 1; // 실제 스프레드시트 행 번호
+          existingScore = Number(data[i][4]) || 0; // E열 (점수)
+          break;
+        }
+      }
+
+      // 동일 아이디 기록 존재 시 갱신 여부 확인 요청 반환
+      if (existingRowIndex !== -1) {
+        if (!payload.forceUpdate) {
+           return createJsonResponse({ 
+             success: false, 
+             requireConfirmation: true, 
+             message: "이전 기록은 " + existingScore + "점 입니다. 현재 기록(" + payload.score + "점)으로 갱신하시겠습니까?" 
+           });
+        } else {
+           sheet.deleteRow(existingRowIndex);
+        }
+      }
+
+      var kstDate = Utilities.formatDate(new Date(payload.timestamp || Date.now()), "Asia/Seoul", "yyyy.MM.dd HH:mm:ss");
+      sheet.appendRow([
+        kstDate, 
+        payload.name || "무명 트레이너", 
+        payload.userId || "", 
+        payload.userPwd || "", 
+        payload.score || 0, 
+        payload.level || 1, 
+        payload.xp || 0, 
+        payload.captured || "", 
+        payload.data2 || "", 
+        payload.data3 || "" 
+      ]);
+      return createJsonResponse({ success: true });
+    } 
+    
+    // 2. 데이터 삭제 (delete)
+    else if (action === "delete") {
+      var kstDateToDelete = Utilities.formatDate(new Date(payload.timestamp), "Asia/Seoul", "yyyy.MM.dd HH:mm:ss");
+      var data = sheet.getDataRange().getValues();
+      var deleted = false;
+      
+      // 아래에서부터 위로 올라가며 매칭되는 등록 시간을 찾아서 행을 삭제합니다.
+      for (var i = data.length - 1; i >= 1; i--) {
+        var rowTime = data[i][0];
+        if (rowTime instanceof Date) {
+          rowTime = Utilities.formatDate(rowTime, "Asia/Seoul", "yyyy.MM.dd HH:mm:ss");
+        }
+        if (rowTime === kstDateToDelete || rowTime == payload.timestamp) {
+          sheet.deleteRow(i + 1); 
+          deleted = true;
+          break;
+        }
+      }
+      return createJsonResponse({ success: true, deleted: deleted });
+    }
+
+  } catch (err) {
+    return createJsonResponse({ success: false, error: err.toString() });
+  }
+}
+
+// ---------------------------------------------------------
+// [2] 통합 doGet 함수 (데이터 조회 및 설정 변경 - GET으로 요청할 때 작동)
+// ---------------------------------------------------------
+function doGet(e) {
+  var action = e.parameter.action;
+  var gameId = e.parameter.gameId;
+
+  try {
+    // 1. 명예의 전당 데이터 불러오기 (load)
+    if (action === "load" || action === "getRankings") {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(gameId);
+      
+      if (!sheet) {
+        return createJsonResponse({ records: [], lbFields: getLatestLbFields() });
+      }
+
+      var data = sheet.getDataRange().getValues();
+      var records = [];
+      
+      for (var i = 1; i < data.length; i++) {
+        var row = data[i];
+        if (!row[1]) continue; 
+        
+        records.push({
+          timestamp: row[0],
+          name: row[1],
+          userId: row[2],   // C열
+          userPwd: row[3],  // D열
+          score: Number(row[4]) || 0, // E열
+          level: Number(row[5]) || 1, // F열
+          xp: Number(row[6]) || 0,    // G열
+          captured: row[7] || "",     // H열 (기타데이터1)
+          data1: row[7] || "",        // H열 (기타데이터1)
+          data2: row[8] || "",        // I열 (기타데이터2)
+          data3: row[9] || ""         // J열 (기타데이터3)
+        });
+      }
+      
+      // ★ 서버 정렬 제거: 클라이언트에서 정렬하도록 원시 데이터 그대로 전송
+      return createJsonResponse({ records: records, lbFields: getLatestLbFields() });
+    }
+
+    // 2. 입장 코드 조회 및 시트 자동 생성/동기화 (getAccessCode)
+    else if (action === "getAccessCode" || action === "initSheet") {
+      var resultSheetId = e.parameter.resultSheetId;
+      ensureSheetsExist(gameId, resultSheetId);
+      var code = getAccessCodeFromConfig(gameId);
+      return createJsonResponse({ success: true, accessCode: code });
+    }
+
+    // 3. 입장 코드 설정 (setAccessCode)
+    else if (action === "setAccessCode") {
+      if (e.parameter.token !== SECURITY_TOKEN) {
+        return createJsonResponse({ success: false, error: "Invalid Token" });
+      }
+      ensureSheetsExist(gameId, null);
+      saveAccessCodeToConfig(gameId, e.parameter.accessCode);
+      return createJsonResponse({ success: true });
+    }
+
+    // 4. 시스템 설정 백업 (saveSettings)
+    else if (action === "saveSettings") {
+      var deployId = e.parameter.saveDeployId || "";
+      var saveGameId = e.parameter.saveGameId || "";
+      var saveResultId = e.parameter.saveResultId || "";
+      var saveTime = e.parameter.saveTime || "";
+      var lbFields = e.parameter.lbFields || "";  // ★ 명예의 전당 표시 항목 설정
+      
+      ensureSheetsExist(saveGameId, saveResultId);
+      logSettingsToConfig(deployId, saveGameId, saveResultId, saveTime, lbFields);
+      return createJsonResponse({ success: true });
+    }
+
+    return ContentService.createTextOutput("Apps Script가 정상 작동 중입니다.");
+
+  } catch (err) {
+    return createJsonResponse({ success: false, error: err.toString() });
+  }
+}
+
+// ---------------------------------------------------------
+// [3] 내부 헬퍼 함수들 (데이터 관리용 보조 함수)
+// ---------------------------------------------------------
+
+function ensureSheetsExist(gameId, resultSheetId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 1. 결과 저장 시트 생성 (없을 경우 자동 생성 및 헤더 구성)
+  if (resultSheetId && resultSheetId.trim() !== "") {
+    var rSheet = ss.getSheetByName(resultSheetId.trim());
+    if (!rSheet) {
+      rSheet = ss.insertSheet(resultSheetId.trim());
+      rSheet.appendRow([
+        "시간", 
+        "용사이름", 
+        "아이디", 
+        "비밀번호", 
+        "점수(처치)", 
+        "레벨", 
+        "경험치", 
+        "기타데이터1", 
+        "기타데이터2", 
+        "기타데이터3"
+      ]);
+      rSheet.getRange("A1:J1").setFontWeight("bold").setBackground("#cfe2f3");
+    }
+  }
+
+  // 2. 시스템 설정 시트 및 입장코드 열 제목 생성 (없을 경우)
+  if (gameId && gameId.trim() !== "") {
+    var sysSheet = ss.getSheetByName(SYSTEM_CONFIG_SHEET);
+    if (!sysSheet) {
+      sysSheet = ss.insertSheet(SYSTEM_CONFIG_SHEET);
+    }
+    var lastCol = sysSheet.getLastColumn();
+    var colIndex = -1;
+    if (lastCol > 0) {
+      var headers = sysSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+      for (var j = 0; j < headers.length; j++) {
+        if (headers[j] === gameId.trim()) {
+          colIndex = j + 1;
+          break;
+        }
+      }
+    }
+    if (colIndex === -1) {
+      colIndex = lastCol + 1;
+      sysSheet.getRange(1, colIndex).setValue(gameId.trim());
+      sysSheet.getRange(1, colIndex).setFontWeight("bold").setBackground("#fce5cd");
+    }
+  }
+}
+
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+                       .setMimeType(ContentService.MimeType.JSON);
+}
+
+// '시스템 설정' 시트에 입장코드 기록
+function saveAccessCodeToConfig(gameId, accessCode) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SYSTEM_CONFIG_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(SYSTEM_CONFIG_SHEET);
+  }
+  
+  var lastCol = sheet.getLastColumn();
+  var colIndex = -1;
+  
+  if (lastCol > 0) {
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    for (var j = 0; j < headers.length; j++) {
+      if (headers[j] === gameId) {
+        colIndex = j + 1;
+        break;
+      }
+    }
+  }
+  
+  if (colIndex === -1) {
+    colIndex = lastCol + 1;
+    sheet.getRange(1, colIndex).setValue(gameId);
+    sheet.getRange(1, colIndex).setFontWeight("bold").setBackground("#fce5cd");
+  }
+  
+  var lastRow = sheet.getLastRow();
+  var nextRow = 2;
+  if (lastRow > 0) {
+    var colValues = sheet.getRange(1, colIndex, lastRow, 1).getValues();
+    for (var i = colValues.length - 1; i >= 0; i--) {
+      if (colValues[i][0] !== "") {
+        nextRow = i + 2;
+        break;
+      }
+    }
+  }
+  
+  sheet.getRange(nextRow, colIndex).setValue(accessCode);
+}
+
+// '시스템 설정' 시트에서 가장 아래 입장코드 가져오기
+function getAccessCodeFromConfig(gameId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SYSTEM_CONFIG_SHEET);
+  if (!sheet) return "";
+  
+  var lastCol = sheet.getLastColumn();
+  if (lastCol === 0) return "";
+  
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var colIndex = -1;
+  for (var j = 0; j < headers.length; j++) {
+    if (headers[j] === gameId) {
+      colIndex = j + 1;
+      break;
+    }
+  }
+  
+  if (colIndex === -1) return "";
+  
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return "";
+  
+  var colValues = sheet.getRange(1, colIndex, lastRow, 1).getValues();
+  for (var i = colValues.length - 1; i >= 1; i--) {
+    if (colValues[i][0] !== "") {
+      return String(colValues[i][0]).trim();
+    }
+  }
+  return "";
+}
+
+// ★ 시스템 설정 시트에서 최신 lbFields 값 읽기
+function getLatestLbFields() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SYSTEM_CONFIG_SHEET);
+    if (!sheet) return "";
+    var lastCol = sheet.getLastColumn();
+    if (lastCol === 0) return "";
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var colIndex = -1;
+    for (var j = 0; j < headers.length; j++) {
+      if (String(headers[j]).indexOf("명예의 전당 표시") !== -1) {
+        colIndex = j + 1;
+        break;
+      }
+    }
+    if (colIndex === -1) return "";
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return "";
+    var colValues = sheet.getRange(2, colIndex, lastRow - 1, 1).getValues();
+    for (var i = colValues.length - 1; i >= 0; i--) {
+      if (colValues[i][0] !== "") return String(colValues[i][0]);
+    }
+  } catch(e) {}
+  return "";
+}
+
+// '시스템 설정' 시트의 '설정값 누가 기록' 헤더 하단에 설정값 누적 기록 (반영시간 포함 5열)
+function logSettingsToConfig(deployId, saveGameId, saveResultId, saveTime, lbFields) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SYSTEM_CONFIG_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(SYSTEM_CONFIG_SHEET);
+  }
+  
+  var lastCol = sheet.getLastColumn();
+  var colIndex = -1;
+  if (lastCol > 0) {
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    for (var j = 0; j < headers.length; j++) {
+      var hStr = String(headers[j]);
+      if (hStr === "설정값 누가 기록" || hStr.indexOf("설정값 누가 기록") !== -1 || hStr.indexOf("반영시간") !== -1) {
+        colIndex = j + 1;
+        break;
+      }
+    }
+  }
+  
+  if (colIndex === -1) {
+    colIndex = lastCol + 1;
+    if (colIndex < 1) colIndex = 1;
+    sheet.getRange(1, colIndex, 1, 5).setValues([["설정값 누가 기록(반영시간)", "배포 ID", "입장코드", "게임결과를 기록할 시트 이름", "명예의 전당 표시 항목"]]);
+    sheet.getRange(1, colIndex, 1, 5).setFontWeight("bold").setBackground("#d9ead3");
+  }
+  
+  var lastRow = sheet.getLastRow();
+  var nextRow = 2;
+  if (lastRow > 0) {
+    var colValues = sheet.getRange(1, colIndex, lastRow, 1).getValues();
+    for (var i = colValues.length - 1; i >= 0; i--) {
+      if (colValues[i][0] !== "") {
+        nextRow = i + 2;
+        break;
+      }
+    }
+  }
+  
+  var timestamp = saveTime;
+  if (!timestamp || timestamp === "") {
+    var now = new Date();
+    var yyyy = now.getFullYear();
+    var mm = ('0' + (now.getMonth() + 1)).slice(-2);
+    var dd = ('0' + now.getDate()).slice(-2);
+    var hh = ('0' + now.getHours()).slice(-2);
+    var mi = ('0' + now.getMinutes()).slice(-2);
+    var ss = ('0' + now.getSeconds()).slice(-2);
+    timestamp = yyyy + "-" + mm + "-" + dd + " " + hh + ":" + mi + ":" + ss;
+  }
+  
+  var targetRange = sheet.getRange(nextRow, colIndex, 1, 5);
+  targetRange.setNumberFormat("@");
+  targetRange.setValues([[String(timestamp), String(deployId), String(saveGameId), String(saveResultId), String(lbFields || "")]]);
+}
+
+// ---------------------------------------------------------
+// [5] 개인정보(아이디/비밀번호) 검증 및 변경 로직
+// ---------------------------------------------------------
+var PRIVACY_SHEET = "개인정보";
+
+function verifyUserAuth(userId, userPwd) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(PRIVACY_SHEET);
+  if (!sheet) return { success: false, message: "개인정보 시트가 존재하지 않습니다." };
+
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    var sheetId = String(data[i][4]).trim(); // E열 (학번)
+    if (sheetId === String(userId).trim()) {
+      var initialPwd = String(data[i][5]).trim(); // F열 (초기비번)
+      var changedPwd = String(data[i][6]).trim(); // G열 (사용자수정비번)
+      var activePwd = changedPwd ? changedPwd : initialPwd;
+
+      if (activePwd === String(userPwd).trim()) {
+        return { success: true };
+      } else {
+        return { success: false, message: "비밀번호가 일치하지 않습니다." };
+      }
+    }
+  }
+  return { success: false, message: "존재하지 않는 아이디(학번)입니다." };
+}
+
+function changeUserPassword(userId, oldPwd, newPwd) {
+  var authCheck = verifyUserAuth(userId, oldPwd);
+  if (!authCheck.success) {
+    return { success: false, message: "기존 비밀번호가 일치하지 않거나 아이디가 존재하지 않습니다." };
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(PRIVACY_SHEET);
+  var data = sheet.getDataRange().getValues();
+  
+  for (var i = 1; i < data.length; i++) {
+    var sheetId = String(data[i][4]).trim();
+    if (sheetId === String(userId).trim()) {
+      sheet.getRange(i + 1, 7).setNumberFormat("@");
+      sheet.getRange(i + 1, 7).setValue(String(newPwd));
+      return { success: true };
+    }
+  }
+  return { success: false, message: "비밀번호 변경 중 알 수 없는 오류 발생" };
+}

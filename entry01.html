@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- // v1.0.0_범용_게임로비_템플릿 -->
+  <title>범용 게임 로비 및 백엔드 템플릿</title>
+  
+  <!-- 🛡️ [보안 코어] 우클릭 방지 및 개발자 도구 단축키 차단 -->
+  <script type="text/javascript">
+    (function(){const _0x1=["\x63\x6F\x6E\x74\x65\x78\x74\x6D\x65\x6E\x75","\x70\x72\x65\x76\x65\x6E\x74\x44\x65\x66\x61\x75\x6C\x74","\x6B\x65\x79\x64\x6F\x77\x6E","\x63\x74\x72\x6C\x4B\x65\x79","\x73\x68\x69\x66\x74\x4B\x65\x79","\x6B\x65\x79\x43\x6F\x64\x65","\x61\x64\x64\x45\x76\x65\x6E\x74\x4C\x69\x73\x74\x65\x6E\x65\x72"];document[_0x1[6]](_0x1[0],function(_0x2){_0x2[_0x1[1]]();return false;},true);window[_0x1[6]](_0x1[2],function(_0x3){if(_0x3[_0x1[5]]===123||(_0x3[_0x1[3]]&&_0x3[_0x1[4]]&&(_0x3[_0x1[5]]===73||_0x3[_0x1[5]]===74||_0x3[_0x1[5]]===67))||(_0x3[_0x1[3]]&&_0x3[_0x1[5]]===85)){if(_0x3[_0x1[5]]!==81) { _0x3[_0x1[1]]();return false; }}},true);})();
+  </script>
+
+  <!-- 📚 라이브러리 (Tailwind, FontAwesome, Pretendard 등) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+  <style>
+    body { font-family: 'Pretendard', sans-serif; }
+    @font-face { font-family: 'DNFBitBitv2'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2112@1.0/DNFBitBitv2.woff') format('woff'); font-weight: normal; font-style: normal; }
+    .font-retro { font-family: 'DNFBitBitv2', sans-serif; letter-spacing: 0.02em; }
+    .font-sans { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", "Noto Sans KR", Roboto, sans-serif !important; }
+    
+    /* 스크롤바 커스텀 */
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; } 
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    
+    /* 애니메이션 모음 */
+    .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* --- [시스템 설정창 전용 CSS] --- */
+    .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .animate-pulse-slow { animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .tooltip { position: relative; }
+    .tooltip .tooltiptext { visibility: hidden; width: 200px; background-color: #1e293b; color: #fff; text-align: center; border-radius: 6px; padding: 8px; position: absolute; z-index: 30; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.2s; font-size: 11px; line-height: 1.4; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+    .tooltip .tooltiptext::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #1e293b transparent transparent transparent; }
+    .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+    .bg-grid { background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 20px 20px; }
+  </style>
+</head>
+<body oncontextmenu="return false;" class="min-h-screen bg-gray-900 bg-grid flex items-start justify-center p-0 md:p-2 pt-0 md:pt-0 font-retro select-none relative text-gray-200">
+
+  <!-- ========================================== -->
+  <!-- 1. 각종 시스템 제어 모달 영역 -->
+  <!-- ========================================== -->
+
+  <!-- 명예의 전당 모달 -->
+  <div id="leaderboard-modal" class="hidden fixed inset-0 w-screen h-screen bg-black/70 z-[9999999] flex items-center justify-center p-4 pointer-events-auto">
+    <div class="bg-white border-4 border-gray-800 rounded-xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden font-retro animate-fade-in pointer-events-auto relative z-10">
+      <div class="bg-gray-800 text-yellow-400 text-center py-3 text-lg font-bold tracking-widest" id="leaderboard-title">🏆 명예의 전당 🏆</div>
+      <!-- 사용자 지정 정렬 드롭다운 바 -->
+      <div class="bg-gray-100 border-b-2 border-gray-300 px-3 py-2 flex flex-wrap items-center justify-between text-xs font-sans text-gray-700">
+        <div class="flex items-center gap-1.5 font-bold w-full justify-between">
+          <span>정렬 기준:</span>
+          <select id="leaderboard-sort-select" onchange="applyLeaderboardSort()" class="bg-white border border-gray-300 rounded px-2 py-1 font-bold text-gray-800 outline-none focus:border-blue-500 text-xs cursor-pointer">
+            <option value="score_desc">점수 높은 순 (내림차순)</option>
+            <option value="score_asc">점수 낮은 순 (오름차순)</option>
+            <option value="name_asc">용사이름 순 (가나다 오름차순)</option>
+            <option value="name_desc">용사이름 순 (가나다 내림차순)</option>
+            <option value="time_desc">최신 등록 시간 순</option>
+            <option value="time_asc">오래된 등록 시간 순</option>
+          </select>
+        </div>
+      </div>
+      <div class="p-4 flex-1 overflow-y-auto max-h-[50vh] bg-slate-50">
+        <ul id="leaderboard-list" class="space-y-2"></ul>
+      </div>
+      <div class="flex gap-2 p-3 bg-gray-100 border-t border-gray-300">
+        <button id="btn-close-leaderboard" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded border-2 border-gray-800 transition-colors tracking-widest text-sm cursor-pointer">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 보안 암호 인증 모달 -->
+  <div id="admin-pwd-modal" class="hidden fixed inset-0 w-screen h-screen z-[9999999] bg-black/60 flex items-center justify-center p-4 pointer-events-auto">
+    <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full font-sans animate-fade-in pointer-events-auto relative z-10">
+      <h3 id="admin-pwd-title" class="text-xl font-bold mb-4 text-gray-800">보안 구역</h3>
+      <p class="text-sm text-gray-600 mb-4">접근을 위한 비밀번호를 입력해주세요.</p>
+      <input type="password" id="admin-pwd-input" class="w-full border-2 border-gray-200 rounded-lg p-3 outline-none focus:border-indigo-500 mb-2 font-mono tracking-widest text-lg text-center text-black" placeholder="Password" autocomplete="off" />
+      <p id="admin-pwd-error" class="hidden text-red-500 text-xs mb-4 font-bold">비밀번호가 일치하지 않습니다.</p>
+      <div class="flex gap-2 mt-4">
+        <button id="btn-admin-cancel" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 transition-colors cursor-pointer">취소</button>
+        <button id="btn-admin-confirm" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold text-white transition-colors cursor-pointer">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 시스템 관리 제어 모달 -->
+  <div id="system-settings-modal" class="hidden fixed inset-0 w-screen h-screen z-[9999999] bg-black/80 flex items-center justify-center p-4 font-sans pointer-events-auto">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 flex flex-col relative animate-fade-in pointer-events-auto z-10">
+        <button id="btn-close-system-settings" class="absolute top-2.5 right-4 text-gray-400 hover:text-gray-700 z-[100] text-3xl font-bold leading-none smooth-transition">&times;</button>
+        
+        <div class="py-3 px-6 border-b border-gray-100 bg-slate-50 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div>
+                    <h1 class="text-sm font-bold text-gray-800">시스템 설정 (관리자 모드)</h1>
+                </div>
+            </div>
+            <button onclick="toggleSettings()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 smooth-transition relative mr-6" title="세부 설정">
+                <i class="fa-solid fa-sliders text-base"></i>
+                <span class="absolute top-0.5 right-0.5 flex h-1.5 w-1.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
+                </span>
+            </button>
+        </div>
+
+        <div class="p-4 space-y-3 relative">
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-semibold text-gray-400 uppercase tracking-wider">현재 헤더: <span id="sheetNameBadge" class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md">새로운 게임1</span></span>
+                <span id="connectionBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-medium bg-amber-100 text-amber-800">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> 확인 대기중
+                </span>
+            </div>
+
+            <div class="flex items-center gap-2 w-full">
+                <div class="flex-1 min-w-0 bg-sky-50 border border-sky-100/70 rounded-xl px-3 flex items-center justify-start gap-2 h-9">
+                    <span class="font-bold text-sm text-gray-500 uppercase tracking-wider shrink-0 select-none">현재 코드:</span>
+                    <span id="box" class="font-bold text-sm text-gray-800 truncate max-w-full" title="현재 시트의 마지막 코드">데이터 로딩 중...</span>
+                </div>
+                <input type="text" id="textinputbox" placeholder="수정할 코드" class="smooth-transition flex-1 min-w-0 border border-gray-300 rounded-xl px-3 bg-white text-gray-800 font-bold text-sm placeholder:font-normal placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm h-9" onkeypress="handleKeyPress(event)">
+                <button id="submitBtn" onclick="submitData()" class="smooth-transition bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold px-4 rounded-xl shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none text-sm flex items-center justify-center whitespace-nowrap shrink-0 h-9">코드 수정</button>
+            </div>
+
+            <div id="statusMessage" class="rounded-xl px-4 py-2 text-[11px] font-semibold text-center smooth-transition opacity-0"></div>
+
+            <div id="loader" class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center opacity-0 pointer-events-none smooth-transition rounded-b-3xl z-10">
+                <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-100">
+                    <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span class="text-xs text-blue-800 font-medium" id="loaderText">불러오는 중...</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="settingsPanel" class="max-h-0 overflow-hidden smooth-transition">
+            <div class="bg-slate-50 border-t border-gray-200 p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2"><i class="fa-solid fa-wrench"></i> 고급 통신 진단 / 세팅</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 mb-1">DEPLOYMENT_ID</label>
+                        <input type="text" id="settingDeployId" class="w-full text-xs font-mono border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed smooth-transition text-gray-800 bg-white" disabled>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 mb-1">입장코드를 저장할 열(1행)의 제목</label>
+                        <input type="text" id="settingGameId" value="포트리스" class="w-full text-xs border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed smooth-transition text-gray-800 bg-white" placeholder="예: 포트리스" disabled>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 mb-1">게임 결과를 기록할 시트 이름</label>
+                        <input type="text" id="settingResultSheetId" value="포트리스" class="w-full text-xs border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed smooth-transition text-gray-800 bg-white" placeholder="예: 포트리스" disabled>
+                    </div>
+                </div>
+
+                <!-- 명예의 전당 표시 항목 설정 -->
+                <div class="border-t border-gray-200 pt-3">
+                  <label class="block text-xs font-bold text-gray-700 mb-2">🏆 명예의 전당 표시 항목 선택 (체크한 항목 표시)</label>
+                  <div class="grid grid-cols-2 gap-1.5 text-xs text-gray-700">
+                    <label class="flex items-center gap-1.5"><input type="checkbox" id="lb-show-time" onchange="saveLeaderboardDisplaySettings()"> 시간 (등록일시)</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" id="lb-show-userid" onchange="saveLeaderboardDisplaySettings()"> 아이디 (학번)</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" id="lb-show-level" onchange="saveLeaderboardDisplaySettings()"> 레벨</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" id="lb-show-xp" onchange="saveLeaderboardDisplaySettings()"> 경험치</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" id="lb-show-data1" onchange="saveLeaderboardDisplaySettings()"> 기타데이터1</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" id="lb-show-data2" onchange="saveLeaderboardDisplaySettings()"> 기타데이터2</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" id="lb-show-data3" onchange="saveLeaderboardDisplaySettings()"> 기타데이터3</label>
+                  </div>
+                  <p class="text-[10px] text-gray-400 mt-1">* 용사 이름 및 점수(처치)는 기본 표시됩니다.</p>
+                </div>
+                <div class="pt-3 flex items-center justify-between gap-2 border-t border-gray-200/60 mt-3">
+                    <div class="tooltip flex-1">
+                        <button onclick="saveSettingsToSheet()" class="w-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-semibold py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 smooth-transition shadow-sm truncate"><i class="fa-solid fa-cloud-arrow-up"></i> 현재 설정 저장</button>
+                        <span class="tooltiptext">현재 배포 ID와 헤더 제목을 스프레드시트 '시스템 설정' 시트에 기록합니다.</span>
+                    </div>
+                    <div class="tooltip flex-1">
+                        <button onclick="saveDeployId()" class="w-full bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-xs font-semibold py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 smooth-transition shadow-sm truncate"><i class="fa-solid fa-check text-green-500"></i> 적용</button>
+                        <span class="tooltiptext">입력한 배포 ID와 게임 ID를 시스템에 반영합니다.</span>
+                    </div>
+                    <div class="tooltip flex-1">
+                        <button onclick="downloadConfiguredHTML()" class="w-full bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 text-xs font-semibold py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 smooth-transition shadow-sm truncate"><i class="fa-solid fa-download"></i> 파일로 저장</button>
+                        <span class="tooltiptext">현재 배포 ID와 시트 설정이 코드에 완전히 적용된 새로운 HTML 파일을 다운로드합니다. (시크릿모드/학생배포용)</span>
+                    </div>
+                    <div class="tooltip">
+                        <button id="lockToggleBtn" onclick="toggleSettingsLock()" class="bg-gray-200 hover:bg-gray-300 border border-gray-300 text-gray-800 text-sm py-2 px-3 rounded-lg flex items-center justify-center smooth-transition shadow-sm shrink-0">🔒</button>
+                        <span class="tooltiptext">설정값을 수정하려면 클릭하여 잠금을 해제하세요.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- 에러 정보 진단 모달 -->
+  <div id="errorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[9999999] opacity-0 pointer-events-none smooth-transition font-sans">
+      <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-red-500/20 transform scale-95 smooth-transition duration-300">
+          <div class="bg-gradient-to-r from-red-500 to-rose-600 p-6 text-white flex items-center gap-4">
+              <div class="bg-white/20 p-3 rounded-2xl text-2xl"><i class="fa-solid fa-triangle-exclamation animate-bounce"></i></div>
+              <div>
+                  <h2 class="text-lg font-bold" id="errorModalTitle">Failed to Fetch (통신 오류)</h2>
+                  <p class="text-xs text-white/80" id="errorModalSub">앱스크립트 권한 설정 및 버전 조치가 필요합니다.</p>
+              </div>
+          </div>
+          <div class="p-6 space-y-4 text-sm text-gray-600 font-sans">
+              <p class="leading-relaxed font-medium text-gray-800" id="errorDiagnosticSummary">브라우저가 구글 앱스크립트 연결을 거부했습니다. 아래 원격 진단 결과를 확인해 주세요.</p>
+              <div class="bg-slate-900 text-green-400 rounded-xl p-4 font-mono text-xs space-y-2 border border-slate-800 shadow-inner">
+                  <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1.5"><span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Server Response Diagnostic Console</span><span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span></div>
+                  <div class="overflow-x-auto max-h-24 scrollbar-thin scrollbar-thumb-slate-800" id="diagnosticRawResponse">RAW RESPONSE: Empty or failed to extract response text.</div>
+              </div>
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3" id="errorResolutionGuide">
+                  <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-square-check text-blue-500"></i> 앱스크립트 3초 해결 가이드</h3>
+                  <ol class="list-decimal list-inside space-y-2 text-xs text-gray-600 pl-1">
+                      <li>구글 앱스크립트 에디터 우측 상단의 <strong class="text-blue-600 font-semibold">배포 (Deploy)</strong> 버튼을 클릭합니다.</li>
+                      <li><strong class="text-slate-800 font-semibold">새 배포 (New Deployment)</strong>를 누릅니다.</li>
+                      <li>유형이 <strong class="text-slate-800">웹 앱 (Web App)</strong>인지 확인합니다.</li>
+                      <li>액세스 권한이 있는 사용자(<span class="bg-red-50 text-red-600 font-bold px-1 py-0.5 rounded">Who has access</span>)를 <br><span class="inline-flex items-center gap-1 text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 mt-1 rounded font-bold"><i class="fa-solid fa-globe"></i> 모든 사용자 (Anyone)</span> 로 필수 선택 후 <strong class="text-blue-600">배포</strong>합니다.</li>
+                      <li>새로 발급받은 <strong class="text-indigo-600">배포 ID</strong>를 복사하여 세부 설정창에 넣고 [적용]을 누릅니다.</li>
+                  </ol>
+              </div>
+          </div>
+          <div class="p-4 bg-slate-50 border-t border-slate-100 flex gap-2 justify-end">
+              <button onclick="toggleSettings(); closeErrorModal();" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl smooth-transition">설정 탭 열기</button>
+              <button onclick="closeErrorModal()" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 text-xs font-bold rounded-xl smooth-transition">확인 후 닫기</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. 메인 컨테이너 (화면 상태별 노출 제어) -->
+  <!-- ========================================== -->
+  <div class="relative w-full max-w-[1920px] h-[100dvh] md:h-[98vh] md:mt-[1vh]">
+    <div class="w-full h-full bg-gray-900 flex flex-col relative border-x-4 border-b-4 md:border-y-4 border-blue-900 md:rounded-b-2xl md:rounded-t-lg shadow-2xl overflow-hidden">
+
+      <!-- [SCREEN 1] 게임 로비 (대문) -->
+      <div id="screen-start" class="w-full h-full flex flex-col justify-center items-center z-10 px-4 md:px-12 pt-[114px] pb-32 relative bg-gray-800/80 overflow-y-auto">
+        <div class="max-w-5xl w-full font-sans">
+          
+          <!-- 헤더 영역 -->
+          <div class="flex flex-col mb-4 md:mb-6 px-1 pointer-events-auto w-full">
+            <div class="text-left w-full mb-1">
+              <span class="text-xl sm:text-2xl md:text-3xl font-black text-blue-400 tracking-tight font-retro">QUADRATIC FORTRESS</span>
+            </div>
+            
+            <div class="flex flex-row justify-between items-end gap-2 w-full">
+              <div class="text-left shrink-0 min-w-0 flex-1 mr-2 md:mr-4">
+                <h1 class="text-base min-[380px]:text-lg sm:text-xl md:text-2xl font-bold mb-0.5 md:mb-1 font-sans tracking-tight flex items-baseline w-full">
+                  <span class="text-gray-300 font-bold truncate block min-w-0">이차함수 포켓몬 포트리스</span>
+                </h1>
+              </div>
+
+              <div class="flex gap-1.5 sm:gap-3 shrink-0 mb-0.5 md:mb-1">
+                <button id="btn-suggest-system" class="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 border-2 border-gray-900 bg-blue-100 text-gray-900 rounded text-[9px] min-[380px]:text-[10px] sm:text-xs md:text-sm font-bold shadow-[4px_4px_0_#111827] hover:bg-blue-200 transition-all cursor-pointer font-sans active:translate-x-[4px] active:translate-y-[4px] active:shadow-none whitespace-nowrap">시스템 건의</button>
+                <button id="btn-open-leaderboard" class="px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 border-2 border-gray-900 bg-yellow-100 text-gray-900 rounded text-[9px] min-[380px]:text-[10px] sm:text-xs md:text-sm font-bold shadow-[4px_4px_0_#111827] hover:bg-yellow-200 transition-all cursor-pointer font-sans active:translate-x-[4px] active:translate-y-[4px] active:shadow-none whitespace-nowrap">명예의 전당</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 좌우 2단 분할 Grid -->
+          <div class="grid grid-cols-12 gap-3 md:gap-6 w-full">
+            
+            <!-- A. 좌측 입력박스 카드 -->
+            <div class="col-span-12 md:col-span-5 p-3 md:p-6 border-4 border-blue-500 rounded-2xl bg-gray-800 shadow-[0_0_15px_rgba(59,130,246,0.5)] flex flex-col text-gray-200">
+              <div class="text-center mb-3 md:mb-5 relative">
+                <span class="inline-block bg-blue-900 text-blue-200 text-[8px] md:text-xs font-bold px-1.5 md:px-3 py-0.5 md:py-1 rounded border border-blue-400 whitespace-nowrap font-sans">Trainer Login</span>
+                <button onclick="openChangePwdModal()" class="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-bold text-gray-400 hover:text-blue-300 underline cursor-pointer pointer-events-auto">비밀번호 변경</button>
+              </div>
+              
+              <div class="mb-2 text-left pointer-events-auto">
+                <label class="block text-[9px] md:text-sm font-bold text-gray-400 mb-1"><span class="text-red-400">*</span> 입장코드</label>
+                <input id="input-access-code" type="text" placeholder="입장 코드를 입력하세요" class="w-full bg-gray-900 border-2 border-gray-600 text-white rounded-lg px-2 md:px-4 py-1.5 text-[10px] md:text-base text-center outline-none focus:border-blue-500 font-sans tracking-wide">
+              </div>
+
+              <div class="mb-2 text-left pointer-events-auto">
+                <label class="block text-[9px] md:text-sm font-bold text-gray-400 mb-1"><span class="text-red-400">*</span> 아이디 (ID)</label>
+                <input id="input-user-id" type="text" placeholder="아이디" class="w-full bg-gray-900 border-2 border-gray-600 text-white rounded-lg px-2 md:px-4 py-1.5 text-[10px] md:text-base text-center outline-none focus:border-blue-500 font-sans tracking-wide">
+              </div>
+
+              <div class="mb-2 text-left pointer-events-auto">
+                <label class="block text-[9px] md:text-sm font-bold text-gray-400 mb-1"><span class="text-red-400">*</span> 비밀번호</label>
+                <input id="input-user-pwd" type="password" placeholder="비밀번호" class="w-full bg-gray-900 border-2 border-gray-600 text-white rounded-lg px-2 md:px-4 py-1.5 text-[10px] md:text-base text-center outline-none focus:border-blue-500 font-sans tracking-wide">
+              </div>
+              
+              <div class="text-left mb-auto pointer-events-auto">
+                <label class="block text-[9px] md:text-sm font-bold text-gray-400 mb-1"><span class="text-red-400">*</span> 트레이너 별명</label>
+                <input id="input-player-name" type="text" maxlength="7" placeholder="사용할 닉네임" class="w-full bg-gray-900 border-2 border-gray-600 text-white rounded-lg px-2 md:px-4 py-1.5 text-[10px] md:text-base text-center outline-none focus:border-blue-500 font-sans tracking-wide" autocomplete="off">
+              </div>
+              
+              <div class="w-full mt-4 md:mt-5 flex flex-col items-center justify-center pointer-events-auto">
+                <button id="btn-start" class="w-full py-2 md:py-3.5 border-[3px] md:border-4 border-blue-400 rounded-xl bg-blue-600 text-white text-sm md:text-lg font-bold shadow-[0_0_10px_rgba(59,130,246,0.8)] hover:bg-blue-500 transition-colors active:scale-[0.97] font-sans tracking-widest">
+                  스타팅 몬스터 선택하기 ▶
+                </button>
+              </div>
+            </div>
+
+            <!-- B. 우측 안내 카드 -->
+            <div class="col-span-12 md:col-span-7 p-3 md:p-6 border-4 border-blue-800 rounded-2xl bg-gray-800/80 flex flex-col justify-between text-left relative shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+              <div>
+                <div class="flex justify-between items-end mb-2 md:mb-4 w-full">
+                  <span class="inline-block border border-blue-400 text-blue-400 text-[8px] md:text-[10px] font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded">MISSION BRIEFING</span>
+                  <span class="text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-400 font-sans tracking-normal pb-0.5">Quadratic Fortress v4</span>
+                </div>
+                <p class="text-gray-300 text-[9px] sm:text-xs md:text-sm leading-tight md:leading-relaxed mb-2 md:mb-4 font-sans break-keep">
+                  이차함수의 세계에 오신 것을 환영합니다.<br>선생님이 알려주신 코드를 입력하고, 수학의 힘을 이용해 몬스터들을 훈련시키세요.
+                </p>
+                
+                <!-- [보안 구역 트리거 1: 명예의 전당] -->
+                <p class="text-gray-300 text-[9px] sm:text-xs md:text-sm leading-tight md:leading-relaxed mb-2 md:mb-4 font-sans break-keep">
+                  더 나은 도구로 진화할 수 있도록 버그 제보 및 참신한 기능 제안을 상단 우측의 [시스템 건의] 링크를 통해 이메일로 보내주시면 감사하겠습니다.<span id="btn-admin-secret-hall" class="cursor-default select-none pointer-events-auto font-semibold text-transparent">■</span>
+                </p>
+                <p id="app-version-display" class="text-gray-300 text-[9px] sm:text-xs md:text-sm leading-tight md:leading-relaxed mb-2 md:mb-4 font-sans break-keep">
+                  v4.0.11_260715_1418_배포기본설정및다운로드추가
+                </p>
+              </div>
+              <div class="mt-3 md:mt-6 pt-2 md:pt-4 border-t border-blue-100 flex justify-between items-end">
+                <div>
+                  <p class="text-[8px] md:text-[10px] text-blue-400 font-bold mb-0.5 md:mb-1 tracking-wider uppercase">Ultimate Target</p>
+                  <!-- [보안 구역 트리거 2: 시스템 관리] -->
+                  <p class="text-[9px] sm:text-xs md:text-sm font-bold text-gray-200 font-sans break-keep">수학의 정점에 도전하라<span id="btn-admin-secret-sys" class="cursor-default select-none pointer-events-auto font-semibold text-transparent">■</span></p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- [SCREEN 2] 스타팅 몬스터 선택 화면 -->
+      <div id="screen-select" class="hidden w-full h-full flex-col justify-center items-center bg-gray-900 relative z-20 text-white p-4">
+          <h2 class="text-3xl md:text-5xl font-black mb-2 font-retro text-blue-400">CHOOSE YOUR MONSTER</h2>
+          <p class="mb-8 text-gray-400 font-sans text-sm md:text-base">함께할 첫 번째 함수몬을 선택하세요!</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full">
+            <div class="bg-gray-800 border-2 border-red-500 rounded-xl p-6 text-center hover:scale-105 transition cursor-pointer" onclick="selectStarter('fire')">
+              <div class="text-5xl mb-4">🔥</div>
+              <h3 class="font-bold text-lg mb-2">파이어볼 (직구형)</h3>
+              <p class="text-xs text-gray-400 font-sans">a값이 커서 낮고 빠른 직선 궤적에 유리합니다.</p>
+            </div>
+            <div class="bg-gray-800 border-2 border-blue-500 rounded-xl p-6 text-center hover:scale-105 transition cursor-pointer" onclick="selectStarter('water')">
+              <div class="text-5xl mb-4">💧</div>
+              <h3 class="font-bold text-lg mb-2">아쿠아드롭 (고각형)</h3>
+              <p class="text-xs text-gray-400 font-sans">높이 쏘아 올려 장애물을 넘기 좋습니다.</p>
+            </div>
+            <div class="bg-gray-800 border-2 border-green-500 rounded-xl p-6 text-center hover:scale-105 transition cursor-pointer" onclick="selectStarter('grass')">
+              <div class="text-5xl mb-4">🌿</div>
+              <h3 class="font-bold text-lg mb-2">리프밤 (폭발형)</h3>
+              <p class="text-xs text-gray-400 font-sans">폭발 반경이 넓어 초보자에게 적합합니다.</p>
+            </div>
+          </div>
+          
+          <button onclick="updateUI('START')" class="mt-12 bg-gray-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-gray-600">이전으로</button>
+      </div>
+
+      <!-- [SCREEN 3] 실제 게임 영역 (여기에 새로운 게임 UI를 만드세요) -->
+      <div id="screen-game" class="hidden w-full h-full flex-col justify-center items-center bg-gray-900 relative z-20 text-white">
+          <h2 class="text-3xl font-black mb-4">🎮 실제 게임 화면입니다.</h2>
+          <p class="mb-8 text-gray-400">이곳에 캔버스, 캐릭터, 문제 풀이 등의 로직을 채워넣으세요.</p>
+          <div class="flex gap-4">
+              <button onclick="endGameDemo()" class="bg-red-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg">강제 게임 종료 (테스트)</button>
+              <button onclick="updateUI('START')" class="bg-gray-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg">로비로 돌아가기</button>
+          </div>
+      </div>
+
+      <!-- [SCREEN 3] 게임 오버 화면 (결과 저장) -->
+      <div id="screen-gameover" class="hidden w-full h-full flex-col justify-center items-center bg-slate-50 relative z-30 font-sans text-center">
+        <div class="max-w-md w-full p-6 bg-white border-4 border-gray-900 rounded-2xl shadow-[4px_4px_0_#111827]">
+            <h1 class="text-3xl text-red-600 mb-4 tracking-wider font-retro">게임 오버!</h1>
+            <p id="gameover-score" class="text-gray-700 text-lg mb-1 font-bold">최종 점수: 0점</p>
+            
+            <div id="gameover-name-edit" class="mb-6 mt-4 flex flex-col items-center">
+              <label class="text-xs text-gray-500 mb-1 font-bold">명예의 전당 등록 전, 용사님의 이름을 수정할 수 있습니다.</label>
+              <input id="input-gameover-name" type="text" maxlength="7" class="w-full text-center text-lg text-blue-900 border-2 border-gray-500 rounded px-2 py-2 outline-none focus:border-blue-600 focus:bg-blue-50 transition-all font-sans" autocomplete="off"/>
+            </div>
+            
+            <button id="btn-save-score" class="w-full px-5 py-3 bg-yellow-400 border-2 border-gray-800 rounded-xl shadow-sm hover:bg-yellow-500 active:scale-95 transition-all font-bold mb-3 text-lg">🏆 명예의 전당에 기록 저장</button>
+            <button id="btn-saved-score" class="hidden w-full px-5 py-3 bg-gray-200 text-gray-500 border-2 border-gray-400 rounded-xl opacity-70 cursor-not-allowed font-bold mb-3 text-lg" disabled>✅ 기록 저장 완료</button>
+            
+            <button onclick="updateUI('START')" class="w-full py-3 bg-gray-800 text-white text-lg rounded-xl hover:bg-gray-900 transition-colors font-bold mt-2">↺ 처음으로 돌아가기</button>
+        </div>
+      </div>
+
+      <!-- 비밀번호 변경 모달 -->
+      <div id="change-pwd-modal" class="hidden fixed inset-0 w-screen h-screen bg-black/80 flex items-center justify-center z-[9999999] px-4 font-sans backdrop-blur-sm pointer-events-auto">
+        <div class="bg-gray-800 border-4 border-blue-500 rounded-2xl p-6 w-full max-w-sm text-center relative shadow-[0_0_20px_rgba(59,130,246,0.6)] pointer-events-auto z-10">
+          <h2 class="text-2xl font-black text-white mb-4">비밀번호 변경</h2>
+          <div class="mb-3 text-left">
+            <label class="block text-xs font-bold text-gray-400 mb-1">아이디 (학번)</label>
+            <input id="input-pwd-change-id" type="text" class="w-full bg-gray-900 border-2 border-gray-600 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-center" placeholder="학번 입력">
+          </div>
+          <div class="mb-3 text-left">
+            <label class="block text-xs font-bold text-gray-400 mb-1">현재 비밀번호</label>
+            <input id="input-pwd-change-old" type="password" class="w-full bg-gray-900 border-2 border-gray-600 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-center" placeholder="현재 비밀번호">
+          </div>
+          <div class="mb-3 text-left">
+            <label class="block text-xs font-bold text-gray-400 mb-1">새로운 비밀번호</label>
+            <input id="input-pwd-change-new" type="password" class="w-full bg-gray-900 border-2 border-gray-600 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-center" placeholder="새 비밀번호 (특수문자 포함)">
+          </div>
+          <div class="mb-5 text-left">
+            <label class="block text-xs font-bold text-gray-400 mb-1">새로운 비밀번호 확인</label>
+            <input id="input-pwd-change-new-confirm" type="password" class="w-full bg-gray-900 border-2 border-gray-600 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-center" placeholder="새 비밀번호를 한 번 더 입력하세요">
+          </div>
+          <div class="flex justify-between gap-3">
+            <button onclick="closeChangePwdModal()" class="w-1/2 py-2.5 bg-gray-600 text-white rounded-xl font-bold hover:bg-gray-500">취소</button>
+            <button onclick="submitChangePwd()" class="w-1/2 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500">변경하기</button>
+          </div>
+      </div>
+
+      <!-- 로그인/신원 검증 로딩 모달 -->
+      <div id="auth-loading-modal" class="hidden fixed inset-0 w-screen h-screen bg-black/80 flex items-center justify-center z-[9999999] px-4 font-sans backdrop-blur-sm pointer-events-auto">
+        <div class="bg-gray-800 border-4 border-blue-500 rounded-2xl p-7 w-full max-w-sm text-center relative shadow-xl pointer-events-auto z-10">
+          <div class="text-4xl mb-4 inline-block">⏳</div>
+          <h2 id="auth-loading-title" class="text-xl font-black text-white mb-2">⏳ 사용자 정보 확인 중... 10</h2>
+          <p class="text-xs text-blue-300 font-bold leading-relaxed">구글 스프레드시트 서버와 사용자 일치 여부를 대조하고 있습니다.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. 백엔드 연동 및 로비 제어 JavaScript -->
+  <!-- ========================================== -->
+  <script type="text/javascript">
+    // [설정] 기본 환경 변수
+    const DEFAULT_DEPLOYMENT_ID = "AKfycbx3pnyTH5kRvthvMxiVfnfozLdbt2Fnv5OYVga2MzDYAES3f-Pthw1BKJDu-kEHioFx";
+    const SECRET_TOKEN = "super_secret_key_2026!"; 
+    let CURRENT_DEPLOYMENT_ID = localStorage.getItem('gas_deploy_id') || DEFAULT_DEPLOYMENT_ID;
+    let CURRENT_GAME_ID = localStorage.getItem('gas_game_id') || "포트리스";
+    let CURRENT_RESULT_SHEET_ID = localStorage.getItem('gas_result_sheet_id') || "포트리스";
+    let CURRENT_ACCESS_CODE = ""; 
+
+    function getScriptUrl() { return `https://script.google.com/macros/s/${CURRENT_DEPLOYMENT_ID}/exec`; }
+
+    // [상태] 애플리케이션 전역 상태 관리
+    const state = { 
+        gameState: 'START', // START, GAME, GAME_OVER
+        isAdmin: false, 
+        adminMode: null, // 'SYSTEM' or 'HALL'
+        playerName: '', 
+        userId: '',
+        userPwd: '',
+        score: 0, 
+        totalXp: 0, 
+        hasSavedScore: false, 
+        leaderboardData: []
+    };
+
+    // [DOM] 요소 캐싱
+    const DOM = { 
+      leaderboardModal: document.getElementById('leaderboard-modal'), 
+      leaderboardList: document.getElementById('leaderboard-list'), 
+      btnOpenLeaderboard: document.getElementById('btn-open-leaderboard'), 
+      btnCloseLeaderboard: document.getElementById('btn-close-leaderboard'), 
+      btnSuggestSystem: document.getElementById('btn-suggest-system'), 
+      adminPwdModal: document.getElementById('admin-pwd-modal'), 
+      adminPwdInput: document.getElementById('admin-pwd-input'), 
+      adminPwdError: document.getElementById('admin-pwd-error'), 
+      btnAdminCancel: document.getElementById('btn-admin-cancel'), 
+      btnAdminConfirm: document.getElementById('btn-admin-confirm'), 
+      btnAdminSecretHall: document.getElementById('btn-admin-secret-hall'),
+      btnAdminSecretSys: document.getElementById('btn-admin-secret-sys'),
+      
+      screenStart: document.getElementById('screen-start'), 
+      screenGame: document.getElementById('screen-game'),
+      screenGameOver: document.getElementById('screen-gameover'), 
+      
+      inputPlayerName: document.getElementById('input-player-name'), 
+      inputAccessCode: document.getElementById('input-access-code'),
+      inputUserId: document.getElementById('input-user-id'),
+      inputUserPwd: document.getElementById('input-user-pwd'),
+      btnStart: document.getElementById('btn-start'), 
+      
+      gameoverScore: document.getElementById('gameover-score'), 
+      inputGameoverName: document.getElementById('input-gameover-name'), 
+      btnSaveScore: document.getElementById('btn-save-score'), 
+      btnSavedScore: document.getElementById('btn-saved-score'), 
+      
+      systemSettingsModal: document.getElementById('system-settings-modal'),
+      btnCloseSystemSettings: document.getElementById('btn-close-system-settings'),
+      boxEl: document.getElementById('box'),
+      inputEl: document.getElementById('textinputbox'),
+      submitBtn: document.getElementById('submitBtn'),
+      loaderEl: document.getElementById('loader'),
+      loaderTextEl: document.getElementById('loaderText'),
+      statusEl: document.getElementById('statusMessage'),
+      connBadgeEl: document.getElementById('connectionBadge')
+    };
+
+    let warningTimeout = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      
+      // ----------------------------------------------------
+      // [로비 로직] 입장 코드 검증 및 게임 시작 (서버 연동 검증 포함)
+      // ----------------------------------------------------
+      async function validateAndStart() {
+          const userCode = DOM.inputAccessCode.value.trim();
+          if (CURRENT_ACCESS_CODE && CURRENT_ACCESS_CODE !== "" && userCode !== CURRENT_ACCESS_CODE) {
+              if (warningTimeout) clearTimeout(warningTimeout);
+              const oldPlaceholder = DOM.inputAccessCode.placeholder;
+              DOM.inputAccessCode.value = ""; 
+              DOM.inputAccessCode.placeholder = "입장 코드가 일치하지 않습니다!";
+              DOM.inputAccessCode.classList.add('placeholder:text-red-600', 'bg-red-100', 'animate-pulse', 'border-red-500');
+              
+              warningTimeout = setTimeout(() => {
+                  DOM.inputAccessCode.placeholder = oldPlaceholder; 
+                  DOM.inputAccessCode.classList.remove('placeholder:text-red-600', 'bg-red-100', 'animate-pulse', 'border-red-500');
+                  DOM.inputAccessCode.focus();
+                  warningTimeout = null;
+              }, 1200);
+              return;
+          }
+          
+          const nameVal = DOM.inputPlayerName.value.trim(); 
+          const idVal = DOM.inputUserId.value.trim();
+          const pwdVal = DOM.inputUserPwd.value.trim();
+          
+          if (nameVal === '' || idVal === '' || pwdVal === '') { 
+              alert("모든 빈칸(입장코드, 아이디, 비밀번호, 트레이너 별명)을 입력해주세요!");
+              return; 
+          } 
+          
+          // 💡 서버 통신 중 사용자 당황 방지용 중앙 로딩 모달 제어 (카운트다운 적용)
+          let authCountdownTimer = null;
+          function showAuthLoadingModal(isLoading) {
+              const authModal = document.getElementById('auth-loading-modal');
+              const authTitle = document.getElementById('auth-loading-title');
+              if (authCountdownTimer) { clearInterval(authCountdownTimer); authCountdownTimer = null; }
+
+              if (isLoading) {
+                  let count = 10;
+                  const updateText = (c) => {
+                      const text = `⏳ 사용자 정보 확인 중... ${c}`;
+                      if (authTitle) authTitle.innerText = text;
+                      DOM.btnStart.innerText = text;
+                  };
+                  updateText(count);
+
+                  if (authModal) authModal.classList.remove('hidden');
+                  DOM.btnStart.disabled = true;
+
+                  authCountdownTimer = setInterval(() => {
+                      count--;
+                      if (count <= 0) {
+                          clearInterval(authCountdownTimer);
+                          return;
+                      }
+                      updateText(count);
+                  }, 1000);
+              } else {
+                  if (authModal) authModal.classList.add('hidden');
+                  DOM.btnStart.disabled = false;
+                  DOM.btnStart.innerText = "스타팅 몬스터 선택하기 ▶";
+              }
+          }
+
+          // 서버와 통신하여 아이디/비밀번호 검증
+          showAuthLoadingModal(true);
+          window.setLoading(true, "로그인 정보 확인 중...");
+          try {
+              const response = await fetch(getScriptUrl(), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({ 
+                      action: 'login', 
+                      userId: idVal,
+                      userPwd: pwdVal,
+                      token: SECRET_TOKEN 
+                  })
+              });
+              const result = await response.json();
+              if (!result.success) {
+                  showAuthLoadingModal(false);
+                  alert("❌ " + (result.message || "아이디/비밀번호가 일치하지 않습니다."));
+                  window.setLoading(false);
+                  return;
+              }
+          } catch (error) {
+              showAuthLoadingModal(false);
+              alert("서버와의 통신에 실패했습니다. 다시 시도해 주세요.");
+              window.setLoading(false);
+              return;
+          }
+          showAuthLoadingModal(false);
+          window.setLoading(false);
+          
+          state.playerName = nameVal; 
+          state.userId = idVal;
+          state.userPwd = pwdVal;
+          
+          // ✔️ 검증 통과 시 실제 게임 화면으로 전환!
+          startGameLogic();
+      }
+
+      function startGameLogic() {
+          // 본게임이 아니라 몬스터 선택화면으로 진입
+          updateUI('SELECT');
+      }
+      
+      window.selectStarter = function(type) {
+          console.log(type + " 몬스터 선택됨!");
+          state.score = 0;
+          state.hasSavedScore = false;
+          updateUI('GAME'); // 다음 단계인 설정화면 또는 본게임으로 이동 (일단 GAME으로 구현)
+      }
+
+      // [테스트용] 임시로 게임을 끝내고 결과창으로 보내는 함수
+      window.endGameDemo = function() {
+          state.score = Math.floor(Math.random() * 100) + 10; // 가짜 점수
+          DOM.gameoverScore.innerText = `최종 점수: ${state.score}점`;
+          DOM.inputGameoverName.value = state.playerName;
+          
+          DOM.btnSaveScore.disabled = false;
+          DOM.btnSaveScore.classList.remove('hidden');
+          DOM.btnSavedScore.classList.add('hidden');
+          
+          updateUI('GAME_OVER');
+      }
+
+      // ----------------------------------------------------
+      // [UI 제어] 화면 상태별 컴포넌트 노출 스위칭
+      // ----------------------------------------------------
+      window.updateUI = function(newState) {
+          if (newState) state.gameState = newState;
+
+          // 💡 처음으로 돌아가기(START) 또는 새 게임 오버(GAME_OVER) 진입 시 저장 상태와 버튼 UI 초기화
+          if (newState === 'START' || newState === 'SELECT' || newState === 'GAME_OVER') {
+              state.hasSavedScore = false;
+              DOM.btnSaveScore.disabled = false;
+              DOM.btnSaveScore.innerText = "🏆 명예의 전당에 기록 저장";
+              DOM.btnSaveScore.classList.remove('hidden');
+              DOM.btnSavedScore.classList.add('hidden');
+          }
+
+          const isStart = state.gameState === 'START'; 
+          const isGameOver = state.gameState === 'GAME_OVER'; 
+          const isGame = state.gameState === 'GAME';
+          const isSelect = state.gameState === 'SELECT';
+
+          DOM.screenStart.classList.toggle('hidden', !isStart);
+          document.getElementById('screen-select').classList.toggle('hidden', !isSelect);
+          DOM.screenGame.classList.toggle('hidden', !isGame);
+          DOM.screenGameOver.classList.toggle('hidden', !isGameOver);
+      }
+
+      // ----------------------------------------------------
+      // [CRUD 백엔드 연동] 명예의 전당 (Leaderboard) 데이터 제어
+      // ----------------------------------------------------
+      let leaderboardCountdownTimer = null;
+      function showLeaderboardLoadingState(msg = "서버에서 명예의 전당을 불러오고 있습니다...") {
+          if (leaderboardCountdownTimer) { clearInterval(leaderboardCountdownTimer); leaderboardCountdownTimer = null; }
+          DOM.leaderboardList.innerHTML = `
+              <div class="flex flex-col items-center justify-center py-10">
+                  <div class="text-3xl animate-spin mb-3">⏳</div>
+                  <div class="text-sm font-bold text-gray-700">${msg}</div>
+                  <div id="loading-countdown" class="text-2xl font-black text-blue-600 mt-4">20</div>
+              </div>
+          `;
+          let timeLeft = 20;
+          leaderboardCountdownTimer = setInterval(() => {
+              const countdownEl = document.getElementById('loading-countdown');
+              if (!countdownEl) { clearInterval(leaderboardCountdownTimer); return; }
+              timeLeft--;
+              if (timeLeft <= 0) {
+                  clearInterval(leaderboardCountdownTimer);
+                  countdownEl.innerText = "곧... 불러옵니다...";
+                  countdownEl.classList.replace('text-2xl', 'text-base');
+                  return;
+              }
+              countdownEl.innerText = timeLeft;
+          }, 1000);
+      }
+
+      window.loadLeaderboardFromServer = async function(showLoading = true) {
+          if (showLoading) showLeaderboardLoadingState();
+          try {
+              const response = await fetch(`${getScriptUrl()}?action=load&gameId=${CURRENT_RESULT_SHEET_ID}`);
+              const data = await response.json();
+
+              // ★ 서버에서 lbFields 수신 시 localStorage + 체크박스 즉시 덮어쓰기
+              const serverLbFields = data.lbFields;
+              if (serverLbFields && typeof serverLbFields === 'string' && serverLbFields.length > 0) {
+                  const parsed = parseLbFields(serverLbFields);
+                  localStorage.setItem('lb_display_fields', JSON.stringify(parsed));
+                  // 관리자 설정 창 체크박스도 동기화
+                  if (document.getElementById('lb-show-time'))   document.getElementById('lb-show-time').checked   = !!parsed.time;
+                  if (document.getElementById('lb-show-userid')) document.getElementById('lb-show-userid').checked = !!parsed.userId;
+                  if (document.getElementById('lb-show-level'))  document.getElementById('lb-show-level').checked  = !!parsed.level;
+                  if (document.getElementById('lb-show-xp'))     document.getElementById('lb-show-xp').checked     = !!parsed.xp;
+                  if (document.getElementById('lb-show-data1'))  document.getElementById('lb-show-data1').checked  = !!parsed.data1;
+                  if (document.getElementById('lb-show-data2'))  document.getElementById('lb-show-data2').checked  = !!parsed.data2;
+                  if (document.getElementById('lb-show-data3'))  document.getElementById('lb-show-data3').checked  = !!parsed.data3;
+                  updateSortOptions();
+              }
+
+              let recordsArr = Array.isArray(data) ? data : (data.records || data.data || null);
+              if (recordsArr) {
+                  state.leaderboardData = recordsArr;
+                  applyLeaderboardSort();
+              }
+          } catch (error) {
+              DOM.leaderboardList.innerHTML = `<div class="text-center py-5"><p class="text-red-500 font-bold text-sm">🚨 서버 기록 로드 실패</p></div>`;
+          }
+      };
+
+      // "time:ON,userId:OFF,..." 형식 파싱
+      window.parseLbFields = function(str) {
+          const defaults = { time: false, userId: false, level: false, xp: false, data1: false, data2: false, data3: false };
+          if (!str) return defaults;
+          try {
+              str.split(',').forEach(pair => {
+                  const [k, v] = pair.trim().split(':');
+                  if (k && v !== undefined) defaults[k.trim()] = v.trim().toUpperCase() === 'ON';
+              });
+          } catch(e) {}
+          return defaults;
+      };
+
+
+      window.saveScoreToServer = async function(playerName, score, forceUpdate = false) {
+          try {
+              const response = await fetch(getScriptUrl(), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({ 
+                      action: 'save', 
+                      gameId: CURRENT_RESULT_SHEET_ID, 
+                      name: playerName, 
+                      userId: state.userId,
+                      userPwd: state.userPwd,
+                      score: score, 
+                      timestamp: Date.now(), 
+                      token: SECRET_TOKEN,
+                      forceUpdate: forceUpdate
+                  })
+              });
+              const result = await response.json();
+              
+              if (!result.success) {
+                  if (result.requireConfirmation) {
+                      const confirmUpdate = confirm("⚠️ 기록 갱신 확인\n\n" + result.message);
+                      if (confirmUpdate) {
+                          // 사용자가 갱신을 원하면 forceUpdate=true로 재요청
+                          return await saveScoreToServer(playerName, score, true);
+                      } else {
+                          // 갱신 취소 시 기존 기록 목록을 불러와 명예의 전당에 표시
+                          alert("기존 기록이 유지됩니다.");
+                          loadLeaderboardFromServer(false);
+                          return true;
+                      }
+                  } else {
+                      alert("❌ 저장 실패: " + (result.message || "알 수 없는 오류"));
+                      return false;
+                  }
+              }
+              
+              loadLeaderboardFromServer(false);
+              return true;
+          } catch (error) { 
+              console.error("서버 기록 저장 실패:", error.message); 
+              alert("통신 오류로 저장에 실패했습니다.");
+              return false;
+          }
+      };
+
+      window.deleteRecordFromServer = async function(timestamp) {
+          try {
+              showLeaderboardLoadingState();
+              await fetch(getScriptUrl(), {
+                  method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({ action: 'delete', gameId: CURRENT_RESULT_SHEET_ID, timestamp: timestamp, token: SECRET_TOKEN })
+              });
+              loadLeaderboardFromServer(false);
+          } catch (error) { console.error("서버 기록 삭제 실패:", error); }
+      };
+
+      function renderLeaderboard() { 
+          if (leaderboardCountdownTimer) { clearInterval(leaderboardCountdownTimer); leaderboardCountdownTimer = null; }
+          DOM.leaderboardList.innerHTML = ''; 
+          if (!state.leaderboardData || state.leaderboardData.length === 0) { 
+              DOM.leaderboardList.innerHTML = '<p class="text-center text-gray-500 font-bold py-4">아직 등록된 용사가 없습니다.</p>'; 
+              return; 
+          } 
+          
+          const displaySettings = getLeaderboardDisplaySettings();
+
+          state.leaderboardData.forEach((entry, idx) => { 
+              const rankStr = idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : `<span class="text-gray-400 inline-block w-6 text-center">${idx + 1}.</span>`; 
+              
+              let dateStr = "-";
+              if (entry.timestamp) {
+                  // GAS에서 문자열("2025.07.08 14:30:00") 또는 숫자(Unix ms) 모두 처리
+                  let dateObj;
+                  const ts = entry.timestamp;
+                  if (typeof ts === 'string' && /\d{4}[.\-]\d{2}[.\-]\d{2}/.test(ts)) {
+                      // "2025.07.08 14:30:00" 형식
+                      const normalized = ts.replace(/\./g, '-').replace(' ', 'T');
+                      dateObj = new Date(normalized);
+                  } else {
+                      dateObj = new Date(Number(ts));
+                  }
+                  if (dateObj && !isNaN(dateObj.getTime())) {
+                      // 260708 21:32 형식
+                      dateStr = `${String(dateObj.getFullYear()).slice(2)}${String(dateObj.getMonth()+1).padStart(2,'0')}${String(dateObj.getDate()).padStart(2,'0')} ${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
+                  } else {
+                      dateStr = String(ts).replace(/[.\-]/g, '').slice(0, 16);
+                  }
+              }
+
+              const li = document.createElement('li'); 
+              li.className = "flex flex-col bg-white p-3 rounded-lg border border-gray-300 shadow-sm"; 
+              
+              let adminHtml = '';
+              // 💡 [핵심 보안] 오직 관리자 모드(HALL)일 때만 휴지통 삭제 버튼을 생성!
+              if (state.isAdmin && state.adminMode === 'HALL') { 
+                  adminHtml = `<button class="btn-delete-record text-red-500 hover:text-white ml-2 p-1.5 bg-red-50 hover:bg-red-500 rounded transition-all font-bold" data-id="${entry.timestamp}">🗑️</button>`; 
+              }
+              
+              let badgesHtml = '';
+              if (displaySettings.time) {
+                  badgesHtml += `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[11px] font-mono whitespace-nowrap">${dateStr}</span>`;
+              }
+              if (displaySettings.userId && entry.userId) {
+                  badgesHtml += `<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[11px] whitespace-nowrap">ID ${entry.userId}</span>`;
+              }
+              if (displaySettings.level && (entry.level !== undefined && entry.level !== '')) {
+                  badgesHtml += `<span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded text-[11px] font-bold whitespace-nowrap">Lv.${entry.level}</span>`;
+              }
+              if (displaySettings.xp && (entry.xp !== undefined && entry.xp !== '')) {
+                  badgesHtml += `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[11px] whitespace-nowrap">XP: ${entry.xp}</span>`;
+              }
+              if (displaySettings.data1 && (entry.data1 || entry.captured)) {
+                  badgesHtml += `<span class="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap">${entry.data1 || entry.captured}</span>`;
+              }
+              if (displaySettings.data2 && entry.data2) {
+                  badgesHtml += `<span class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[11px] whitespace-nowrap">${entry.data2}</span>`;
+              }
+              if (displaySettings.data3 && entry.data3) {
+                  badgesHtml += `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] whitespace-nowrap">${entry.data3}</span>`;
+              }
+
+              li.innerHTML = ` 
+                  <div class="flex flex-row items-center justify-between w-full">
+                      <div class="font-bold text-gray-800 text-sm md:text-base flex items-center gap-1">${rankStr}<span>${entry.name}</span></div>
+                      <div class="flex items-center gap-2">
+                          <div class="text-sm font-black text-blue-600">${entry.score}점</div>
+                          ${adminHtml}
+                      </div>
+                  </div>
+                  ${badgesHtml ? `<div class="flex flex-nowrap gap-1.5 mt-2 pt-1.5 border-t border-gray-100 overflow-x-auto pb-1" style="scrollbar-width:thin">${badgesHtml}</div>` : ''}
+              `; 
+              DOM.leaderboardList.appendChild(li); 
+          }); 
+          bindDeleteButtons();
+      }
+
+      window.getLeaderboardDisplaySettings = function() {
+          try {
+              const saved = localStorage.getItem('lb_display_fields');
+              if (saved) return JSON.parse(saved);
+          } catch(e) {}
+          return { time: false, userId: false, level: false, xp: false, data1: false, data2: false, data3: false };
+      };
+
+      window.saveLeaderboardDisplaySettings = function() {
+          const settings = {
+              time: document.getElementById('lb-show-time')?.checked ?? false,
+              userId: document.getElementById('lb-show-userid')?.checked ?? false,
+              level: document.getElementById('lb-show-level')?.checked ?? false,
+              xp: document.getElementById('lb-show-xp')?.checked ?? false,
+              data1: document.getElementById('lb-show-data1')?.checked ?? false,
+              data2: document.getElementById('lb-show-data2')?.checked ?? false,
+              data3: document.getElementById('lb-show-data3')?.checked ?? false
+          };
+          localStorage.setItem('lb_display_fields', JSON.stringify(settings));
+          // 서버(시스템 설정 시트)에도 저장
+          const lbFieldsStr = Object.entries(settings).map(([k,v])=> k+':'+(v?'ON':'OFF')).join(',');
+          const now = new Date();
+          const clientTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+          const saveDeployId = document.getElementById('settingDeployId')?.value.trim() || CURRENT_DEPLOYMENT_ID;
+          fetch(`${getScriptUrl()}?action=saveSettings&saveDeployId=${encodeURIComponent(saveDeployId)}&saveGameId=${encodeURIComponent(CURRENT_GAME_ID)}&saveResultId=${encodeURIComponent(CURRENT_RESULT_SHEET_ID)}&saveTime=${encodeURIComponent(clientTime)}&lbFields=${encodeURIComponent(lbFieldsStr)}`).catch(()=>{});
+          updateSortOptions();
+          if (state.leaderboardData && state.leaderboardData.length > 0) renderLeaderboard();
+      };
+
+      window.initLeaderboardDisplaySettings = function() {
+          const settings = window.getLeaderboardDisplaySettings();
+          if (document.getElementById('lb-show-time')) document.getElementById('lb-show-time').checked = !!settings.time;
+          if (document.getElementById('lb-show-userid')) document.getElementById('lb-show-userid').checked = !!settings.userId;
+          if (document.getElementById('lb-show-level')) document.getElementById('lb-show-level').checked = !!settings.level;
+          if (document.getElementById('lb-show-xp')) document.getElementById('lb-show-xp').checked = !!settings.xp;
+          if (document.getElementById('lb-show-data1')) document.getElementById('lb-show-data1').checked = !!settings.data1;
+          if (document.getElementById('lb-show-data2')) document.getElementById('lb-show-data2').checked = !!settings.data2;
+          if (document.getElementById('lb-show-data3')) document.getElementById('lb-show-data3').checked = !!settings.data3;
+          updateSortOptions();
+      };
+
+      window.updateSortOptions = function() {
+          const sel = document.getElementById('leaderboard-sort-select');
+          if (!sel) return;
+          const settings = window.getLeaderboardDisplaySettings();
+          const current = sel.value;
+          // 고정 옵션
+          const baseOptions = [
+              { value: 'score_desc', label: '점수 높은 순 (내림차순)' },
+              { value: 'score_asc',  label: '점수 낮은 순 (오름차순)' },
+              { value: 'name_asc',   label: '용사이름 순 (가나다 오름차순)' },
+              { value: 'name_desc',  label: '용사이름 순 (가나다 내림차순)' },
+              { value: 'time_desc',  label: '최신 등록 시간 순' },
+              { value: 'time_asc',   label: '오래된 등록 시간 순' },
+          ];
+          // 체크된 항목에 따라 추가 정렬 옵션
+          const extraOptions = [];
+          if (settings.userId)  extraOptions.push({ value: 'userid_asc',  label: '아이디 오름차순' }, { value: 'userid_desc', label: '아이디 내림차순' });
+          if (settings.level)   extraOptions.push({ value: 'level_desc',  label: '레벨 높은 순' },    { value: 'level_asc',  label: '레벨 낮은 순' });
+          if (settings.xp)      extraOptions.push({ value: 'xp_desc',     label: '경험치 높은 순' },  { value: 'xp_asc',    label: '경험치 낮은 순' });
+          if (settings.data1)   extraOptions.push({ value: 'data1_asc',   label: '기타데이터1 오름차순' }, { value: 'data1_desc', label: '기타데이터1 내림차순' });
+          if (settings.data2)   extraOptions.push({ value: 'data2_asc',   label: '기타데이터2 오름차순' }, { value: 'data2_desc', label: '기타데이터2 내림차순' });
+          if (settings.data3)   extraOptions.push({ value: 'data3_asc',   label: '기타데이터3 오름차순' }, { value: 'data3_desc', label: '기타데이터3 내림차순' });
+
+          sel.innerHTML = '';
+          [...baseOptions, ...extraOptions].forEach(opt => {
+              const o = document.createElement('option');
+              o.value = opt.value; o.textContent = opt.label;
+              sel.appendChild(o);
+          });
+          // 이전 선택값 유지 (없으면 기본값)
+          if ([...sel.options].some(o => o.value === current)) sel.value = current;
+          else sel.value = 'score_desc';
+      };
+
+      function getTimestampMs(ts) {
+          if (!ts) return 0;
+          if (typeof ts === 'number') return ts;
+          const str = String(ts).trim();
+          if (/^\d+$/.test(str)) return Number(str);
+          const normalized = str.replace(/\./g, '-').replace(' ', 'T');
+          const d = new Date(normalized);
+          if (!isNaN(d.getTime())) return d.getTime();
+          return 0;
+      }
+
+      function naturalCompare(valA, valB) {
+          const strA = String(valA ?? '').trim();
+          const strB = String(valB ?? '').trim();
+          const numA = Number(strA);
+          const numB = Number(strB);
+          if (strA !== '' && strB !== '' && !isNaN(numA) && !isNaN(numB)) {
+              return numA - numB;
+          }
+          return strA.localeCompare(strB, 'ko', { numeric: true, sensitivity: 'base' });
+      }
+
+      window.applyLeaderboardSort = function() {
+          if (!state.leaderboardData || state.leaderboardData.length === 0) return;
+          const sortVal = document.getElementById('leaderboard-sort-select')?.value || 'score_desc';
+          state.leaderboardData.sort((a, b) => {
+              if (sortVal === 'score_desc') return (Number(b.score) || 0) - (Number(a.score) || 0);
+              if (sortVal === 'score_asc')  return (Number(a.score) || 0) - (Number(b.score) || 0);
+              if (sortVal === 'name_asc')   return naturalCompare(a.name, b.name);
+              if (sortVal === 'name_desc')  return naturalCompare(b.name, a.name);
+              if (sortVal === 'time_desc')  return getTimestampMs(b.timestamp) - getTimestampMs(a.timestamp);
+              if (sortVal === 'time_asc')   return getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp);
+              if (sortVal === 'userid_asc') return naturalCompare(a.userId, b.userId);
+              if (sortVal === 'userid_desc')return naturalCompare(b.userId, a.userId);
+              if (sortVal === 'level_desc') return (Number(b.level) || 0) - (Number(a.level) || 0);
+              if (sortVal === 'level_asc')  return (Number(a.level) || 0) - (Number(b.level) || 0);
+              if (sortVal === 'xp_desc')    return (Number(b.xp) || 0) - (Number(a.xp) || 0);
+              if (sortVal === 'xp_asc')     return (Number(a.xp) || 0) - (Number(b.xp) || 0);
+              if (sortVal === 'data1_asc')  return naturalCompare(a.data1 || a.captured, b.data1 || b.captured);
+              if (sortVal === 'data1_desc') return naturalCompare(b.data1 || b.captured, a.data1 || a.captured);
+              if (sortVal === 'data2_asc')  return naturalCompare(a.data2, b.data2);
+              if (sortVal === 'data2_desc') return naturalCompare(b.data2, a.data2);
+              if (sortVal === 'data3_asc')  return naturalCompare(a.data3, b.data3);
+              if (sortVal === 'data3_desc') return naturalCompare(b.data3, a.data3);
+              return 0;
+          });
+          renderLeaderboard();
+      };
+
+      // 삭제 버튼 이벤트 바인딩 (renderLeaderboard 내부에서 호출)
+      function bindDeleteButtons() {
+          const deleteButtons = DOM.leaderboardList.querySelectorAll('.btn-delete-record');
+          deleteButtons.forEach(btn => {
+              btn.addEventListener('click', (e) => {
+                  const id = btn.getAttribute('data-id');
+                  if (state.isAdmin && state.adminMode === 'HALL') {
+                      if(confirm("이 기록을 삭제하시겠습니까?")) deleteRecordFromServer(id);
+                  }
+              });
+          });
+      }
+
+
+      function handleSaveScore() {
+          if (state.score <= 0) {
+              const oldText = DOM.btnSaveScore.innerText; 
+              DOM.btnSaveScore.innerText = "⚠️ 0점은 저장할 수 없습니다!"; 
+              DOM.btnSaveScore.classList.add('bg-red-400');
+              setTimeout(() => { DOM.btnSaveScore.innerText = oldText; DOM.btnSaveScore.classList.remove('bg-red-400'); }, 2000); 
+              return;
+          }
+          if (state.hasSavedScore) return;
+          
+          state.playerName = DOM.inputGameoverName.value.trim() || state.playerName; 
+          
+          DOM.btnSaveScore.disabled = true; 
+          DOM.btnSaveScore.innerText = "저장 중...";
+          
+          // 💡 [핵심 보안] 학생이 기록 저장 시 혹시 모를 관리자 권한 강제 소멸
+          state.isAdmin = false;
+          state.adminMode = null;
+
+          // 💡 모달 창 열기 및 즉시 모래시계 로딩 화면 출력 (사용자 당황 방지)
+          document.getElementById('leaderboard-title').innerText = "🏆 명예의 전당 🏆";
+          DOM.leaderboardModal.classList.remove('hidden');
+          showLeaderboardLoadingState("서버에 기록을 반영하고 명예의 전당을 불러오는 중...");
+
+          saveScoreToServer(state.playerName, state.score);
+
+          state.hasSavedScore = true; 
+          DOM.btnSavedScore.classList.remove('hidden');
+          DOM.btnSaveScore.classList.add('hidden');
+      }
+
+      // ----------------------------------------------------
+      // [이벤트 바인딩] 각종 버튼 클릭
+      // ----------------------------------------------------
+      DOM.btnStart.addEventListener('click', validateAndStart);
+      DOM.btnSaveScore.addEventListener('click', handleSaveScore);
+      
+      DOM.inputAccessCode.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.inputPlayerName.focus(); } });
+      DOM.inputPlayerName.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); validateAndStart(); } });
+
+      DOM.btnOpenLeaderboard.addEventListener('click', () => { 
+          state.isAdmin = false; state.adminMode = null;
+          document.getElementById('leaderboard-title').innerText = "🏆 명예의 전당 🏆";
+          DOM.leaderboardModal.classList.remove('hidden');
+          updateSortOptions(); // 수시 정렬 옵션 동기화 (체크박스 상태 반영)
+          const sel = document.getElementById('leaderboard-sort-select');
+          if (sel && !sel.value) sel.value = 'score_desc';
+          loadLeaderboardFromServer(); 
+      });
+      DOM.btnCloseLeaderboard.addEventListener('click', () => DOM.leaderboardModal.classList.add('hidden'));
+
+      window.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' || e.keyCode === 27) {
+              if (DOM.leaderboardModal && !DOM.leaderboardModal.classList.contains('hidden')) {
+                  DOM.leaderboardModal.classList.add('hidden');
+              }
+              const adminPwdModal = document.getElementById('admin-pwd-modal');
+              if (adminPwdModal && !adminPwdModal.classList.contains('hidden')) {
+                  adminPwdModal.classList.add('hidden');
+              }
+              const changePwdModal = document.getElementById('change-pwd-modal');
+              if (changePwdModal && !changePwdModal.classList.contains('hidden')) {
+                  changePwdModal.classList.add('hidden');
+              }
+              const errorModal = document.getElementById('errorModal');
+              if (errorModal && !errorModal.classList.contains('opacity-0')) {
+                  if (typeof closeErrorModal === 'function') closeErrorModal();
+              }
+          }
+      });
+
+
+      DOM.btnSuggestSystem.addEventListener('click', () => { 
+          window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=blessed258@seojong.ms.kr&su=[건의사항]`, '_blank'); 
+      });
+
+      // ----------------------------------------------------
+      // [보안] 이스터에그 기반 관리자 접속 로직 (Ctrl + Click 필수)
+      // ----------------------------------------------------
+      DOM.btnAdminSecretHall.addEventListener('click', (e) => {
+          if (!e.ctrlKey && !e.metaKey) return; 
+          e.preventDefault(); e.stopPropagation();
+          state.adminMode = 'HALL';
+          document.getElementById('admin-pwd-title').innerText = "보안 구역 (명예의 전당)";
+          DOM.adminPwdModal.classList.remove('hidden'); 
+          DOM.adminPwdInput.value = ''; setTimeout(() => DOM.adminPwdInput.focus(), 100); 
+          DOM.adminPwdError.classList.add('hidden'); 
+      });
+
+      DOM.btnAdminSecretSys.addEventListener('click', (e) => {
+          if (!e.ctrlKey && !e.metaKey) return; 
+          e.preventDefault(); e.stopPropagation();
+          state.adminMode = 'SYSTEM';
+          document.getElementById('admin-pwd-title').innerText = "보안 구역 (시스템 설정)";
+          DOM.adminPwdModal.classList.remove('hidden'); 
+          DOM.adminPwdInput.value = ''; setTimeout(() => DOM.adminPwdInput.focus(), 100); 
+          DOM.adminPwdError.classList.add('hidden'); 
+      });
+
+      DOM.btnAdminCancel.addEventListener('click', () => DOM.adminPwdModal.classList.add('hidden'));
+      DOM.btnAdminConfirm.addEventListener('click', () => { 
+          const pwd = DOM.adminPwdInput.value; 
+          // 암호 검증 (btoa('235711') = 'MjM1NzEx')
+          if (btoa(pwd) === "MjM1NzEx") { 
+              state.isAdmin = true; 
+              DOM.adminPwdModal.classList.add('hidden'); 
+              
+              if (state.adminMode === 'SYSTEM') {
+                  document.getElementById('settingDeployId').value = CURRENT_DEPLOYMENT_ID;
+                  document.getElementById('settingGameId').value = CURRENT_GAME_ID;
+                  document.getElementById('settingResultSheetId').value = CURRENT_RESULT_SHEET_ID;
+                  document.getElementById('sheetNameBadge').textContent = CURRENT_RESULT_SHEET_ID;
+                  DOM.systemSettingsModal.classList.remove('hidden');
+                  window.fetchCurrentData(); // 입장 코드 동기화
+              } else {
+                  document.getElementById('leaderboard-title').innerText = "🛠️ 관리자 명예의 전당 🛠️";
+                  DOM.leaderboardModal.classList.remove('hidden');
+                  loadLeaderboardFromServer();
+              }
+          } else { 
+              DOM.adminPwdError.classList.remove('hidden'); 
+          } 
+      });
+      DOM.adminPwdInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') DOM.btnAdminConfirm.click(); });
+      DOM.btnCloseSystemSettings.addEventListener('click', () => DOM.systemSettingsModal.classList.add('hidden'));
+
+      // ----------------------------------------------------
+      // [관리자 전용] 시스템 설정 통신 제어 로직
+      // ----------------------------------------------------
+      window.setLoading = function(isLoading, msg="") { DOM.inputEl.disabled = isLoading; DOM.submitBtn.disabled = isLoading; if(isLoading) { DOM.loaderEl.style.opacity = "1"; DOM.loaderEl.style.pointerEvents = "auto"; DOM.loaderTextEl.textContent = msg; } else { DOM.loaderEl.style.opacity = "0"; DOM.loaderEl.style.pointerEvents = "none"; } };
+      window.showBanner = function(msg, type="info") { DOM.statusEl.textContent = msg; DOM.statusEl.style.opacity = "1"; DOM.statusEl.className = type==="success" ? "rounded-xl px-4 py-2 text-[11px] font-semibold text-center smooth-transition opacity-100 bg-green-50 text-green-700 border border-green-200/50" : (type==="error" ? "rounded-xl px-4 py-2 text-[11px] font-semibold text-center smooth-transition opacity-100 bg-red-50 text-red-700 border border-red-200/50" : "rounded-xl px-4 py-2 text-[11px] font-semibold text-center smooth-transition opacity-100 bg-blue-50 text-blue-700 border border-blue-200/50"); setTimeout(() => DOM.statusEl.style.opacity = "0", 5000); };
+      
+      window.updateConnectionBadge = function(status) {
+          if(status === "connected") {
+              DOM.connBadgeEl.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800";
+              DOM.connBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> 연결 완료`;
+          } else if(status === "error") {
+              DOM.connBadgeEl.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800";
+              DOM.connBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> 연결 단절`;
+          } else {
+              DOM.connBadgeEl.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800";
+              DOM.connBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> 확인 대기중`;
+          }
+      };
+
+      window.openErrorModal = function(title, sub, rawContent) {
+          const modal = document.getElementById('errorModal');
+          if(!modal) return;
+          if(title) document.getElementById('errorModalTitle').textContent = title;
+          if(sub) document.getElementById('errorModalSub').textContent = sub;
+          const diagBox = document.getElementById('diagnosticRawResponse');
+          if(diagBox && rawContent) {
+              if(rawContent.includes("정상적으로 동작 중입니다.")) diagBox.innerHTML = `⚠️ 서버 리턴:\n"${rawContent}"\n\n💡 [진단]: 새 배포로 게시되지 않았습니다.`;
+              else if(rawContent.includes("<!DOCTYPE html>") || rawContent.includes("Login")) diagBox.innerHTML = `⚠️ Google 로그인 HTML 감지:\n\n💡 [진단]: "Who has access" 권한이 "Anyone"으로 되지 않았습니다.`;
+              else diagBox.innerHTML = `RAW CONTENT:\n${rawContent}`;
+          } else if(diagBox) {
+              diagBox.textContent = "RAW RESPONSE: No string returned.";
+          }
+          modal.classList.remove('opacity-0', 'pointer-events-none');
+          const transformEl = modal.querySelector('.transform');
+          if(transformEl) {
+              transformEl.classList.remove('scale-95');
+              transformEl.classList.add('scale-100');
+          }
+      };
+
+      window.closeErrorModal = function() {
+          const modal = document.getElementById('errorModal');
+          if(!modal) return;
+          modal.classList.add('opacity-0', 'pointer-events-none');
+          const transformEl = modal.querySelector('.transform');
+          if(transformEl) {
+              transformEl.classList.remove('scale-100');
+              transformEl.classList.add('scale-95');
+          }
+      };
+
+      window.fetchCurrentData = async function() {
+          window.setLoading(true, "조회 중...");
+          window.updateConnectionBadge("pending");
+          try {
+              const targetUrl = `${getScriptUrl()}?action=getAccessCode&gameId=${encodeURIComponent(CURRENT_GAME_ID)}&resultSheetId=${encodeURIComponent(CURRENT_RESULT_SHEET_ID)}`;
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 10000);
+              const res = await fetch(targetUrl, {signal: controller.signal});
+              clearTimeout(timeoutId);
+              const result = await res.json();
+              if(result.success) {
+                  DOM.boxEl.textContent = result.accessCode || "기록 없음";
+                  DOM.boxEl.title = result.accessCode || "기록 없음";
+                  CURRENT_ACCESS_CODE = result.accessCode || "";
+                  window.updateConnectionBadge("connected");
+                  window.showBanner("동기화 완료 (시트 자동 생성)", "success");
+              } else throw new Error(result.error || "알 수 없는 오류");
+          } catch(e) {
+              console.error(e);
+              DOM.boxEl.textContent = "동기화 오류";
+              window.updateConnectionBadge("error");
+              window.showBanner("시트 값 로드 실패", "error");
+          } finally {
+              window.setLoading(false);
+          }
+      };
+      
+      window.submitData = async function() { const val = DOM.inputEl.value.trim(); if(!val) return window.showBanner("값을 입력하세요.", "error"); window.setLoading(true, "적용 중..."); try { const url = `${getScriptUrl()}?action=setAccessCode&gameId=${encodeURIComponent(CURRENT_GAME_ID)}&accessCode=${encodeURIComponent(val)}&token=${encodeURIComponent(SECRET_TOKEN)}`; const res = await fetch(url); const result = await res.json(); if(result.success) { window.showBanner("수정 완료.", "success"); DOM.inputEl.value = ""; await window.fetchCurrentData(); } else throw new Error(result.error); } catch(e) { window.showBanner("수정 실패", "error"); } finally { window.setLoading(false); } };
+      window.handleKeyPress = function(e) { if(e.key === 'Enter') window.submitData(); };
+      
+      window.toggleSettings = function() { const panel = document.getElementById('settingsPanel'); panel.style.maxHeight = (panel.style.maxHeight && panel.style.maxHeight !== '0px') ? '0px' : '600px'; };
+      window.saveDeployId = function() { const newId = document.getElementById('settingDeployId').value.trim(); const newGameId = document.getElementById('settingGameId').value.trim(); const newResultSheetId = document.getElementById('settingResultSheetId').value.trim(); if(!newId || !newGameId || !newResultSheetId) return window.showBanner("올바른 값을 입력하세요.", "error"); CURRENT_DEPLOYMENT_ID = newId; CURRENT_GAME_ID = newGameId; CURRENT_RESULT_SHEET_ID = newResultSheetId; localStorage.setItem('gas_deploy_id', newId); localStorage.setItem('gas_game_id', newGameId); localStorage.setItem('gas_result_sheet_id', newResultSheetId); document.getElementById('sheetNameBadge').textContent = CURRENT_RESULT_SHEET_ID; window.showBanner("설정이 반영되었습니다.", "success"); window.fetchCurrentData(); };
+      
+      window.saveSettingsToSheet = async function() { const depId = document.getElementById('settingDeployId').value.trim(); const gamId = document.getElementById('settingGameId').value.trim(); const resId = document.getElementById('settingResultSheetId').value.trim(); if(!depId || !gamId || !resId) return; window.setLoading(true, "시트에 기록 중..."); try { const now = new Date(); const yyyy = now.getFullYear(); const mm = String(now.getMonth() + 1).padStart(2, '0'); const dd = String(now.getDate()).padStart(2, '0'); const hh = String(now.getHours()).padStart(2, '0'); const mi = String(now.getMinutes()).padStart(2, '0'); const ss = String(now.getSeconds()).padStart(2, '0'); const clientTime = `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`; const res = await fetch(`${getScriptUrl()}?action=saveSettings&saveDeployId=${encodeURIComponent(depId)}&saveGameId=${encodeURIComponent(gamId)}&saveResultId=${encodeURIComponent(resId)}&saveTime=${encodeURIComponent(clientTime)}`); const result = await res.json(); if(result.success) window.showBanner("안전하게 기록되었습니다.", "success"); else window.showBanner("기록 실패", "error"); } catch(e) { window.showBanner("통신 오류", "error"); } finally { window.setLoading(false); } };
+      
+      let isSettingsLocked = true;
+      window.toggleSettingsLock = function() { isSettingsLocked = !isSettingsLocked; document.getElementById('settingDeployId').disabled = isSettingsLocked; document.getElementById('settingGameId').disabled = isSettingsLocked; document.getElementById('settingResultSheetId').disabled = isSettingsLocked; document.getElementById('lockToggleBtn').innerText = isSettingsLocked ? "🔒" : "🔓"; window.showBanner(isSettingsLocked ? "잠금 설정됨" : "잠금 해제됨", "success"); };
+
+      window.downloadConfiguredHTML = async function() {
+          window.setLoading(true, "HTML 파일 생성 중...");
+          document.getElementById('system-settings-modal').classList.add('hidden'); // DOM 복사 시 모달 가리기
+          try {
+              let html = "";
+              try {
+                  const res = await fetch(location.href);
+                  html = await res.text();
+              } catch(e) {
+                  // 로컬 파일 CORS 제약 시 현재 DOM 상태 사용
+                  html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+              }
+              // 정규식을 이용해 하드코딩된 상수 교체
+              html = html.replace(/(const\s+DEFAULT_DEPLOYMENT_ID\s*=\s*")[^"]*(")/, `$1${CURRENT_DEPLOYMENT_ID}$2`);
+              html = html.replace(/(let\s+CURRENT_GAME_ID\s*=\s*localStorage\.getItem\([^)]+\)\s*\|\|\s*")[^"]*(")/, `$1${CURRENT_GAME_ID}$2`);
+              html = html.replace(/(let\s+CURRENT_RESULT_SHEET_ID\s*=\s*localStorage\.getItem\([^)]+\)\s*\|\|\s*")[^"]*(")/, `$1${CURRENT_RESULT_SHEET_ID}$2`);
+              
+              const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `entry01_배포용.html`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              window.showBanner("다운로드 성공! 이제 배포용 파일을 사용하세요.", "success");
+          } catch(e) {
+              alert("다운로드 중 오류가 발생했습니다.");
+          } finally {
+              window.setLoading(false);
+              document.getElementById('system-settings-modal').classList.remove('hidden');
+          }
+      };
+
+      // ----------------------------------------------------
+      // [비밀번호 변경] 로직
+      // ----------------------------------------------------
+      window.openChangePwdModal = function() {
+          document.getElementById('change-pwd-modal').classList.remove('hidden');
+          document.getElementById('input-pwd-change-id').value = DOM.inputUserId.value; // 기존 입력값 연동
+          document.getElementById('input-pwd-change-old').value = '';
+          document.getElementById('input-pwd-change-new').value = '';
+          document.getElementById('input-pwd-change-new-confirm').value = '';
+      };
+      
+      window.closeChangePwdModal = function() {
+          document.getElementById('change-pwd-modal').classList.add('hidden');
+      };
+
+      window.submitChangePwd = async function() {
+          const id = document.getElementById('input-pwd-change-id').value.trim();
+          const oldPwd = document.getElementById('input-pwd-change-old').value.trim();
+          const newPwd = document.getElementById('input-pwd-change-new').value.trim();
+          const newPwdConfirm = document.getElementById('input-pwd-change-new-confirm').value.trim();
+
+          if (!id || !oldPwd || !newPwd || !newPwdConfirm) {
+              alert("학번, 현재 비밀번호, 새 비밀번호 확인까지 모두 입력해주세요.");
+              return;
+          }
+
+          if (newPwd !== newPwdConfirm) {
+              alert("❌ '새로운 비밀번호'와 '새로운 비밀번호 확인'이 일치하지 않습니다. 다시 확인해주세요!");
+              return;
+          }
+
+          if (!/[!@#$%^&*(),.?":{}|<>\-_+=\/\\]/.test(newPwd)) {
+              alert("❌ 새로운 비밀번호에는 특수문자(!@#$%^&* 등)를 최소 1개 이상 포함해야 합니다.");
+              return;
+          }
+
+          window.setLoading(true, "비밀번호 변경 중...");
+          try {
+              const res = await fetch(getScriptUrl(), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({ 
+                      action: 'changePwd', 
+                      userId: id,
+                      oldPwd: oldPwd,
+                      newPwd: newPwd,
+                      token: SECRET_TOKEN 
+                  })
+              });
+              const result = await res.json();
+              if (result.success) {
+                  alert("✅ 비밀번호가 성공적으로 변경되었습니다!");
+                  DOM.inputUserPwd.value = newPwd; // 로비 비밀번호 칸 자동 채움
+                  closeChangePwdModal();
+              } else {
+                  alert("❌ 변경 실패: " + (result.message || "알 수 없는 오류"));
+              }
+          } catch(e) {
+              alert("통신 오류가 발생했습니다.");
+          } finally {
+              window.setLoading(false);
+          }
+      };
+
+      // 초기 실행
+      updateUI('START'); 
+      setTimeout(() => { window.fetchCurrentData(); }, 100);
+      setTimeout(() => { DOM.inputAccessCode.focus(); }, 300);
+    });
+  </script>
+</body>
+</html>
