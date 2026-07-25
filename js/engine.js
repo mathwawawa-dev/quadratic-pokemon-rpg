@@ -520,7 +520,7 @@ function initStage() {
                       terrainHeights[key] = [y];
                       terrainBottoms[key] = [y - 5.0];
                   }
-              } else if (stage.terrain === 'grass' || stage.terrain === 'ice' || stage.terrain === 'lava' || stage.terrain === 'cave' || stage.terrain === 'electric' || stage.terrain === 'ocean' || stage.terrain === 'psychic') {
+              } else if (stage.terrain === 'grass' || stage.terrain === 'ice' || stage.terrain === 'lava' || stage.terrain === 'electric' || stage.terrain === 'ocean' || stage.terrain === 'psychic') {
                   const roundedX = Math.round(x * 10) / 10;
                   // x < -20 또는 x > 20일 때 서서히 둥글게 깎아지르도록 (내리막)
                   if (x < -20) {
@@ -537,6 +537,8 @@ function initStage() {
                   } else {
                       terrainHeights[key] = [y];
                   }
+              } else if (stage.terrain === 'cave') {
+                  terrainHeights[key] = [y];
               } else {
                   terrainHeights[key] = [y];
               }
@@ -2957,6 +2959,51 @@ function render() {
         }
         ctx.lineTo(canvas.width + 10, -10);
         ctx.lineTo(-10, -10);
+        ctx.closePath();
+        ctx.fillStyle = tData.color || '#595959';
+        ctx.fill();
+        ctx.restore();
+
+        // 3. 측면 둥근 암석 벽면 채우기 (좌/우)
+        const getFloorY = (x) => {
+            const key = (Math.round(x * 10) / 10).toFixed(1);
+            if (terrainHeights[key] && terrainHeights[key].length > 0 && terrainHeights[key][0] !== -100) {
+                return terrainHeights[key][0];
+            }
+            return tData.func(x);
+        };
+
+        // 좌측 둥근 벽면
+        ctx.save();
+        ctx.beginPath();
+        let pStart = gridToScreen(-25, getCeilY(-25));
+        ctx.moveTo(pStart.x, pStart.y);
+        for (let x = -25; x <= -18; x += 0.2) {
+            let p = gridToScreen(x, getCeilY(x));
+            ctx.lineTo(p.x, p.y);
+        }
+        for (let x = -18; x >= -25; x -= 0.2) {
+            let p = gridToScreen(x, getFloorY(x));
+            ctx.lineTo(p.x, p.y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = tData.color || '#595959';
+        ctx.fill();
+        ctx.restore();
+
+        // 우측 둥근 벽면
+        ctx.save();
+        ctx.beginPath();
+        pStart = gridToScreen(18, getCeilY(18));
+        ctx.moveTo(pStart.x, pStart.y);
+        for (let x = 18; x <= 25; x += 0.2) {
+            let p = gridToScreen(x, getCeilY(x));
+            ctx.lineTo(p.x, p.y);
+        }
+        for (let x = 25; x >= 18; x -= 0.2) {
+            let p = gridToScreen(x, getFloorY(x));
+            ctx.lineTo(p.x, p.y);
+        }
         ctx.closePath();
         ctx.fillStyle = tData.color || '#595959';
         ctx.fill();
