@@ -34,7 +34,7 @@ const TERRAINS = {
         func: (x) => Math.cos((x + terrainSeed) / 2.5) * 2.5 + Math.sin((x - terrainSeed) / 1.2) * 1 - 3
     },
     ice: {
-        name: "얼음 설산",
+        name: "눈 덮인 산",
         bg: ["#001428", "#003d66", "#66adff", "#d9eaff"],
         color: "rgba(179, 217, 255, 0.95)", outColor: "#002b4d",
         func: (x) => {
@@ -96,7 +96,7 @@ const TERRAINS = {
         func: (x) => Math.sin((x + terrainSeed) / 3) * 3 + Math.cos((x - terrainSeed) / 3) * 1.5 - 2
     },
     garden: {
-        name: "공중정원",
+        name: "부유하는 섬",
         bg: ["#0ea5e9", "#7dd3fc", "#e0f2fe"],
         color: "#22c55e", outColor: "#15803d",
         isFloating: true,
