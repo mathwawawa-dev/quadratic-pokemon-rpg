@@ -100,7 +100,7 @@ const TERRAINS = {
         bg: ["#0ea5e9", "#7dd3fc", "#e0f2fe"],
         color: "#22c55e", outColor: "#15803d",
         isFloating: true,
-        deathZoneY: -12,
+        deathZoneY: -25,
         init: function(seed) {
             this.islands = [[], [], []];
             
