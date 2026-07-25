@@ -755,6 +755,8 @@ function initStage() {
             const safeTerrainY = getTerrainY(rx);
             ry = safeTerrainY > -50 ? safeTerrainY + 2.5 : spawnDeathZoneY + 8;
             e.isFlying = true;
+            e.hasCloud = true;
+        }
         if (stage.terrain === 'garden' && (e.isFlying || isSkyMap) && ry >= 15.0) {
             ry = 14.5;
         }
