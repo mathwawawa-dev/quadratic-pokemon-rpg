@@ -596,11 +596,18 @@ function initStage() {
         const yVal = terrainHeights[key] ? Math.max(...terrainHeights[key]) : (tData.layers ? Math.max(...tData.layers.map(l=>l(px))) : tData.func(px));
         const isSpikePeak = terrainSpikes.some(sp => Math.abs(px - sp.cx) < 8.0);
 
-        if (yVal !== -100 && (isFloatingMap || yVal < 5.0) && !isSpikePeak) {
-            break; // 낮고 평탄한 곳에만 배치 (빈 공간 및 과도하게 높은 언덕 제외)
+        // 골짜기(Concave Valley: 좌우 주변 지형보다 0.4 이상 패여 있는 구덩이/바닥) 검출
+        const keyLeft = (Math.round((px - 1.8) * 10) / 10).toFixed(1);
+        const keyRight = (Math.round((px + 1.8) * 10) / 10).toFixed(1);
+        const yLeft = terrainHeights[keyLeft] ? Math.max(...terrainHeights[keyLeft]) : yVal;
+        const yRight = terrainHeights[keyRight] ? Math.max(...terrainHeights[keyRight]) : yVal;
+        const isValley = (yLeft > yVal + 0.4) && (yRight > yVal + 0.4);
+
+        if (yVal !== -100 && (isFloatingMap || yVal < 5.0) && !isSpikePeak && !isValley) {
+            break; // 낮고 평탄한 능선/언덕 상단에만 배치 (골짜기 바닥 및 과도하게 높은 스파이크 제외)
         }
         attempts++;
-    } while (attempts < 50);
+    } while (attempts < 60);
 
     // 강제 배치되었는데 허공(-100)이라면 주변 섬으로 이동
     if (getTerrainY(px) === -100) {
