@@ -211,7 +211,7 @@ const TERRAINS = {
         color: "rgba(255, 255, 255, 0.92)",   // 반투명 뽀송한 흰색 구름 섬 (v1.4.156 복구)
         outColor: "rgba(186, 230, 253, 0.95)", // 아쿠아 블루 구름 테두리 (v1.4.156 복구)
         isFloating: true,
-        deathZoneY: -15,
+        deathZoneY: -25,
         init: function(seed) {
             this.islands = [[], [], []];
             const rnd = (min, max) => Math.random() * (max - min) + min;
