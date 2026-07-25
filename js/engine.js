@@ -1936,41 +1936,7 @@ function updateGame() {
                 const tx = prevStepX + (stepVx * step) / steps;
                 const ty = prevStepY + (stepVy * step) / steps;
                 
-                // 1. 적 충돌 검사
-                let directHit = null;
-                let targetsToCheck = [...enemies];
-                if (missile.isReflected) targetsToCheck.push(player);
-                for (const e of targetsToCheck) {
-                    if (e.hp > 0 && checkCollision(tx, ty, e)) {
-                        if (missile.type === 'pierce') {
-                            if (!missile.hitTargets.has(e)) {
-                                missile.hitTargets.add(e);
-                                // 지하 적(디그다 등) 표면 스냅
-                                const pierceSurfY = getTerrainY(e.x) + 0.75;
-                                if (e.y < pierceSurfY - 0.1) { e.y = pierceSurfY; e.vy = 0; }
-                                applyDamageAndEffects(e, tx, ty);
-                                effects.push({ type: 'text', x: e.x, y: e.y + 1.8, text: 'PIERCE!', color: '#00e5ff', life: 120 });
-                                effects.push({ type: 'ring', x: e.x, y: e.y, color: '#00e5ff', life: 25, maxLife: 25 });
-                                for (let pi = 0; pi < 15; pi++) {
-                                    const ang = (pi / 15) * Math.PI * 2;
-                                    const spd = 0.25 + Math.random() * 0.45;
-                                    effects.push({ type: 'particle', x: e.x, y: e.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, life: 30, color: pi % 2 === 0 ? '#00e5ff' : '#ffffff' });
-                                }
-                                screenShake = 12;
-                            }
-                        } else {
-                            directHit = e; break;
-                        }
-                    }
-                }
-                
-                if (directHit && missile.type !== 'pierce') {
-                    hitPoint = {x: tx, y: ty};
-                    directHitTarget = directHit;
-                    break;
-                }
-                
-                // 2. 지형 충돌 검사
+                // 1. 지형 충돌 검사 (섬/지형 뒤에 숨은 적보다 지형 타격을 먼저 검사)
                 let insideTerrain = false;
                 if (tData.islands) {
                     for (let l = 0; l < tData.islands.length; l++) {
@@ -2026,6 +1992,40 @@ function updateGame() {
                             break; 
                         }
                     }
+                }
+
+                // 2. 적 포켓몬 충돌 검사
+                let directHit = null;
+                let targetsToCheck = [...enemies];
+                if (missile.isReflected) targetsToCheck.push(player);
+                for (const e of targetsToCheck) {
+                    if (e.hp > 0 && checkCollision(tx, ty, e)) {
+                        if (missile.type === 'pierce') {
+                            if (!missile.hitTargets.has(e)) {
+                                missile.hitTargets.add(e);
+                                // 지하 적(디그다 등) 표면 스냅
+                                const pierceSurfY = getTerrainY(e.x) + 0.75;
+                                if (e.y < pierceSurfY - 0.1) { e.y = pierceSurfY; e.vy = 0; }
+                                applyDamageAndEffects(e, tx, ty);
+                                effects.push({ type: 'text', x: e.x, y: e.y + 1.8, text: 'PIERCE!', color: '#00e5ff', life: 120 });
+                                effects.push({ type: 'ring', x: e.x, y: e.y, color: '#00e5ff', life: 25, maxLife: 25 });
+                                for (let pi = 0; pi < 15; pi++) {
+                                    const ang = (pi / 15) * Math.PI * 2;
+                                    const spd = 0.25 + Math.random() * 0.45;
+                                    effects.push({ type: 'particle', x: e.x, y: e.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, life: 30, color: pi % 2 === 0 ? '#00e5ff' : '#ffffff' });
+                                }
+                                screenShake = 12;
+                            }
+                        } else {
+                            directHit = e; break;
+                        }
+                    }
+                }
+                
+                if (directHit && missile.type !== 'pierce') {
+                    hitPoint = {x: tx, y: ty};
+                    directHitTarget = directHit;
+                    break;
                 }
             }
             
