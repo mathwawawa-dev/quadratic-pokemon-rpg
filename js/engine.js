@@ -1986,21 +1986,23 @@ function updateGame() {
                     
                     if (tData.hasCaveWall && typeof ceilHeights !== 'undefined') {
                         if (ceilHeights[key] !== undefined) {
-                            if (ty >= ceilHeights[key]) { insideTerrain = true; break; }
+                            if (ty >= ceilHeights[key]) { insideTerrain = true; }
                         } else if (tData.ceilFunc) {
-                            if (ty >= tData.ceilFunc(tx)) { insideTerrain = true; break; }
+                            if (ty >= tData.ceilFunc(tx)) { insideTerrain = true; }
                         }
                     }
 
-                    const origYs = originalTerrainHeights[key] || [];
-                    for (let i = 0; i < origYs.length; i++) {
-                        const origY = origYs[i];
-                        if (ty <= origY && origY !== -100) {
-                            if (isFloatingMapLocal || stage.terrain === 'sky') {
-                                const bottomY = origY - 5.0; 
-                                if (ty >= bottomY) { insideTerrain = true; break; }
-                            } else {
-                                insideTerrain = true; break;
+                    if (!insideTerrain) {
+                        const origYs = originalTerrainHeights[key] || [];
+                        for (let i = 0; i < origYs.length; i++) {
+                            const origY = origYs[i];
+                            if (ty <= origY && origY !== -100) {
+                                if (isFloatingMapLocal || stage.terrain === 'sky') {
+                                    const bottomY = origY - 5.0; 
+                                    if (ty >= bottomY) { insideTerrain = true; break; }
+                                } else {
+                                    insideTerrain = true; break;
+                                }
                             }
                         }
                     }
