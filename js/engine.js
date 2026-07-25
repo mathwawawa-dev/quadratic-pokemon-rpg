@@ -644,9 +644,11 @@ function initStage() {
 
     const isSkyMap = (stage.terrain === 'sky');
     const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
-    let flyingYPool = (isSkyMap || isFloatingMapLocal)
-        ? [9, 11, 12, 22, 24].sort(() => Math.random() - 0.5)
-        : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
+    let flyingYPool = isSkyMap
+        ? [8, 10, 12, 14, 16].sort(() => Math.random() - 0.5)
+        : (isFloatingMapLocal
+            ? [8, 10, 12, 13, 14].sort(() => Math.random() - 0.5)
+            : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5));
     let flyingYIdx = 0;
 
     const barrierTypes = ['reflect', 'absorb', 'absolute', 'warp'].sort(() => Math.random() - 0.5);
@@ -708,6 +710,7 @@ function initStage() {
                     } else {
                         ry = flyingYPool[flyingYIdx % flyingYPool.length] + (Math.random()-0.5)*4;
                     }
+                    if (isSkyMap && ry >= 19.8) ry = 14.0 + Math.random() * 5.0; // 성층권 맵 y < 20 미만 상한 캡
                 } else {
                     ry = getTerrainY(rx) + yOffset;
                     if (ry < -50) { attempts++; continue; }
@@ -728,6 +731,7 @@ function initStage() {
                 
                 if (isFlying && !valid) {
                     ry += 2.0; // 실패 시 위쪽 공중으로 고도 이동
+                    if (isSkyMap && ry >= 19.8) ry = 14.0 + Math.random() * 5.0;
                     valid = checkValidPos(rx, ry, true, strictIsland);
                 }
                 attempts++;
@@ -751,15 +755,19 @@ function initStage() {
             rx = Math.max(-spawnLimitX, Math.min(spawnLimitX, rx));
             const terrainYAtRx = getTerrainY(rx);
             if (e.isFlying) {
-                ry = terrainYAtRx > -50 ? terrainYAtRx + 2.8 : 15 + idx * 4;
+                ry = terrainYAtRx > -50 ? terrainYAtRx + 2.8 : 13 + idx * 2;
             } else {
                 ry = terrainYAtRx + 0.75;
-                if (ry < -50) { e.isFlying = true; e.hasCloud = true; ry = 15 + idx * 4; }
+                if (ry < -50) { e.isFlying = true; e.hasCloud = true; ry = 13 + idx * 2; }
             }
         }
         
         if (e.isFlying || isSkyMap) {
             flyingYIdx++;
+        }
+
+        if (isSkyMap && ry >= 19.8) {
+            ry = 13.0 + (idx % 4) * 1.8 + Math.random() * 1.0; // 성층권 맵 Y < 20 미만 엄격 제한
         }
 
         placedPos.push({ x: rx, y: ry, isFlying: (e.isFlying || isSkyMap) });
