@@ -3423,7 +3423,7 @@ function render() {
             offCtxGround.restore();
         });
 
-        // 3. 통나무 상단 잔디 풀밭 레이어 (심플 초록 잔디 + 풀잎)
+        // 3. 통나무 상단 잔디 풀밭 레이어 (두께 절반 0.325, 초록 단색 #22c55e 기반)
         offCtxGround.beginPath();
         const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
         offCtxGround.moveTo(gStartP.x, gStartP.y);
@@ -3433,7 +3433,7 @@ function render() {
             if (x >= skyEndX) break;
         }
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
-            const p = gridToScreen(x, getOrigY(x) - 0.65);
+            const p = gridToScreen(x, getOrigY(x) - 0.325);
             offCtxGround.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
@@ -3441,17 +3441,49 @@ function render() {
         offCtxGround.fillStyle = '#22c55e';
         offCtxGround.fill();
 
-        // 4. 잔디 위에 삐죽삐죽 솟은 풀잎 렌더링
-        offCtxGround.strokeStyle = '#15803d';
-        offCtxGround.lineWidth = 2.5;
-        for (let x = skyStartX; x <= skyEndX; x += 0.4) {
+        // 4. 바람에 살랑살랑 흔들거리는 투톤 풀잎 및 아기자기한 들꽃 렌더링
+        const tNow = Date.now() / 350;
+        for (let x = skyStartX; x <= skyEndX; x += 0.35) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY);
-            const h = 8 + Math.sin(x * 3) * 5;
+            const h = 5 + Math.sin(x * 3.7) * 2.5;
+            // 바람 흔들림 변위 (Date.now() 기반 동적 휘어짐)
+            const wind = Math.sin(tNow + x * 0.75) * 3.5 + Math.cos(tNow * 0.5 + x) * 1.5;
+
+            // 1) 뒤쪽 짙은 풀잎
+            offCtxGround.beginPath();
+            offCtxGround.moveTo(p.x - 1, p.y + 1);
+            offCtxGround.lineTo(p.x + wind - 1.5, p.y - h - 1);
+            offCtxGround.strokeStyle = '#15803d';
+            offCtxGround.lineWidth = 1.8;
+            offCtxGround.stroke();
+
+            // 2) 앞쪽 상큼한 그린 풀잎
             offCtxGround.beginPath();
             offCtxGround.moveTo(p.x, p.y);
-            offCtxGround.lineTo(p.x + Math.sin(x * 5) * 4, p.y - h);
+            offCtxGround.lineTo(p.x + wind, p.y - h);
+            offCtxGround.strokeStyle = '#4ade80';
+            offCtxGround.lineWidth = 1.8;
             offCtxGround.stroke();
+
+            // 3) 바람에 살랑살랑 흔들리는 아기자기한 작은 들꽃 (노란 민들레 🟡 / 하얀 들꽃 ⚪️)
+            if (Math.abs(Math.sin(x * 5.3)) > 0.68) {
+                const flowerX = p.x + wind;
+                const flowerY = p.y - h - 0.5;
+                const isYellow = Math.sin(x * 11.7) > 0;
+
+                // 꽃잎
+                offCtxGround.beginPath();
+                offCtxGround.arc(flowerX, flowerY, 2.2, 0, Math.PI * 2);
+                offCtxGround.fillStyle = isYellow ? '#fde047' : '#ffffff';
+                offCtxGround.fill();
+
+                // 꽃수술
+                offCtxGround.beginPath();
+                offCtxGround.arc(flowerX, flowerY, 0.8, 0, Math.PI * 2);
+                offCtxGround.fillStyle = isYellow ? '#ea580c' : '#f59e0b';
+                offCtxGround.fill();
+            }
         }
 
         offCtxGround.restore();
