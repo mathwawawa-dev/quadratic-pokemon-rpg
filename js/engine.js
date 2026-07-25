@@ -2052,8 +2052,10 @@ function updateGame() {
                             if (GAME_STATE === 'OVER') return;
                             effects.push({ type: 'laser', x: chtX, y: chtY, life: 15 });
                             screenShake = 15;
-                            const satCraterY = Math.min(chtY, getTerrainY(chtX));
-                            createCrater(chtX, satCraterY, explosionRadius);
+                            if (i === 0) {
+                                const satCraterY = Math.min(chtY, getTerrainY(chtX));
+                                createCrater(chtX, satCraterY, explosionRadius);
+                            }
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
                                 const inRadius = Math.hypot(ent.x - chtX, ent.y - chtY) <= explosionRadius + 1.5;
@@ -2136,8 +2138,10 @@ function updateGame() {
                             if (GAME_STATE === 'OVER') return;
                             effects.push({ type: 'laser', x: targetX, y: targetY, life: 15 });
                             screenShake = 15;
-                            const satCraterY = Math.min(targetY, getTerrainY(targetX));
-                            createCrater(targetX, satCraterY, explosionRadius);
+                            if (i === 0) {
+                                const satCraterY = Math.min(targetY, getTerrainY(targetX));
+                                createCrater(targetX, satCraterY, explosionRadius);
+                            }
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
                                 const inRadius = Math.hypot(ent.x - targetX, ent.y - targetY) <= explosionRadius + 1.5;
