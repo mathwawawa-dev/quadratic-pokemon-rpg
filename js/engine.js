@@ -366,7 +366,7 @@ function showMessage(title, desc, isError = true) {
     document.getElementById('message-overlay').style.borderColor = isError ? 'var(--danger)' : 'var(--success)';
     document.getElementById('msg-desc').innerHTML = desc;
     const btn = document.getElementById('msg-btn');
-    btn.innerHTML = (GAME_STATE === 'OVER' && enemies.length > 0 && enemies.filter(e => e.hp <= 0).length >= enemies.length) ? '다음 단계로 <span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>' : '다시 시도 <span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>';
+    btn.innerHTML = (GAME_STATE === 'OVER' && enemies.filter(e => e.hp <= 0).length >= 2) ? '다음 단계로 <span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>' : '다시 시도 <span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>';
     document.getElementById('message-overlay').classList.add('show');
     document.getElementById('fire-btn').disabled = true;
     
@@ -376,7 +376,7 @@ function showMessage(title, desc, isError = true) {
 window.closeMessage = function () {
     document.getElementById('message-overlay').classList.remove('show');
     document.getElementById('fire-btn').disabled = false;
-    if (GAME_STATE === 'OVER' && enemies.length > 0 && enemies.filter(e => e.hp <= 0).length >= enemies.length) {
+    if (GAME_STATE === 'OVER' && enemies.filter(e => e.hp <= 0).length >= 2) {
         playerGold += 200;
         document.getElementById('ui-player-gold').innerText = playerGold;
         currentStage++;
@@ -1441,9 +1441,9 @@ function applyDamageAndEffects(target, mx, my) {
     if (player.hp <= 0) {
         GAME_STATE = 'OVER';
         showMessage('GAME OVER', '자폭했습니다...');
-    } else if (enemies.length > 0 && deadEnemies >= enemies.length && GAME_STATE !== 'OVER') {
+    } else if (deadEnemies >= 2 && GAME_STATE !== 'OVER') {
         GAME_STATE = 'OVER';
-        showMessage('STAGE CLEAR!', '모든 적 처치 완료!', false);
+        showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false);
     } else if (missile.type !== 'pierce' && !missile.active) {
         GAME_STATE = 'IDLE';
         document.getElementById('fire-btn').disabled = false;
@@ -2139,8 +2139,8 @@ function updateGame() {
                                 }
                             });
                             if (i === 3) {
-                                if (enemies.length > 0 && enemies.filter(e => e.hp <= 0).length >= enemies.length) {
-                                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '모든 적 처치 완료!', false), 1500);
+                                if (enemies.filter(e => e.hp <= 0).length >= 2) {
+                                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                                 } else {
                                     setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                                 }
@@ -2174,8 +2174,8 @@ function updateGame() {
                         }
                         createExplosion(targetX, targetY, '#2dd4bf');
                         createCrater(targetX, targetY - 0.5, explosionRadius);
-                        if (enemies.length > 0 && enemies.filter(e => e.hp <= 0).length >= enemies.length) {
-                            GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '모든 적 처치 완료!', false), 1500);
+                        if (enemies.filter(e => e.hp <= 0).length >= 2) {
+                            GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                         } else {
                             setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                         }
@@ -2221,8 +2221,8 @@ function updateGame() {
                         effects.push({ type: 'text', x: missile.x, y: missile.y+1, text: 'MISS', color: '#fff', life: 40 });
                         screenShake = 10;
                     }
-                    if (enemies.length > 0 && enemies.filter(e => e.hp <= 0).length >= enemies.length) {
-                        GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '모든 적 처치 완료!', false), 1500);
+                    if (enemies.filter(e => e.hp <= 0).length >= 2) {
+                        GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                     } else {
                         setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 1000);
                     }
@@ -2235,8 +2235,8 @@ function updateGame() {
             const limitMinY = -30;
             if (Math.abs(missile.x) > limitX || missile.y < limitMinY) {
                 missile.active = false; GAME_STATE = 'IDLE';
-                if (enemies.length > 0 && enemies.filter(e => e.hp <= 0).length >= enemies.length) {
-                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '모든 적 처치 완료!', false), 1500);
+                if (enemies.filter(e => e.hp <= 0).length >= 2) {
+                    GAME_STATE = 'OVER'; setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 1500);
                 } else {
                     document.getElementById('fire-btn').disabled = false;
                 }
