@@ -276,14 +276,21 @@ function getTerrainY(x, currentY) {
         if (currentY !== undefined) {
             const bs = terrainBottoms[key] || [];
             let bestY = -100;
+            let minDiff = 9999;
             for (let i = 0; i < ys.length; i++) {
                 const y = ys[i];
                 const b = bs[i] !== undefined ? bs[i] : -1000;
-                // 현재 높이(currentY)가 섬의 가장 밑바닥(b)보다 살짝 아래(-2.0)까지는 같은 층으로 간주함.
-                // 푹 파인 깊은 크레이터의 가파른 벽을 정상적으로 인식할 수 있게 됨.
-                if (y !== -100 && y > bestY && b <= currentY + 2.0) bestY = y;
+                // 대상의 현재 Y위치(currentY)보다 아래에 있는 섬(b <= currentY + 2.0) 중에서
+                // currentY와 지면 상단(y) 사이의 거리가 가장 가까운 층을 선택함! (상단 레이어로 껑충 점프 방지)
+                if (y !== -100 && b <= currentY + 2.0) {
+                    const diff = Math.abs(currentY - y);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        bestY = y;
+                    }
+                }
             }
-            return bestY;
+            if (bestY !== -100) return bestY;
         }
     }
     return Math.max(...ys);
