@@ -3206,7 +3206,14 @@ function render() {
         const skyEndX = 30;
         const thickness = 5.0;
 
-        const { offCanvasGround, offCtxGround } = getSharedTerrainCtx();
+        let targetCtx = ctx;
+        let craterCanvas = null;
+        if (typeof craters !== 'undefined' && craters.length > 0) {
+            craterCanvas = document.createElement('canvas');
+            craterCanvas.width = canvas.width;
+            craterCanvas.height = canvas.height;
+            targetCtx = craterCanvas.getContext('2d');
+        }
 
         const getOrigY = (x) => {
             const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -3214,12 +3221,12 @@ function render() {
         };
 
         // 1. 상단 표면 곡선 (skyStartX -> skyEndX)
-        offCtxGround.beginPath();
+        targetCtx.beginPath();
         const startP = gridToScreen(skyStartX, getOrigY(skyStartX));
-        offCtxGround.moveTo(startP.x, startP.y);
+        targetCtx.moveTo(startP.x, startP.y);
         for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.2)) {
             const p = gridToScreen(x, getOrigY(x));
-            offCtxGround.lineTo(p.x, p.y);
+            targetCtx.lineTo(p.x, p.y);
             if (x >= skyEndX) break;
         }
 
@@ -3227,12 +3234,12 @@ function render() {
         const rightTopY = getOrigY(skyEndX);
         const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - thickness / 2);
         const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
-        offCtxGround.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
+        targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
 
         // 3. 하단 표면 곡선 (skyEndX -> skyStartX)
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
             const p = gridToScreen(x, getOrigY(x) - thickness);
-            offCtxGround.lineTo(p.x, p.y);
+            targetCtx.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
 
@@ -3240,28 +3247,27 @@ function render() {
         const leftTopY = getOrigY(skyStartX);
         const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - thickness / 2);
         const leftTopP = gridToScreen(skyStartX, leftTopY);
-        offCtxGround.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
+        targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
 
-        offCtxGround.closePath();
+        targetCtx.closePath();
 
-        offCtxGround.fillStyle = tData.color;
-        offCtxGround.fill();
+        targetCtx.fillStyle = tData.color;
+        targetCtx.fill();
         // 구름 위 하늘 맵은 흰 테두리 선(stroke)을 제거하여 x=38 부근 흰 선 완벽 삭제
 
         // 5. 폭발 구멍(craters) 타공
-        if (typeof craters !== 'undefined' && craters.length > 0) {
-            offCtxGround.globalCompositeOperation = 'destination-out';
+        if (craterCanvas) {
+            targetCtx.globalCompositeOperation = 'destination-out';
             for (const crater of craters) {
                 const p = gridToScreen(crater.x, crater.y);
                 const pr = scaleLength(crater.r);
-                offCtxGround.beginPath();
-                offCtxGround.arc(p.x, p.y, pr, 0, Math.PI * 2);
-                offCtxGround.fill();
+                targetCtx.beginPath();
+                targetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                targetCtx.fill();
             }
-            offCtxGround.globalCompositeOperation = 'source-over';
+            targetCtx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(craterCanvas, 0, 0);
         }
-
-        ctx.drawImage(offCanvasGround, 0, 0);
     } else if (stage.terrain === 'log_bridge') {
         const skyStartX = -45;
         const skyEndX = 45;
