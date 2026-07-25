@@ -529,9 +529,19 @@ function initStage() {
                     y = baseY + 20.0;
                 }
             }
-            if (stage.terrain === 'sky' || stage.terrain === 'log_bridge') {
+            if (stage.terrain === 'sky') {
                   const roundedX = Math.round(x * 10) / 10;
                   if (roundedX < -30 || roundedX > 30) {
+                      y = -100;
+                      terrainHeights[key] = [-100];
+                      terrainBottoms[key] = [-100];
+                  } else {
+                      terrainHeights[key] = [y];
+                      terrainBottoms[key] = [y - 5.0];
+                  }
+              } else if (stage.terrain === 'log_bridge') {
+                  const roundedX = Math.round(x * 10) / 10;
+                  if (roundedX < -45 || roundedX > 45) {
                       y = -100;
                       terrainHeights[key] = [-100];
                       terrainBottoms[key] = [-100];
@@ -3228,8 +3238,8 @@ function render() {
 
         ctx.drawImage(offCanvasGround, 0, 0);
     } else if (stage.terrain === 'log_bridge') {
-        const skyStartX = -30;
-        const skyEndX = 30;
+        const skyStartX = -45;
+        const skyEndX = 45;
         const thickness = 5.0;
 
         const offCanvasGround = document.createElement('canvas');
