@@ -1716,36 +1716,41 @@ function updateGame() {
             if (ent.x - ent.w/2 < -limitX) { ent.x = -limitX + ent.w/2; ent.vx *= -0.8; }
             if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
             const groundY = getTerrainY(ent.x, ent.y) + 0.75;
+            const slopeRightY = getTerrainY(ent.x + 0.2, ent.y) + 0.75;
+            const slopeLeftY = getTerrainY(ent.x - 0.2, ent.y) + 0.75;
+            const isValleyBottom = (slopeRightY > groundY + 0.01) && (slopeLeftY > groundY + 0.01);
+
             if (ent.y < groundY) {
                 if (groundY - ent.y > 1.5) {
-                    // 가파른 절벽/크레이터 벽에 수평으로 부딪힌 경우: 위로 순간이동(과도한 튕김) 방지
-                    ent.vx *= -0.5; // 벽에서 반사
+                    // 가파른 절벽/크레이터 벽에 수평으로 부딪힌 경우: 골짜기 저점 반사 감쇄
+                    ent.vx *= isValleyBottom ? -0.2 : -0.5; // 골짜기 저점 벽 부딪힘 시 반발 대폭 감소
                     ent.x += ent.vx; // 벽에서 밀어내어 끼임 방지
-                    ent.vy *= 0.8; // 벽에 마찰되어 떨어지는 속도 약간 감소 (미끄러지듯 추락)
+                    ent.vy *= 0.8; // 벽에 마찰되어 떨어지는 속도 감쇄
+                    if (isValleyBottom && Math.abs(ent.vx) < 0.25) {
+                        ent.vx = 0; // 골짜기 바닥 감쇄
+                    }
                 } else {
-                    // 일반적인 바닥 충돌 (얼음 설산 지형은 넉백 시 더 많이 미끄러짐)
+                    // 일반적인 바닥 충돌
                     ent.y = groundY; 
                     ent.vy *= -0.4; 
                     
-                    const slopeRightY = getTerrainY(ent.x + 0.2, ent.y) + 0.75;
-                    const slopeLeftY = getTerrainY(ent.x - 0.2, ent.y) + 0.75;
                     const slopeDiff = slopeRightY - slopeLeftY;
-                    const isLocalMin = (slopeRightY > groundY + 0.02) && (slopeLeftY > groundY + 0.02);
-                    
                     let safeSlopeDiff = slopeDiff;
                     if (safeSlopeDiff > 2.0) safeSlopeDiff = 2.0;
                     if (safeSlopeDiff < -2.0) safeSlopeDiff = -2.0;
                     
-                    if (Math.abs(safeSlopeDiff) > 0.05 && !isLocalMin) {
+                    if (Math.abs(safeSlopeDiff) > 0.05 && !isValleyBottom) {
                         ent.vx += -safeSlopeDiff * 0.15; 
                     }
                     
                     const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.80 : 0.55;
-                    ent.vx *= iceFriction; 
+                    ent.vx *= isValleyBottom ? 0.3 : iceFriction; // 골짜기 골에서는 수평 마찰력 강화
                     ent.angularVelocity *= 0.5;
                     
-                    if (Math.abs(ent.vy) < 0.1 && Math.abs(ent.vx) < 0.1) {
-                        if (isLocalMin || Math.abs(slopeDiff) <= 0.15) {
+                    // 골짜기 저점이거나 속도가 적을 경우 즉시 착지 정지
+                    const thresh = isValleyBottom ? 0.25 : 0.1;
+                    if (Math.abs(ent.vy) < thresh && Math.abs(ent.vx) < thresh) {
+                        if (isValleyBottom || Math.abs(slopeDiff) <= 0.15) {
                             ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
                         }
                     }
