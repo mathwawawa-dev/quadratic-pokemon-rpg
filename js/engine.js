@@ -2047,14 +2047,14 @@ function updateGame() {
                 
                 if (missile.type === 'satellite') {
                     document.getElementById('fire-btn').disabled = true;
+                    const fixedSatCraterY = Math.min(chtY, getTerrainY(chtX));
                     for (let i = 0; i < 4; i++) {
                         setTimeout(() => {
                             if (GAME_STATE === 'OVER') return;
-                            const satCraterY = Math.min(chtY, getTerrainY(chtX));
-                            effects.push({ type: 'laser', x: chtX, y: satCraterY, life: 15 });
+                            effects.push({ type: 'laser', x: chtX, y: fixedSatCraterY, life: 15 });
                             screenShake = 15;
                             if (i === 0) {
-                                createCrater(chtX, satCraterY, explosionRadius);
+                                createCrater(chtX, fixedSatCraterY, explosionRadius);
                             }
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
@@ -2133,14 +2133,14 @@ function updateGame() {
                     document.getElementById('fire-btn').disabled = true;
                     const targetX = missile.x;
                     const targetY = hitY !== -100 ? hitY : missile.y;
+                    const fixedSatCraterY = Math.min(targetY, getTerrainY(targetX));
                     for (let i = 0; i < 4; i++) {
                         setTimeout(() => {
                             if (GAME_STATE === 'OVER') return;
-                            const satCraterY = Math.min(targetY, getTerrainY(targetX));
-                            effects.push({ type: 'laser', x: targetX, y: satCraterY, life: 15 });
+                            effects.push({ type: 'laser', x: targetX, y: fixedSatCraterY, life: 15 });
                             screenShake = 15;
                             if (i === 0) {
-                                createCrater(targetX, satCraterY, explosionRadius);
+                                createCrater(targetX, fixedSatCraterY, explosionRadius);
                             }
                             const targets = [player, ...enemies];
                             targets.forEach(ent => {
