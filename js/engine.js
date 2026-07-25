@@ -3327,9 +3327,17 @@ function render() {
         offCtxGround.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
         offCtxGround.closePath();
 
-        // 1. 통나무 기본 바탕색 (짙은 통나무 적갈색)
-        offCtxGround.fillStyle = '#5c220c';
-        offCtxGround.fill();
+        // 1. 통나무 기본 바탕 (어두운 계열 수직 그라데이션: 상단 중간 갈색 → 하단 짙은 다크브라운)
+        {
+            const logTop = gridToScreen(0, 0);
+            const logBot = gridToScreen(0, -6);
+            const logGrad = offCtxGround.createLinearGradient(0, logTop.y, 0, logBot.y);
+            logGrad.addColorStop(0.0, '#6b2d10'); // 상단 중간 갈색
+            logGrad.addColorStop(0.55, '#3d1207'); // 중간 딥 브라운
+            logGrad.addColorStop(1.0, '#1e0803'); // 하단 매우 짙은 다크브라운
+            offCtxGround.fillStyle = logGrad;
+            offCtxGround.fill();
+        }
 
         // 2. 나무 껍질 및 결 패턴 렌더링 (검은 세로 눈금선 제거 → 유기적인 나뭇결 및 옹이 렌더링)
         offCtxGround.save();
