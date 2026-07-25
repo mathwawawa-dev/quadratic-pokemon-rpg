@@ -3358,8 +3358,8 @@ function render() {
             offCtxGround.stroke();
         }
 
-        // 2-B. 나무 옹이 (Wood Knots / Burls) — 중심 회오리 나이테 + 나뭇결 휘어짐 + 나무 균열(Crack) 디테일
-        const knotPositions = [-36, -28, -19, -10, -2, 7, 16, 25, 34, 41];
+        // 2-B. 나무 옹이 (Wood Knots) — 개수를 대폭 축소하여 3개만 드문드문 자연스럽게 배치
+        const knotPositions = [-22, 2, 26];
         knotPositions.forEach((kx, kIdx) => {
             const ky = getOrigY(kx) - getThick(kx) * (0.3 + (kIdx % 3) * 0.2);
             const kp = gridToScreen(kx, ky);
