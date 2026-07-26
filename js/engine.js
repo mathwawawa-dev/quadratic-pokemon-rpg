@@ -567,6 +567,9 @@ function initStage() {
               }
         }
         originalTerrainHeights[key] = [...terrainHeights[key]];
+        if (TERRAINS[stage.terrain].hasCaveWall && TERRAINS[stage.terrain].ceilFunc) {
+            ceilHeights[key] = TERRAINS[stage.terrain].ceilFunc(x);
+        }
     }
 
     // 플레이어의 x 위치 설정 (스파이크 언덕 정상이거나 지나치게 높은 곳은 피하도록 검증 루프 적용)
