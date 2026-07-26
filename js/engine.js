@@ -354,13 +354,19 @@ function createCrater(cx, cy, radius) {
         }
     }
 
-    // 숨겨진 땅 포켓몬 근처(반경 1.0 이내)의 지형이 폭발로 파여질 때 즉시 파헤쳐짐 처리
+    // 숨겨진 땅 포켓몬 근처(X 반경 1.0, Y 반경 2.0 이내)의 지형이 폭발로 파여질 때만 파헤쳐짐 처리
     if (typeof enemies !== 'undefined') {
         enemies.forEach(ent => {
-            if (ent.hp > 0 && ent.type === 'ground' && !ent.isSurfaced && Math.abs(ent.x - cx) <= 1.0) {
-                ent.isSurfaced = true;
-                if (typeof effects !== 'undefined') {
-                    effects.push({ type: 'text', x: ent.x, y: ent.y + 2, text: '파헤치기 성공!', color: '#fbbf24', life: 200 });
+            if (ent.hp > 0 && ent.type === 'ground' && !ent.isSurfaced) {
+                const xNear = Math.abs(ent.x - cx) <= 1.0;
+                // 타격 Y좌표가 포켓몬 Y 기준 2.0 이내(지형 표면 부근)일 때만 파헤치기
+                const surfaceY = getTerrainY(ent.x, ent.y); // 해당 위치의 지형 표면 Y
+                const yNear = Math.abs(cy - surfaceY) <= 2.0;
+                if (xNear && yNear) {
+                    ent.isSurfaced = true;
+                    if (typeof effects !== 'undefined') {
+                        effects.push({ type: 'text', x: ent.x, y: ent.y + 2, text: '파헤치기 성공!', color: '#fbbf24', life: 200 });
+                    }
                 }
             }
         });
