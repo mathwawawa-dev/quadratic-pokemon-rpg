@@ -1948,8 +1948,7 @@ function updateGame() {
                     // 포켓몬 속성에 따른 이펙트 색상
                     const eColors = { fire: '#ef4444', electric: '#fbbf24', water: '#3b82f6', flying: '#38bdf8', grass: '#22c55e', normal: '#a8a29e', psychic: '#ec4899' };
                     const eColor = eColors[cp.colorType] || '#fbbf24';
-                    
-                    if (stage.terrain === 'ocean') {
+                    if (currentTerrainKey === 'ocean') {
                         // 버블이 터지는 이펙트 (파티클 수 증가, 퍼짐 증가)
                         for (let pi=0; pi<15; pi++) {
                             effects.push({ type: 'particle', x: cx, y: cy, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5, life: 30 + Math.random()*20, color: eColor });
