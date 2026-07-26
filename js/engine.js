@@ -1751,38 +1751,22 @@ function updateGame() {
         }
 
         if (elapsed >= 15000) {
-            // 종유석 낙하 타격 (15초 경과)
+            // 종유석 낙하 시작 (15초 경과)
             window.lastCaveWarningTime = now;
             window.caveStalactiteWarned = false;
             
-            // 데미지 5~10
-            const dmg = 5 + Math.floor(Math.random() * 6);
-            player.hp = Math.max(1, player.hp - dmg);
-            player.shake = 15;
-            screenShake = 15;
-            updateHPUI();
+            const ceilY = TERRAINS['cave'].ceilFunc ? Math.max(TERRAINS['cave'].ceilFunc(player.x) - 2.0, player.y + 15) : player.y + 25;
 
-            // 파편 이펙트 (위로 튀는 돌조각들)
-            for (let pi = 0; pi < 15; pi++) {
-                effects.push({
-                    type: 'particle',
-                    x: player.x,
-                    y: player.y + 0.5,
-                    vx: (Math.random() - 0.5) * 0.8,
-                    vy: Math.random() * 0.6 + 0.2, // 위로 튐
-                    life: 40,
-                    color: Math.random() < 0.5 ? '#525252' : '#737373'
-                });
-            }
-
-            // 텍스트 경고
             effects.push({
-                type: 'text',
+                type: 'stalactite',
+                startX: player.x,
+                startY: ceilY,
+                targetX: player.x,
+                targetY: player.y,
+                life: 30, // 30프레임 동안 낙하
+                maxLife: 30,
                 x: player.x,
-                y: player.y + 3.0,
-                text: `🪨 종유석 낙하! -${dmg}HP`,
-                color: '#d4d4d8',
-                life: 180
+                y: ceilY
             });
         }
     }
@@ -1853,6 +1837,62 @@ function updateGame() {
                 if (player.hp <= 0) {
                     GAME_STATE = 'OVER';
                     if (typeof showMessage === 'function') showMessage('GAME OVER', '뜨거운 용암탄에 쓰러졌습니다...');
+                }
+            }
+        }
+        
+        if (e.type === 'stalactite') {
+            const p = 1.0 - (e.life / e.maxLife); // 0.0 ~ 1.0
+            e.x = e.startX;
+            // 낙하 가속 느낌을 위해 p 제곱 사용 (엔진 y축은 위가 양수)
+            e.y = e.startY - (e.startY - e.targetY) * Math.pow(p, 1.5);
+            
+            if (e.life <= 0) {
+                // 데미지 5~10
+                const dmg = 5 + Math.floor(Math.random() * 6);
+                player.hp = Math.max(1, player.hp - dmg);
+                player.shake = 15;
+                screenShake = 15;
+                if (typeof updateHPUI === 'function') updateHPUI();
+
+                // 파편 이펙트 (위로 튀는 돌조각들)
+                for (let pi = 0; pi < 15; pi++) {
+                    effects.push({
+                        type: 'particle',
+                        x: player.x,
+                        y: player.y + 0.5,
+                        vx: (Math.random() - 0.5) * 0.8,
+                        vy: Math.random() * 0.6 + 0.2,
+                        life: 40,
+                        color: Math.random() < 0.5 ? '#525252' : '#737373'
+                    });
+                }
+
+                // 먼지 구름 파티클 (충격 효과 보강)
+                for (let pi = 0; pi < 8; pi++) {
+                    effects.push({
+                        type: 'particle',
+                        x: player.x + (Math.random() - 0.5) * 2,
+                        y: player.y + Math.random(),
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: Math.random() * 0.2,
+                        life: 50,
+                        color: Math.random() < 0.5 ? 'rgba(115,115,115,0.6)' : 'rgba(163,163,163,0.6)'
+                    });
+                }
+
+                effects.push({
+                    type: 'text',
+                    x: player.x,
+                    y: player.y + 3.0,
+                    text: `🪨 종유석 낙하! -${dmg}HP`,
+                    color: '#d4d4d8',
+                    life: 180
+                });
+
+                if (player.hp <= 0) {
+                    GAME_STATE = 'OVER';
+                    if (typeof showMessage === 'function') showMessage('GAME OVER', '종유석에 깔려 쓰러졌습니다...');
                 }
             }
         }
@@ -4249,6 +4289,44 @@ function render() {
             ctx.fillStyle = e.color; ctx.font = '900 28px Outfit'; ctx.textAlign = 'center';
             ctx.fillText(e.text, sc.x, sc.y);
             ctx.globalAlpha = 1;
+        } else if (e.type === 'stalactite') {
+            const sc = gridToScreen(e.x, e.y);
+            const w = scaleLength(0.7); // 종유석 너비
+            const h = scaleLength(2.0); // 종유석 높이
+            
+            ctx.save();
+            ctx.translate(sc.x, sc.y);
+            
+            // 엔진 스크린 y축은 아래가 양수이므로:
+            // -h/2 (위쪽)을 넓게, h/2 (아래쪽)을 뾰족하게
+            ctx.beginPath();
+            ctx.moveTo(0, h/2);      // 아래쪽 끝 (뾰족)
+            ctx.lineTo(-w/2, -h/2);  // 왼쪽 위
+            ctx.lineTo(w/2, -h/2);   // 오른쪽 위
+            ctx.closePath();
+            
+            // 바위색 그라데이션
+            const grad = ctx.createLinearGradient(0, -h/2, 0, h/2);
+            grad.addColorStop(0, '#3f3f46');
+            grad.addColorStop(1, '#a1a1aa');
+            ctx.fillStyle = grad;
+            
+            // 그림자 효과로 입체감
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 4;
+            ctx.fill();
+            
+            // 왼쪽 밝은 하이라이트로 디테일 추가
+            ctx.beginPath();
+            ctx.moveTo(0, h/2 * 0.9);
+            ctx.lineTo(-w/2.2, -h/2);
+            ctx.lineTo(-w/6, -h/2);
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.shadowColor = 'transparent';
+            ctx.fill();
+            
+            ctx.restore();
         } else if (e.type === 'lava_rock') {
             const sc = gridToScreen(e.x, e.y);
             const rot = (e.maxLife - e.life) * 0.25;
