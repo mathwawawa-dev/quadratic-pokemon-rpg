@@ -1948,8 +1948,20 @@ function updateGame() {
                     // 포켓몬 속성에 따른 이펙트 색상
                     const eColors = { fire: '#ef4444', electric: '#fbbf24', water: '#3b82f6', flying: '#38bdf8', grass: '#22c55e', normal: '#a8a29e', psychic: '#ec4899' };
                     const eColor = eColors[cp.colorType] || '#fbbf24';
-                    for (let pi=0; pi<5; pi++) {
-                        effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 40, color: eColor });
+                    
+                    if (stage.terrain === 'ocean') {
+                        // 버블이 터지는 이펙트 (파티클 수 증가, 퍼짐 증가)
+                        for (let pi=0; pi<15; pi++) {
+                            effects.push({ type: 'particle', x: cx, y: cy, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5, life: 30 + Math.random()*20, color: eColor });
+                        }
+                        // 버블을 랜덤한 다른 곳으로 즉시 재생성
+                        cp.bx = (Math.random() - 0.5) * 20; // -10 ~ 10
+                        cp.by = 8 + Math.random() * 15;     // 8 ~ 23
+                    } else {
+                        // 일반 파워업 구름의 통과 이펙트
+                        for (let pi=0; pi<5; pi++) {
+                            effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 40, color: eColor });
+                        }
                     }
                 }
 
