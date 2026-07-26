@@ -3730,7 +3730,7 @@ function render() {
             targetCtx.globalCompositeOperation = 'destination-out';
             for (const crater of craters) {
                 const p = gridToScreen(crater.x, crater.y);
-                const pr = scaleLength(crater.radius);
+                const pr = scaleLength(crater.r);
                 if (pr > 0) {
                     targetCtx.beginPath();
                     targetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
