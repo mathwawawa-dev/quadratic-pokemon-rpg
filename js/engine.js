@@ -2892,7 +2892,7 @@ function render() {
             const gy = baseY; // gy가 커지면 화면에서 위로 올라감 (반중력)
             
             const sc = gridToScreen(gx, gy);
-            const radius = scaleLength(0.25 + (seed % 6) * 0.15); // 크기 다양화
+            const radius = scaleLength(0.1 + (seed % 4) * 0.1); // 크기 다양화 (0.1 ~ 0.4)
             
             if (sc.x < -radius*2 || sc.x > canvas.width + radius*2 || 
                 sc.y < -radius*2 || sc.y > canvas.height + radius*2) continue;
