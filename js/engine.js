@@ -2875,7 +2875,7 @@ function render() {
         
         ctx.globalCompositeOperation = 'screen';
         
-        for (let i = 0; i < 45; i++) {
+        for (let i = 0; i < 22; i++) {
             const seed = i * 7231;
             const riseSpeed = 0.0005 + (seed % 5) * 0.0002; // 위로 떠오르는 속도
             const swayAmp = 1.0 + (seed % 4) * 0.5; // 좌우 흔들림 진폭
@@ -2901,15 +2901,15 @@ function render() {
             const pulse = Math.sin(now * 0.001 + i * 2.1);
             const alpha = 0.4 + pulse * 0.3; // 0.1 ~ 0.7
             
-            // 구슬 본체 (블러/글로우 느낌)
+            // 구슬 본체 (블러/글로우 느낌) - 대폭 축소
             ctx.beginPath();
-            ctx.arc(sc.x, sc.y, radius, 0, Math.PI * 2);
+            ctx.arc(sc.x, sc.y, radius * 0.6, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(${color}, ${alpha})`;
             ctx.fill();
             
-            // 구슬 밝은 코어 (중심)
+            // 구슬 밝은 코어 (중심) - 살짝 축소
             ctx.beginPath();
-            ctx.arc(sc.x, sc.y, radius * 0.4, 0, Math.PI * 2);
+            ctx.arc(sc.x, sc.y, radius * 0.32, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, alpha + 0.3)})`;
             ctx.fill();
         }
