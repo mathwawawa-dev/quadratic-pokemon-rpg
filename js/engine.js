@@ -2752,6 +2752,74 @@ function render() {
         ctx.restore();
     }
 
+    // 외나무다리('log_bridge') 지형 분위기: 초록 나뭇잎이 바람에 휘날리며 떨어지는 효과 (월드 좌표 연동)
+    if (stage.terrain === 'log_bridge') {
+        ctx.save();
+        const now = Date.now();
+        const leafColors = [
+            '34, 139, 34',   // 포레스트 그린
+            '50, 205, 50',   // 라임 그린
+            '60, 179, 71',   // 에메랄드 그린
+            '107, 142, 35',  // 올리브 드랩 (연두)
+            '144, 238, 144', // 라이트 그린
+        ];
+        for (let i = 0; i < 10; i++) {
+            const seed = i * 5381;
+            // 수평: 오른쪽 바람 + 불규칙 흔들림
+            const driftSpeed = 0.0003 + (seed % 7) * 0.00005;
+            // 수직: 느린 낙하 + 위아래 너울
+            const fallSpeed = 0.00012 + (seed % 5) * 0.00003;
+            const swayAmp = 0.6 + (seed % 4) * 0.2;
+            const swayFreq = 0.0005 + (seed % 3) * 0.00015;
+
+            // gx: 오른쪽 바람 + 좌우 살랑 흔들림
+            const cycleX = 55.0;
+            const baseGx = -25.0 + ((now * driftSpeed + (seed % 1000) * 0.055) % cycleX);
+            const gx = baseGx + Math.sin(now * swayFreq + i * 2.7) * swayAmp;
+
+            // gy: 위에서 아래로 천천히 낙하 + 너울
+            const cycleY = 30.0;
+            const baseGy = 22.0 - ((now * fallSpeed + (seed % 800) * 0.04) % cycleY);
+            const gy = baseGy + Math.sin(now * swayFreq * 1.3 + i * 1.9) * 0.3;
+
+            const sc = gridToScreen(gx, gy);
+
+            // 화면 밖 스킵
+            if (sc.x < -40 || sc.x > canvas.width + 40 || sc.y < -40 || sc.y > canvas.height + 40) continue;
+
+            const color = leafColors[i % leafColors.length];
+            const flicker = Math.sin(now * 0.0012 + i * 2.1) * 0.12;
+            const alpha = Math.max(0.4, 0.7 + flicker);
+
+            // 나뭇잎 회전 각도 (바람에 뒤집히는 효과)
+            const rotation = (now * 0.0015 + seed) % (Math.PI * 2);
+
+            ctx.save();
+            ctx.translate(sc.x, sc.y);
+            ctx.rotate(rotation);
+
+            // 나뭇잎 형태: 타원 + 중심 잎맥선
+            const leafW = scaleLength(0.18 + (i % 3) * 0.04);
+            const leafH = leafW * 0.5;
+
+            ctx.fillStyle = `rgba(${color}, ${alpha})`;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, leafW, leafH, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 잎맥 중심선
+            ctx.strokeStyle = `rgba(20, 80, 20, ${alpha * 0.5})`;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(-leafW * 0.8, 0);
+            ctx.lineTo(leafW * 0.8, 0);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
     // 화산 용암('lava') 지형 분위기: 가벼운 불티 파티클
     if (stage.terrain === 'lava') {
         ctx.save();
