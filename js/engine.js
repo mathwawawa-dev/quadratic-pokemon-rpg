@@ -1945,8 +1945,11 @@ function updateGame() {
                 // 파워업 구름 통과 시 파워부스트
                 if (cp.isPowerCloud && !missile.powerBoosted && dist < cloudLogicRadius) {
                     missile.powerBoosted = true;
+                    // 포켓몬 속성에 따른 이펙트 색상
+                    const eColors = { fire: '#ef4444', electric: '#fbbf24', water: '#3b82f6', flying: '#38bdf8', grass: '#22c55e', normal: '#a8a29e', psychic: '#ec4899' };
+                    const eColor = eColors[cp.colorType] || '#fbbf24';
                     for (let pi=0; pi<5; pi++) {
-                        effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 40, color: '#fbbf24' });
+                        effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 40, color: eColor });
                     }
                 }
 
@@ -3338,7 +3341,8 @@ function render() {
                 flying:  { main: 'rgba(160, 180, 255, 0.35)', rim: 'rgba(190, 210, 255, 0.6)', highlight: 'rgba(230, 240, 255, 0.8)' },
                 psychic: { main: 'rgba(200, 100, 240, 0.35)', rim: 'rgba(220, 160, 255, 0.6)', highlight: 'rgba(240, 210, 255, 0.8)' }
             };
-            const colors = typeColors[cp.colorType] || typeColors.water;
+            // 심해 맵의 버블은 항상 바닷속 느낌(물 속성 색상)으로 고정
+            const colors = typeColors.water;
 
             offCtx.save();
             // 거품 본체 (반투명 원)
