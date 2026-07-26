@@ -3481,13 +3481,11 @@ function render() {
             const colors = { fire: '239, 68, 68', water: '59, 130, 246', grass: '45, 106, 79', electric: '250, 204, 21', poison: '168, 85, 247', ground: '217, 119, 6', normal: '200, 200, 200', psychic: '168, 85, 247' };
             const rgb = colors[colorType] || '200, 200, 200';
             
-            // 진주운(Nacreous cloud) 효과: 시간에 따라 회전하는 파스텔 그라데이션
-            const angle = Date.now() / 1500;
-            const dx = Math.cos(angle) * baseRadius * 0.8;
-            const dy = Math.sin(angle) * baseRadius * 0.8;
+            // 진주운(Nacreous cloud) 효과: 사선 무늬(대각선)를 유지하며 부드럽게 흐르도록 수정 (어지러움 방지)
+            const shift = Math.sin(Date.now() / 1500) * baseRadius * 0.6;
             const grad = octx.createLinearGradient(
-                cx - baseRadius * 1.5 + dx, cy - baseRadius * 0.5 + dy, 
-                cx + baseRadius * 1.5 - dx, cy + baseRadius * 1.0 - dy
+                cx - baseRadius * 1.5 + shift, cy - baseRadius * 0.8 + shift, 
+                cx + baseRadius * 1.5 + shift, cy + baseRadius * 1.0 + shift
             );
             
             // 스타팅 포켓몬 베이스 색상(rgb)과 파스텔 무지개(핑크, 민트, 라벤더) 교차 배합
