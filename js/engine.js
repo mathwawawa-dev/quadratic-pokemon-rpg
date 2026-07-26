@@ -3462,6 +3462,7 @@ function render() {
         targetCtx.lineWidth = 1.2;
         targetCtx.stroke();
 
+        targetCtx.restore(); // 잔디 레이어 save 해제
         targetCtx.restore(); // 클리핑 해제
 
         // 5. 폭발 구멍(craters) 타공 — 모든 지형 요소(통나무, 잔디, Dot Rim, 흙 띠)를 그리고 난 후 일괄 타공하여 뚫린 구멍 위 잔상 완벽 제거
