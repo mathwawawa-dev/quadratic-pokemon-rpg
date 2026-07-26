@@ -2515,7 +2515,8 @@ function drawEntity(ent) {
         bobY = Math.sin(Date.now() / 400 + ph) * scaleLength(0.12);
     }
 
-        const yOff = ent.isFlying ? -sh * 0.1 : sh * 0.35;
+    // 비행하지 않는 포켓몬은 바닥(지표면)에 발이 닿도록(-0.25), 비행하는 포켓몬은 공중에 띄우기 (-0.7)
+    const yOff = ent.isFlying ? -sh * 0.7 : -sh * 0.25;
     const animY = ent.yOffAnim ? -ent.yOffAnim : 0;
     let visualYOffset = 0;
     if (ent.name === '파이리') visualYOffset = scaleLength(0.2); // 파이리 전체(오라 포함) 오프셋
