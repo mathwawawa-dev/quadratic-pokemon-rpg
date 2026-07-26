@@ -428,6 +428,7 @@ function initStage() {
     GAME_STATE = 'LOADING';
 
     terrainSeed = Math.random() * 100;
+
     const stage = LEVELS[currentStage % LEVELS.length];
     const mathField = document.getElementById('math-input');
     if (mathField) mathField.value = '';
@@ -454,6 +455,8 @@ function initStage() {
     craters = [];
     window.caveCeilOffset = 5.0 + Math.random() * 5.0; // 동굴 천장 높이 5~10 무작위 상승 오프셋
     window.lastElectricLightningTime = Date.now();
+    window.lastCaveWarningTime = Date.now();
+    window.caveStalactiteWarned = false;
 
     // 플레이어 스폰 위치 사전 산출 (스파이크가 플레이어 주변 8.0 이내에 생기는 것 방지)
     let approxPx = 0;
@@ -1714,6 +1717,73 @@ function updateGame() {
                 });
             }
             screenShake = 5; // 발사 시 약한 흔들림
+        }
+    }
+
+    // 어두운 동굴('cave') 맵 기믹: 15초마다 플레이어 머리 위로 종유석 낙하 (넉백 없음)
+    if (currentTerrainKey === 'cave' && player.hp > 0 && GAME_STATE !== 'OVER') {
+        const now = Date.now();
+        if (!window.lastCaveWarningTime) {
+            window.lastCaveWarningTime = now;
+            window.caveStalactiteWarned = false;
+        }
+
+        const elapsed = now - window.lastCaveWarningTime;
+
+        // 13초 ~ 15초 사이: 천장에서 흙먼지 경고 이펙트
+        if (elapsed >= 13000 && elapsed < 15000) {
+            window.caveStalactiteWarned = true;
+            // 플레이어 바로 위 천장 부근
+            const ceilY = TERRAINS['cave'].ceilFunc ? TERRAINS['cave'].ceilFunc(player.x) - 2.0 : 35;
+            
+            // 매 프레임마다 일정 확률로 흙먼지 파티클 생성
+            if (Math.random() < 0.3) {
+                effects.push({
+                    type: 'particle',
+                    x: player.x + (Math.random() - 0.5) * 1.5,
+                    y: ceilY,
+                    vx: (Math.random() - 0.5) * 0.2,
+                    vy: -Math.random() * 0.8 - 0.2, // 아래로 떨어짐
+                    life: 60,
+                    color: Math.random() < 0.5 ? '#737373' : '#a3a3a3' // 회색 흙먼지
+                });
+            }
+        }
+
+        if (elapsed >= 15000) {
+            // 종유석 낙하 타격 (15초 경과)
+            window.lastCaveWarningTime = now;
+            window.caveStalactiteWarned = false;
+            
+            // 데미지 5~10
+            const dmg = 5 + Math.floor(Math.random() * 6);
+            player.hp = Math.max(1, player.hp - dmg);
+            player.shake = 15;
+            screenShake = 15;
+            updateHPUI();
+
+            // 파편 이펙트 (위로 튀는 돌조각들)
+            for (let pi = 0; pi < 15; pi++) {
+                effects.push({
+                    type: 'particle',
+                    x: player.x,
+                    y: player.y + 0.5,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    vy: Math.random() * 0.6 + 0.2, // 위로 튐
+                    life: 40,
+                    color: Math.random() < 0.5 ? '#525252' : '#737373'
+                });
+            }
+
+            // 텍스트 경고
+            effects.push({
+                type: 'text',
+                x: player.x,
+                y: player.y + 3.0,
+                text: `🪨 종유석 낙하! -${dmg}HP`,
+                color: '#d4d4d8',
+                life: 180
+            });
         }
     }
 
