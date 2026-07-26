@@ -857,8 +857,39 @@ function initStage() {
     
     // 플레이어와 대상 적 사이의 보간값 (35% ~ 65% 무작위 지점)
     const ratio = 0.35 + Math.random() * 0.3;
-    const bx = player.x + (targetX - player.x) * ratio;
+    let bx = player.x + (targetX - player.x) * ratio;
     const by = 13 + Math.random() * 5; // y: 13 ~ 18 공중
+
+    // 지형(섬)과 겹치지 않도록 검증 (옵션 3: 겹치면 x좌표 이동)
+    let overlapAttempts = 0;
+    let isOverlapping = true;
+    while (isOverlapping && overlapAttempts < 50) {
+        isOverlapping = false;
+        const key = (Math.round(bx * 10) / 10).toFixed(1);
+        if (terrainHeights[key]) {
+            for (let i = 0; i < terrainHeights[key].length; i++) {
+                const tY = terrainHeights[key][i];
+                const bY = terrainBottoms[key] ? terrainBottoms[key][i] : -100;
+                // 포켓볼 반경(0.65)을 고려하여 약간의 여유(1.0)를 두고 충돌 검사
+                if (by <= tY + 1.0 && by >= bY - 1.0) {
+                    isOverlapping = true;
+                    break;
+                }
+            }
+        }
+        
+        if (isOverlapping) {
+            // 지형과 겹치면 x를 1.5 ~ 3.5만큼 좌우 무작위로 이동
+            bx += (Math.random() < 0.5 ? 1 : -1) * (1.5 + Math.random() * 2.0);
+            
+            // 맵 경계를 벗어나지 않도록 안전장치
+            const X_MIN_B = -50, X_MAX_B = 50;
+            if (bx < X_MIN_B) bx = X_MIN_B + Math.random() * 5;
+            if (bx > X_MAX_B) bx = X_MAX_B - Math.random() * 5;
+        }
+        overlapAttempts++;
+    }
+
     const type = balloonTypes[Math.floor(Math.random() * balloonTypes.length)];
     balloons.push({ x: bx, y: by, type, active: true, radius: 0.65, phase: Math.random() * Math.PI * 2 });
 
