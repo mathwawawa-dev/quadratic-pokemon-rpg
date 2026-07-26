@@ -2691,6 +2691,67 @@ function render() {
         ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
+    // 푸른 들판('grass') 지형 분위기: 민들레 홀씨가 바람에 살랑살랑 날리는 효과 (월드 좌표 연동)
+    if (stage.terrain === 'grass') {
+        ctx.save();
+        const now = Date.now();
+        for (let i = 0; i < 12; i++) {
+            const seed = i * 4219;
+            // 수평 이동: 왼쪽→오른쪽 기본 바람 + 불규칙 속도 편차
+            const driftSpeed = 0.00025 + (seed % 7) * 0.00006;
+            // 수직 흔들림: 살랑살랑 위아래 너울
+            const bobAmp = 0.4 + (seed % 5) * 0.15;
+            const bobFreq = 0.0006 + (seed % 3) * 0.0002;
+
+            // gx: 왼→오른 바람 방향 + 좌우 살랑 흔들림
+            const cycleLen = 55.0; // 그리드 단위 순환 길이
+            const baseGx = -25.0 + ((now * driftSpeed + (seed % 1000) * 0.06) % cycleLen);
+            const gx = baseGx + Math.sin(now * bobFreq * 0.7 + i * 3.1) * 0.5;
+
+            // gy: 위아래 살랑살랑 너울 (지형 위 공중)
+            const baseGy = 2.0 + (seed % 800) * 0.025; // 2~22 범위 분산
+            const gy = baseGy + Math.sin(now * bobFreq + i * 2.5) * bobAmp;
+
+            const sc = gridToScreen(gx, gy);
+
+            // 화면 밖 파티클 스킵
+            if (sc.x < -30 || sc.x > canvas.width + 30 || sc.y < -30 || sc.y > canvas.height + 30) continue;
+
+            // 홀씨 크기 (작은 원 + 실 줄기)
+            const sizeGroup = i % 3;
+            const r = scaleLength(0.04 + sizeGroup * 0.015);
+
+            // 은은한 깜빡임 (투명도 변화)
+            const flicker = Math.sin(now * 0.0015 + i * 1.7) * 0.15;
+            const alpha = Math.max(0.35, 0.65 + sizeGroup * 0.08 + flicker);
+
+            // 하얀 우유빛 홀씨 본체
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, Math.max(0.8, r), 0, Math.PI * 2);
+            ctx.fill();
+
+            // 홀씨에서 뻗어나가는 미세한 방사형 솜털(3~4갈래)
+            const tuftCount = 3 + (i % 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+            ctx.lineWidth = 0.6;
+            for (let t = 0; t < tuftCount; t++) {
+                const angle = (t / tuftCount) * Math.PI * 2 + Math.sin(now * 0.001 + i + t) * 0.3;
+                const tuftLen = r * 2.5 + Math.sin(now * 0.002 + t * 1.5) * r * 0.5;
+                ctx.beginPath();
+                ctx.moveTo(sc.x, sc.y);
+                ctx.lineTo(sc.x + Math.cos(angle) * tuftLen, sc.y + Math.sin(angle) * tuftLen);
+                ctx.stroke();
+                // 솜털 끝 미세 점
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.45})`;
+                ctx.beginPath();
+                ctx.arc(sc.x + Math.cos(angle) * tuftLen, sc.y + Math.sin(angle) * tuftLen, 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        ctx.restore();
+    }
+
     // 화산 용암('lava') 지형 분위기: 가벼운 불티 파티클
     if (stage.terrain === 'lava') {
         ctx.save();
