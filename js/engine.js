@@ -3288,12 +3288,12 @@ function render() {
         };
 
         // 통나무 전체 외형 패스 (상단 표면 -> 우측 캡 -> 평행 하단 라인 -> 좌측 캡)
-        offCtxGround.beginPath();
+        targetCtx.beginPath();
         const startP = gridToScreen(skyStartX, getOrigY(skyStartX));
-        offCtxGround.moveTo(startP.x, startP.y);
+        targetCtx.moveTo(startP.x, startP.y);
         for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.4)) {
             const p = gridToScreen(x, getOrigY(x));
-            offCtxGround.lineTo(p.x, p.y);
+            targetCtx.lineTo(p.x, p.y);
             if (x >= skyEndX) break;
         }
 
@@ -3301,12 +3301,12 @@ function render() {
         const rightTopY = getOrigY(skyEndX);
         const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - thickness / 2);
         const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
-        offCtxGround.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
+        targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
 
         // 하단 껍질 라인 (x축과 평행한 일직선 바닥, 고정 두께 5.0)
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.4)) {
             const p = gridToScreen(x, getOrigY(x) - thickness);
-            offCtxGround.lineTo(p.x, p.y);
+            targetCtx.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
 
@@ -3314,38 +3314,38 @@ function render() {
         const leftTopY = getOrigY(skyStartX);
         const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - thickness / 2);
         const leftTopP = gridToScreen(skyStartX, leftTopY);
-        offCtxGround.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
-        offCtxGround.closePath();
+        targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
+        targetCtx.closePath();
 
         // 1. 통나무 기본 바탕 (어두운 계열 수직 그라데이션: 상단 중간 갈색 → 하단 짙은 다크브라운)
         {
             const logTop = gridToScreen(0, 0);
             const logBot = gridToScreen(0, -6);
-            const logGrad = offCtxGround.createLinearGradient(0, logTop.y, 0, logBot.y);
+            const logGrad = targetCtx.createLinearGradient(0, logTop.y, 0, logBot.y);
             logGrad.addColorStop(0.0, '#6b2d10'); // 상단 중간 갈색
             logGrad.addColorStop(0.55, '#3d1207'); // 중간 딥 브라운
             logGrad.addColorStop(1.0, '#1e0803'); // 하단 매우 짙은 다크브라운
-            offCtxGround.fillStyle = logGrad;
-            offCtxGround.fill();
+            targetCtx.fillStyle = logGrad;
+            targetCtx.fill();
         }
 
         // 2. 나무 껍질 및 결 패턴 렌더링 (검은 세로 눈금선 제거 → 유기적인 나뭇결 및 옹이 렌더링)
-        offCtxGround.save();
-        offCtxGround.clip();
+        targetCtx.save();
+        targetCtx.clip();
 
         // 수평 나뭇결 흐름선 (유기적인 무늬)
         for (let relRatio = 0.15; relRatio < 0.95; relRatio += 0.18) {
-            offCtxGround.beginPath();
+            targetCtx.beginPath();
             for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.4) {
                 const curThick = thickness;
                 const yVal = getOrigY(x) - curThick * relRatio + Math.sin(x * 0.7 + relRatio * 10) * 0.2;
                 const p = gridToScreen(x, yVal);
-                if (x === skyStartX - 2) offCtxGround.moveTo(p.x, p.y);
-                else offCtxGround.lineTo(p.x, p.y);
+                if (x === skyStartX - 2) targetCtx.moveTo(p.x, p.y);
+                else targetCtx.lineTo(p.x, p.y);
             }
-            offCtxGround.strokeStyle = (Math.round(relRatio * 100) % 2 === 0) ? 'rgba(61, 21, 6, 0.45)' : 'rgba(122, 47, 18, 0.35)';
-            offCtxGround.lineWidth = 2.5;
-            offCtxGround.stroke();
+            targetCtx.strokeStyle = (Math.round(relRatio * 100) % 2 === 0) ? 'rgba(61, 21, 6, 0.45)' : 'rgba(122, 47, 18, 0.35)';
+            targetCtx.lineWidth = 2.5;
+            targetCtx.stroke();
         }
 
         // 2-B. 나무 옹이 (Wood Knots) — 개수를 대폭 축소하여 3개만 드문드문 자연스럽게 배치
@@ -3357,67 +3357,67 @@ function render() {
             const kry = scaleLength(0.5 + (kIdx % 2) * 0.15);
             const angle = 0.18 * (kIdx % 2 === 0 ? 1 : -1);
 
-            offCtxGround.save();
+            targetCtx.save();
 
             // 1) 옹이 주변 나뭇결 휘어짐 파동 (Grain Warp Lines)
-            offCtxGround.beginPath();
+            targetCtx.beginPath();
             const warpR = krx * 2.2;
             for (let t = -Math.PI; t <= Math.PI; t += 0.2) {
                 const wx = kp.x + Math.cos(t) * warpR * (1 + Math.sin(t * 2) * 0.15);
                 const wy = kp.y + Math.sin(t) * (kry * 2.2) * (1 + Math.cos(t) * 0.1);
-                if (t === -Math.PI) offCtxGround.moveTo(wx, wy);
-                else offCtxGround.lineTo(wx, wy);
+                if (t === -Math.PI) targetCtx.moveTo(wx, wy);
+                else targetCtx.lineTo(wx, wy);
             }
-            offCtxGround.strokeStyle = 'rgba(40, 12, 4, 0.4)';
-            offCtxGround.lineWidth = 1.8;
-            offCtxGround.stroke();
+            targetCtx.strokeStyle = 'rgba(40, 12, 4, 0.4)';
+            targetCtx.lineWidth = 1.8;
+            targetCtx.stroke();
 
             // 2) 옹이 본체 방사형 3D 그라데이션 (중심 짙은 갈색 -> 외곽 유기적 적갈색)
-            const knotGrad = offCtxGround.createRadialGradient(kp.x - krx * 0.2, kp.y - kry * 0.2, 2, kp.x, kp.y, krx);
+            const knotGrad = targetCtx.createRadialGradient(kp.x - krx * 0.2, kp.y - kry * 0.2, 2, kp.x, kp.y, krx);
             knotGrad.addColorStop(0.0, '#1c0701'); // 중심 깊은 음영
             knotGrad.addColorStop(0.55, '#3a1304'); // 중간 적갈색
             knotGrad.addColorStop(1.0, '#240a02'); // 외곽 테두리
 
-            offCtxGround.beginPath();
-            offCtxGround.ellipse(kp.x, kp.y, krx, kry, angle, 0, Math.PI * 2);
-            offCtxGround.fillStyle = knotGrad;
-            offCtxGround.fill();
-            offCtxGround.strokeStyle = '#170501';
-            offCtxGround.lineWidth = 2.2;
-            offCtxGround.stroke();
+            targetCtx.beginPath();
+            targetCtx.ellipse(kp.x, kp.y, krx, kry, angle, 0, Math.PI * 2);
+            targetCtx.fillStyle = knotGrad;
+            targetCtx.fill();
+            targetCtx.strokeStyle = '#170501';
+            targetCtx.lineWidth = 2.2;
+            targetCtx.stroke();
 
             // 3) 회오리 나이테 (Spiral Ring)
-            offCtxGround.beginPath();
+            targetCtx.beginPath();
             const rings = 3;
             for (let r = 1; r <= rings; r++) {
                 const ringRatio = r / (rings + 0.5);
                 const rx = krx * ringRatio;
                 const ry = kry * ringRatio;
-                offCtxGround.moveTo(kp.x + rx, kp.y);
-                offCtxGround.ellipse(kp.x, kp.y, rx, ry, angle, 0, Math.PI * 2);
+                targetCtx.moveTo(kp.x + rx, kp.y);
+                targetCtx.ellipse(kp.x, kp.y, rx, ry, angle, 0, Math.PI * 2);
             }
-            offCtxGround.strokeStyle = 'rgba(20, 5, 1, 0.55)';
-            offCtxGround.lineWidth = 1.2;
-            offCtxGround.stroke();
+            targetCtx.strokeStyle = 'rgba(20, 5, 1, 0.55)';
+            targetCtx.lineWidth = 1.2;
+            targetCtx.stroke();
 
             // 4) 세밀한 나무 균열 (Wood Crack)
-            offCtxGround.beginPath();
+            targetCtx.beginPath();
             const crackDir = (kIdx % 2 === 0) ? 1 : -1;
-            offCtxGround.moveTo(kp.x, kp.y);
-            offCtxGround.lineTo(kp.x + krx * 0.7 * crackDir, kp.y - kry * 0.3);
-            offCtxGround.lineTo(kp.x + krx * 0.9 * crackDir, kp.y - kry * 0.1);
-            offCtxGround.strokeStyle = '#0d0300';
-            offCtxGround.lineWidth = 1.5;
-            offCtxGround.stroke();
+            targetCtx.moveTo(kp.x, kp.y);
+            targetCtx.lineTo(kp.x + krx * 0.7 * crackDir, kp.y - kry * 0.3);
+            targetCtx.lineTo(kp.x + krx * 0.9 * crackDir, kp.y - kry * 0.1);
+            targetCtx.strokeStyle = '#0d0300';
+            targetCtx.lineWidth = 1.5;
+            targetCtx.stroke();
 
-            offCtxGround.restore();
+            targetCtx.restore();
         });
 
         // 3. 통나무 상단 잔디 풀밭 레이어 (두께 절반 0.1625 슬림화, #22c55e -> #15803d 2색 그라데이션)
-        offCtxGround.save();
-        offCtxGround.beginPath();
+        targetCtx.save();
+        targetCtx.beginPath();
         const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
-        offCtxGround.moveTo(gStartP.x, gStartP.y);
+        targetCtx.moveTo(gStartP.x, gStartP.y);
         for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.2)) {
             const p = gridToScreen(x, getOrigY(x));
             targetCtx.lineTo(p.x, p.y);
