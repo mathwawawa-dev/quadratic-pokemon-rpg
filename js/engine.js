@@ -2827,6 +2827,72 @@ function render() {
         ctx.restore();
     }
 
+    // 왜곡된 차원('psychic') 지형 분위기: 보랏빛/분홍빛 성간 가스(성운) 덩어리가 기괴하게 일렁이는 효과 (월드 좌표 연동)
+    if (stage.terrain === 'psychic') {
+        ctx.save();
+        const now = Date.now();
+        const nebulaColors = [
+            '147, 51, 234',   // 짙은 보라
+            '217, 70, 239',   // 밝은 자주/분홍
+            '192, 38, 211',   // 마젠타
+            '168, 85, 247'    // 연한 보라
+        ];
+        
+        ctx.globalCompositeOperation = 'screen';
+        
+        for (let i = 0; i < 8; i++) {
+            const seed = i * 8491;
+            // 수평/수직 무작위 아주 느린 표류
+            const driftSpeedX = 0.00008 + (seed % 3) * 0.00002;
+            const driftSpeedY = 0.00005 + (seed % 4) * 0.000015;
+            
+            // 일렁임 (크게 너울)
+            const wobbleFreq = 0.0002 + (seed % 5) * 0.00005;
+            const wobbleAmp = 1.5 + (seed % 4) * 0.5;
+
+            const cycleX = 60.0;
+            const cycleY = 40.0;
+            
+            // X, Y 베이스 이동
+            const baseGx = -30.0 + ((now * driftSpeedX + (seed % 1000) * 0.06) % cycleX);
+            const baseGy = -5.0 + ((now * driftSpeedY + (seed % 800) * 0.05) % cycleY);
+            
+            // 최종 위치
+            const gx = baseGx + Math.sin(now * wobbleFreq + i * 3.1) * wobbleAmp;
+            const gy = baseGy + Math.cos(now * wobbleFreq * 1.2 + i * 2.3) * wobbleAmp;
+            
+            const sc = gridToScreen(gx, gy);
+            const radius = scaleLength(4.0 + (seed % 5) * 1.5);
+            
+            if (sc.x < -radius*1.5 || sc.x > canvas.width + radius*1.5 || 
+                sc.y < -radius*1.5 || sc.y > canvas.height + radius*1.5) continue;
+
+            const color = nebulaColors[i % nebulaColors.length];
+            const pulse = Math.sin(now * 0.0005 + i * 1.7);
+            const alpha = 0.15 + pulse * 0.05; // 0.1 ~ 0.2
+            
+            const grad = ctx.createRadialGradient(sc.x, sc.y, 0, sc.x, sc.y, radius);
+            grad.addColorStop(0, `rgba(${color}, ${alpha})`);
+            grad.addColorStop(0.5, `rgba(${color}, ${alpha * 0.5})`);
+            grad.addColorStop(1, `rgba(${color}, 0)`);
+            
+            // 일그러진 타원 모양을 위해 약간 찌그러뜨림
+            ctx.save();
+            ctx.translate(sc.x, sc.y);
+            const rot = now * 0.0003 + seed;
+            ctx.rotate(rot);
+            const scaleY = 0.6 + Math.abs(Math.sin(now * 0.0002 + i)) * 0.3;
+            ctx.scale(1, scaleY);
+            
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
     // 화산 용암('lava') 지형 분위기: 가벼운 불티 파티클
     if (stage.terrain === 'lava') {
         ctx.save();
