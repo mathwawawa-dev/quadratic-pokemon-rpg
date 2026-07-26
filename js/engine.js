@@ -2916,6 +2916,59 @@ function render() {
         ctx.restore();
     }
 
+    // 부유하는 섬('garden') 지형 분위기: 신비로운 반딧불이가 느릿느릿 맴돌며 반짝이는 효과
+    if (stage.terrain === 'garden') {
+        ctx.save();
+        const now = Date.now();
+        const fireflyColors = [
+            '180, 230, 60',   // 황록
+            '210, 240, 80',   // 연노랑
+            '160, 255, 90',   // 밝은 연두
+            '230, 250, 120',  // 레몬빛
+            '140, 220, 70'    // 초록빛
+        ];
+
+        ctx.globalCompositeOperation = 'screen';
+
+        for (let i = 0; i < 18; i++) {
+            const seed = i * 5413;
+            // 반딧불이는 느리게 원형~8자 궤적으로 맴돎
+            const orbitSpeed = 0.0003 + (seed % 4) * 0.0001;
+            const orbitRadX = 2.0 + (seed % 5) * 0.8;
+            const orbitRadY = 1.5 + (seed % 3) * 0.6;
+
+            const baseX = -22.0 + (seed % 440) * 0.1;
+            const baseY = 3.0 + (seed % 200) * 0.08;
+
+            const gx = baseX + Math.sin(now * orbitSpeed + i * 1.7) * orbitRadX;
+            const gy = baseY + Math.cos(now * orbitSpeed * 0.7 + i * 2.3) * orbitRadY;
+
+            const sc = gridToScreen(gx, gy);
+            const radius = scaleLength(0.08 + (seed % 3) * 0.06); // 0.08 ~ 0.20
+
+            if (sc.x < -radius*3 || sc.x > canvas.width + radius*3 ||
+                sc.y < -radius*3 || sc.y > canvas.height + radius*3) continue;
+
+            const color = fireflyColors[i % fireflyColors.length];
+            // 깜빡임: 밝아졌다 어두워졌다 반복 (반딧불이 느낌)
+            const blink = Math.sin(now * 0.002 + i * 4.1);
+            const alpha = Math.max(0.05, 0.35 + blink * 0.35); // 0.05 ~ 0.70
+
+            // 글로우 (은은한 빛 번짐)
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, radius * 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${color}, ${alpha * 0.25})`;
+            ctx.fill();
+
+            // 코어 (밝은 중심점)
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, radius * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 230, ${Math.min(1, alpha + 0.2)})`;
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
     // 화산 용암('lava') 지형 분위기: 가벼운 불티 파티클
     if (stage.terrain === 'lava') {
         ctx.save();
