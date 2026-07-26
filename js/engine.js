@@ -815,6 +815,10 @@ function initStage() {
             { bx: 8,  by: 28.0, speed: 3500, radius: 1.4, stretchX: 1.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
             { bx: -3, by: 7.0,  speed: 3800, radius: 0.55, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
         ];
+    } else if (stage.terrain === 'ocean') {
+        cloudParams = [
+            { bx: 0, by: 20, speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
+        ];
     } else {
         cloudParams = [
             { bx: 5,  by: 18, speed: 3000, radius: 2.2, alpha: 0.6 },
@@ -3321,7 +3325,43 @@ function render() {
             pulse = Math.sin(Date.now() / 400);
             currentRadius = cp.radius * (1 + pulse * 0.055);
         }
-        drawCloudOff(offCtx, c.x, c.y, scaleLength(currentRadius), cp.alpha, cp.isPowerCloud, cp.colorType, pulse, cp.stretchX || 1.0);
+
+        // ocean 맵에서는 파워업 구름을 거품(버블) 모양으로 렌더링
+        if (stage.terrain === 'ocean' && cp.isPowerCloud) {
+            const r = scaleLength(currentRadius);
+            const typeColors = {
+                fire:    { main: 'rgba(255, 120, 50, 0.35)', rim: 'rgba(255, 180, 100, 0.6)', highlight: 'rgba(255, 220, 180, 0.8)' },
+                water:   { main: 'rgba(80, 160, 255, 0.35)',  rim: 'rgba(130, 200, 255, 0.6)', highlight: 'rgba(200, 235, 255, 0.8)' },
+                grass:   { main: 'rgba(80, 200, 100, 0.35)',  rim: 'rgba(140, 230, 140, 0.6)', highlight: 'rgba(200, 255, 210, 0.8)' },
+                flying:  { main: 'rgba(160, 180, 255, 0.35)', rim: 'rgba(190, 210, 255, 0.6)', highlight: 'rgba(230, 240, 255, 0.8)' },
+                psychic: { main: 'rgba(200, 100, 240, 0.35)', rim: 'rgba(220, 160, 255, 0.6)', highlight: 'rgba(240, 210, 255, 0.8)' }
+            };
+            const colors = typeColors[cp.colorType] || typeColors.water;
+
+            offCtx.save();
+            // 거품 본체 (반투명 원)
+            offCtx.beginPath();
+            offCtx.arc(c.x, c.y, r, 0, Math.PI * 2);
+            offCtx.fillStyle = colors.main;
+            offCtx.fill();
+
+            // 거품 테두리 (얇은 링)
+            offCtx.beginPath();
+            offCtx.arc(c.x, c.y, r, 0, Math.PI * 2);
+            offCtx.strokeStyle = colors.rim;
+            offCtx.lineWidth = Math.max(1.5, r * 0.08);
+            offCtx.stroke();
+
+            // 하이라이트 반짝임 (왼쪽 상단 작은 원)
+            offCtx.beginPath();
+            offCtx.arc(c.x - r * 0.3, c.y - r * 0.3, r * 0.22, 0, Math.PI * 2);
+            offCtx.fillStyle = colors.highlight;
+            offCtx.fill();
+
+            offCtx.restore();
+        } else {
+            drawCloudOff(offCtx, c.x, c.y, scaleLength(currentRadius), cp.alpha, cp.isPowerCloud, cp.colorType, pulse, cp.stretchX || 1.0);
+        }
     });
 
     // destination-out으로 구멍 뚫기
