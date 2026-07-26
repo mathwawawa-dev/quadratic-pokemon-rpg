@@ -2954,9 +2954,9 @@ function render() {
             const blink = Math.sin(now * 0.002 + i * 4.1);
             const alpha = Math.max(0.05, 0.35 + blink * 0.35); // 0.05 ~ 0.70
 
-            // 글로우: 코어 크기에서 출발 → 커졌다 줄어드는 맥박 (1.0x ~ 3.0x)
+            // 글로우: 코어 크기에서 출발 → 커졌다 줄어드는 맥박 (1.0x ~ 2.0x)
             const glowPulse = (Math.sin(now * 0.0015 + i * 3.7) + 1.0) / 2.0; // 0 ~ 1
-            const glowR = coreR * (1.0 + glowPulse * 2.0);
+            const glowR = coreR * (1.0 + glowPulse * 1.0);
 
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, glowR, 0, Math.PI * 2);
@@ -2967,6 +2967,63 @@ function render() {
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, coreR * 0.5, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255, 255, 230, ${Math.min(1, alpha + 0.2)})`;
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
+    // 솜사탕('cloud_garden') 지형 분위기: 반짝이는 별 먼지가 천천히 내려오는 효과
+    if (stage.terrain === 'cloud_garden') {
+        ctx.save();
+        const now = Date.now();
+        const dustColors = [
+            '255, 255, 255',  // 순백
+            '255, 220, 240',  // 연분홍
+            '255, 200, 230',  // 핑크
+            '240, 230, 255',  // 연보라
+            '255, 240, 250'   // 크림핑크
+        ];
+
+        ctx.globalCompositeOperation = 'screen';
+
+        for (let i = 0; i < 10; i++) {
+            const seed = i * 6317;
+            const fallSpeed = 0.0003 + (seed % 4) * 0.00008; // 느리게 내려옴
+            const swayAmp = 1.2 + (seed % 3) * 0.5;
+            const swayFreq = 0.0004 + (seed % 5) * 0.00015;
+
+            const cycleY = 50.0;
+            // 위에서 아래로 내려옴 (반중력의 반대)
+            const baseY = 25.0 - ((now * fallSpeed + (seed % 1000) * 0.05) % cycleY);
+            const baseX = -25.0 + (seed % 500) * 0.1;
+
+            const gx = baseX + Math.sin(now * swayFreq + i * 2.1) * swayAmp;
+            const gy = baseY;
+
+            const sc = gridToScreen(gx, gy);
+            const coreR = scaleLength(0.06 + (seed % 3) * 0.04); // 0.06 ~ 0.14
+
+            if (sc.x < -coreR*5 || sc.x > canvas.width + coreR*5 ||
+                sc.y < -coreR*5 || sc.y > canvas.height + coreR*5) continue;
+
+            const color = dustColors[i % dustColors.length];
+            // 반짝임: 별처럼 깜빡
+            const twinkle = Math.sin(now * 0.003 + i * 5.3);
+            const alpha = Math.max(0.1, 0.4 + twinkle * 0.4); // 0.1 ~ 0.8
+
+            // 글로우 (은은한 빛 번짐)
+            const glowPulse = (Math.sin(now * 0.002 + i * 3.1) + 1.0) / 2.0;
+            const glowR = coreR * (1.0 + glowPulse * 1.0);
+
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, glowR, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${color}, ${alpha * 0.15})`;
+            ctx.fill();
+
+            // 코어 (밝은 별 점)
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, coreR * 0.4, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, alpha + 0.2)})`;
             ctx.fill();
         }
         ctx.restore();
