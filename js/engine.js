@@ -817,7 +817,9 @@ function initStage() {
         ];
     } else if (stage.terrain === 'ocean') {
         cloudParams = [
-            { bx: 0, by: 20, speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
+            { bx: -8, by: 15, speed: 4200, radius: 0.7, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
+            { bx: 5,  by: 22, speed: 3800, radius: 0.9, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
+            { bx: 0,  by: 12, speed: 4500, radius: 0.6, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
         ];
     } else {
         cloudParams = [
