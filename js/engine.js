@@ -2930,7 +2930,7 @@ function render() {
 
         ctx.globalCompositeOperation = 'screen';
 
-        for (let i = 0; i < 18; i++) {
+        for (let i = 0; i < 10; i++) {
             const seed = i * 5413;
             // 반딧불이는 느리게 원형~8자 궤적으로 맴돎
             const orbitSpeed = 0.0003 + (seed % 4) * 0.0001;
@@ -2944,25 +2944,28 @@ function render() {
             const gy = baseY + Math.cos(now * orbitSpeed * 0.7 + i * 2.3) * orbitRadY;
 
             const sc = gridToScreen(gx, gy);
-            const radius = scaleLength(0.08 + (seed % 3) * 0.06); // 0.08 ~ 0.20
+            const coreR = scaleLength(0.08 + (seed % 3) * 0.06); // 코어 반경 0.08 ~ 0.20
 
-            if (sc.x < -radius*3 || sc.x > canvas.width + radius*3 ||
-                sc.y < -radius*3 || sc.y > canvas.height + radius*3) continue;
+            if (sc.x < -coreR*6 || sc.x > canvas.width + coreR*6 ||
+                sc.y < -coreR*6 || sc.y > canvas.height + coreR*6) continue;
 
             const color = fireflyColors[i % fireflyColors.length];
             // 깜빡임: 밝아졌다 어두워졌다 반복 (반딧불이 느낌)
             const blink = Math.sin(now * 0.002 + i * 4.1);
             const alpha = Math.max(0.05, 0.35 + blink * 0.35); // 0.05 ~ 0.70
 
-            // 글로우 (은은한 빛 번짐)
+            // 글로우: 코어 크기에서 출발 → 커졌다 줄어드는 맥박 (1.0x ~ 3.0x)
+            const glowPulse = (Math.sin(now * 0.0015 + i * 3.7) + 1.0) / 2.0; // 0 ~ 1
+            const glowR = coreR * (1.0 + glowPulse * 2.0);
+
             ctx.beginPath();
-            ctx.arc(sc.x, sc.y, radius * 2.5, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${color}, ${alpha * 0.25})`;
+            ctx.arc(sc.x, sc.y, glowR, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${color}, ${alpha * 0.2})`;
             ctx.fill();
 
-            // 코어 (밝은 중심점)
+            // 코어 (밝은 중심점 - 고정 크기)
             ctx.beginPath();
-            ctx.arc(sc.x, sc.y, radius * 0.5, 0, Math.PI * 2);
+            ctx.arc(sc.x, sc.y, coreR * 0.5, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255, 255, 230, ${Math.min(1, alpha + 0.2)})`;
             ctx.fill();
         }
