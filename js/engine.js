@@ -2937,6 +2937,62 @@ function render() {
         ctx.restore();
     }
 
+    // 어두운 동굴('cave') 지형 분위기: 신비로운 푸른빛/보랏빛 형광 벌레가 떠다니는 효과
+    if (stage.terrain === 'cave') {
+        ctx.save();
+        const now = Date.now();
+        const caveBugColors = [
+            '100, 150, 255',  // 옅은 푸른빛
+            '150, 100, 255',  // 보랏빛
+            '50,  200, 255',  // 청록빛
+            '200, 150, 255',  // 연보랏빛
+            '100, 200, 200'   // 신비로운 옥색
+        ];
+
+        ctx.globalCompositeOperation = 'screen';
+
+        for (let i = 0; i < 12; i++) {
+            const seed = i * 7321;
+            // 형광 벌레는 느리게 맴돎 (정원보다 조금 더 느리고 넓게)
+            const orbitSpeed = 0.0002 + (seed % 4) * 0.00008;
+            const orbitRadX = 2.5 + (seed % 5) * 1.0;
+            const orbitRadY = 1.5 + (seed % 3) * 0.8;
+
+            const baseX = -22.0 + (seed % 440) * 0.1;
+            const baseY = 2.0 + (seed % 200) * 0.08;
+
+            const gx = baseX + Math.sin(now * orbitSpeed + i * 1.7) * orbitRadX;
+            const gy = baseY + Math.cos(now * orbitSpeed * 0.7 + i * 2.3) * orbitRadY;
+
+            const sc = gridToScreen(gx, gy);
+            const coreR = scaleLength(0.06 + (seed % 3) * 0.05); // 코어 반경 0.06 ~ 0.16 (조금 작게)
+
+            if (sc.x < -coreR*6 || sc.x > canvas.width + coreR*6 ||
+                sc.y < -coreR*6 || sc.y > canvas.height + coreR*6) continue;
+
+            const color = caveBugColors[i % caveBugColors.length];
+            // 깜빡임: 어둠 속에서 더 극적으로 보임
+            const blink = Math.sin(now * 0.0018 + i * 4.1);
+            const alpha = Math.max(0.05, 0.4 + blink * 0.4); // 0.05 ~ 0.80
+
+            // 글로우: 코어 크기에서 출발 → 커졌다 줄어드는 맥박
+            const glowPulse = (Math.sin(now * 0.0012 + i * 3.7) + 1.0) / 2.0; // 0 ~ 1
+            const glowR = coreR * (1.2 + glowPulse * 1.5); // 글로우 넓게 퍼짐
+
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, glowR, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${color}, ${alpha * 0.25})`;
+            ctx.fill();
+
+            // 코어
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, coreR * 0.6, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(200, 230, 255, ${Math.min(1, alpha + 0.1)})`;
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
     // 부유하는 섬('garden') 지형 분위기: 신비로운 반딧불이가 느릿느릿 맴돌며 반짝이는 효과
     if (stage.terrain === 'garden') {
         ctx.save();
