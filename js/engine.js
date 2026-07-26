@@ -3477,32 +3477,8 @@ function render() {
 
     const drawCloudOff = (octx, cx, cy, baseRadius, alpha, isPower, colorType, pulse, stretchX = 1.0) => {
         octx.save();
-        if (isPower) {
-            const colors = { fire: '239, 68, 68', water: '59, 130, 246', grass: '45, 106, 79', electric: '250, 204, 21', poison: '168, 85, 247', ground: '217, 119, 6', normal: '200, 200, 200', psychic: '168, 85, 247' };
-            const rgb = colors[colorType] || '200, 200, 200';
-            
-            // 진주운(Nacreous cloud) 효과: 사선 무늬(대각선)를 유지하며 부드럽게 흐르도록 수정 (어지러움 방지)
-            const shift = Math.sin(Date.now() / 1500) * baseRadius * 0.6;
-            const grad = octx.createLinearGradient(
-                cx - baseRadius * 1.5 + shift, cy - baseRadius * 0.8 + shift, 
-                cx + baseRadius * 1.5 + shift, cy + baseRadius * 1.0 + shift
-            );
-            
-            // 스타팅 포켓몬 베이스 색상(rgb)과 파스텔 무지개(핑크, 민트, 라벤더) 교차 배합
-            grad.addColorStop(0.0, `rgba(${rgb}, ${alpha})`);
-            grad.addColorStop(0.2, `rgba(255, 180, 200, ${alpha * 0.85})`);
-            grad.addColorStop(0.4, `rgba(${rgb}, ${alpha * 0.9})`);
-            grad.addColorStop(0.6, `rgba(150, 240, 220, ${alpha * 0.85})`);
-            grad.addColorStop(0.8, `rgba(220, 180, 255, ${alpha * 0.85})`);
-            grad.addColorStop(1.0, `rgba(${rgb}, ${alpha})`);
-            
-            octx.fillStyle = grad;
-            
-            // 배경 구름 shadowBlur: IDLE 중에는 비활성화
-            if (isFiring) { octx.shadowColor = `rgba(${rgb}, 0.8)`; octx.shadowBlur = 15 + (pulse || 0) * 5; }
-        } else {
-            octx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-        }
+        
+        // 구름 형태 패스 구성
         octx.beginPath();
         octx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
         
@@ -3518,7 +3494,37 @@ function render() {
         octx.moveTo(cx + w14 + baseRadius * 0.5, cy + baseRadius * 0.5);
         octx.arc(cx + w14, cy + baseRadius * 0.5, baseRadius * 0.5, 0, Math.PI * 2);
         octx.rect(cx - w14, cy + baseRadius * 0.3, w14 * 2.0, baseRadius * 0.7);
-        octx.fill();
+        
+        if (isPower) {
+            const colors = { fire: '239, 68, 68', water: '59, 130, 246', grass: '45, 106, 79', electric: '250, 204, 21', poison: '168, 85, 247', ground: '217, 119, 6', normal: '200, 200, 200', psychic: '168, 85, 247' };
+            const rgb = colors[colorType] || '200, 200, 200';
+            
+            // 1. 베이스 색상 단단하게 채우기
+            octx.fillStyle = `rgba(${rgb}, ${alpha})`;
+            if (isFiring) { octx.shadowColor = `rgba(${rgb}, 0.8)`; octx.shadowBlur = 15 + (pulse || 0) * 5; }
+            octx.fill();
+            
+            // 2. 은은한 파스텔(진주운) 효과만 덧입히기
+            octx.shadowBlur = 0;
+            const shift = Math.sin(Date.now() / 1500) * baseRadius * 0.6;
+            const grad = octx.createLinearGradient(
+                cx - baseRadius * 1.5 + shift, cy - baseRadius * 0.8 + shift, 
+                cx + baseRadius * 1.5 + shift, cy + baseRadius * 1.0 + shift
+            );
+            
+            grad.addColorStop(0.0, 'rgba(255, 255, 255, 0)');
+            grad.addColorStop(0.3, `rgba(255, 200, 220, ${alpha * 0.35})`);
+            grad.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+            grad.addColorStop(0.7, `rgba(200, 255, 240, ${alpha * 0.35})`);
+            grad.addColorStop(0.9, `rgba(230, 210, 255, ${alpha * 0.35})`);
+            grad.addColorStop(1.0, 'rgba(255, 255, 255, 0)');
+            
+            octx.fillStyle = grad;
+            octx.fill();
+        } else {
+            octx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            octx.fill();
+        }
         octx.restore();
     };
 
