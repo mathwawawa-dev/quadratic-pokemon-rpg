@@ -3475,8 +3475,8 @@ function render() {
             ctx.drawImage(craterCanvas, 0, 0);
         }
     } else if (stage.terrain === 'log_bridge') {
-        const skyStartX = -45;
-        const skyEndX = 45;
+        const skyStartX = -30;
+        const skyEndX = 30;
         const thickness = 5.0; // 고정 두께로 하단 라인을 x축과 평행하고 깔끔하게 렌더링 (연산 부하 제거)
 
         let targetCtx = ctx;
@@ -3503,9 +3503,9 @@ function render() {
             if (x >= skyEndX) break;
         }
 
-        // 우측 둥근 나이테 단면 캡 마감
+        // 우측 둥근 나이테 단면 캡 마감 (수직으로 잘린 느낌을 없애기 위해 둥글게 연장)
         const rightTopY = getOrigY(skyEndX);
-        const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - thickness / 2);
+        const rightMidP = gridToScreen(skyEndX + 2.5, rightTopY - thickness / 2);
         const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
         targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
 
@@ -3516,9 +3516,9 @@ function render() {
             if (x <= skyStartX) break;
         }
 
-        // 좌측 둥근 나이테 단면 캡 마감
+        // 좌측 둥근 나이테 단면 캡 마감 (수직으로 잘린 느낌을 없애기 위해 둥글게 연장)
         const leftTopY = getOrigY(skyStartX);
-        const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - thickness / 2);
+        const leftMidP = gridToScreen(skyStartX - 2.5, leftTopY - thickness / 2);
         const leftTopP = gridToScreen(skyStartX, leftTopY);
         targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
         targetCtx.closePath();
@@ -3539,8 +3539,8 @@ function render() {
         targetCtx.save();
         targetCtx.clip();
 
-        // 수평 나뭇결 흐름선 (유기적인 무늬)
-        for (let relRatio = 0.15; relRatio < 0.95; relRatio += 0.18) {
+        // 수평 나뭇결 흐름선 (유기적인 무늬, 반복 횟수 축소하여 최적화)
+        for (let relRatio = 0.2; relRatio < 0.9; relRatio += 0.25) {
             targetCtx.beginPath();
             for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.4) {
                 const curThick = thickness;
