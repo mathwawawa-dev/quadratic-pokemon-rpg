@@ -819,7 +819,10 @@ function initStage() {
         cloudParams = [
             { bx: -8, by: 15, speed: 4200, radius: 0.7, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
             { bx: 5,  by: 22, speed: 3800, radius: 0.9, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
-            { bx: 0,  by: 12, speed: 4500, radius: 0.6, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
+            { bx: 0,  by: 12, speed: 4500, radius: 0.6, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
+            { bx: -4, by: 25, speed: 3500, radius: 0.85, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
+            { bx: 7,  by: 10, speed: 5000, radius: 0.5, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
+            { bx: -2, by: 18, speed: 4000, radius: 0.75, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
         ];
     } else {
         cloudParams = [
