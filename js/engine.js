@@ -3273,7 +3273,14 @@ function render() {
         const skyEndX = 45;
         const thickness = 5.0; // 고정 두께로 하단 라인을 x축과 평행하고 깔끔하게 렌더링 (연산 부하 제거)
 
-        const { offCanvasGround, offCtxGround } = getSharedTerrainCtx();
+        let targetCtx = ctx;
+        let craterCanvas = null;
+        if (typeof craters !== 'undefined' && craters.length > 0) {
+            craterCanvas = document.createElement('canvas');
+            craterCanvas.width = canvas.width;
+            craterCanvas.height = canvas.height;
+            targetCtx = craterCanvas.getContext('2d');
+        }
 
         const getOrigY = (x) => {
             const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -3413,65 +3420,63 @@ function render() {
         offCtxGround.moveTo(gStartP.x, gStartP.y);
         for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.2)) {
             const p = gridToScreen(x, getOrigY(x));
-            offCtxGround.lineTo(p.x, p.y);
+            targetCtx.lineTo(p.x, p.y);
             if (x >= skyEndX) break;
         }
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
             const p = gridToScreen(x, getOrigY(x) - 0.1625);
-            offCtxGround.lineTo(p.x, p.y);
+            targetCtx.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
-        offCtxGround.closePath();
+        targetCtx.closePath();
 
         // 부드러운 3단 수직 그라데이션 (상단 #22c55e -> 중앙 #16a34a -> 하단 #15803d)
         const topScreenP = gridToScreen(0, 0);
         const botScreenP = gridToScreen(0, -0.1625);
-        const grassGrad = offCtxGround.createLinearGradient(0, topScreenP.y - 2, 0, botScreenP.y + 2);
+        const grassGrad = targetCtx.createLinearGradient(0, topScreenP.y - 2, 0, botScreenP.y + 2);
         grassGrad.addColorStop(0.0, '#22c55e');  // 상단 싱그러운 그린
         grassGrad.addColorStop(0.5, '#16a34a');  // 중앙 중간 그린
         grassGrad.addColorStop(1.0, '#15803d');  // 하단 차분한 딥 그린
-        offCtxGround.fillStyle = grassGrad;
-        offCtxGround.fill();
+        targetCtx.fillStyle = grassGrad;
+        targetCtx.fill();
 
         // [수정] Dot Rim 크기 현재의 절반으로 축소 (0.2~0.4px 반경 초미세 마이크로 도트)
         for (let x = skyStartX; x <= skyEndX; x += 0.2) {
             const topY = getOrigY(x);
             const p = gridToScreen(x, topY);
             const microDotR = scaleLength(0.01 + Math.abs(Math.sin(x * 6.3)) * 0.01); // 절반 크기
-            offCtxGround.beginPath();
-            offCtxGround.arc(p.x, p.y + (Math.sin(x * 11) > 0 ? 0.3 : -0.3), microDotR, 0, Math.PI * 2);
-            offCtxGround.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(20, 83, 45, 0.45)' : 'rgba(22, 101, 52, 0.35)';
-            offCtxGround.fill();
+            targetCtx.beginPath();
+            targetCtx.arc(p.x, p.y + (Math.sin(x * 11) > 0 ? 0.3 : -0.3), microDotR, 0, Math.PI * 2);
+            targetCtx.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(20, 83, 45, 0.45)' : 'rgba(22, 101, 52, 0.35)';
+            targetCtx.fill();
         }
 
         // 통나무 경계 얇은 흙/이끼 띠 (Soil Border: 하단에 얇고 자연스럽게 이어진 토양 마감)
-        offCtxGround.beginPath();
+        targetCtx.beginPath();
         for (let x = skyStartX; x <= skyEndX; x += 0.2) {
             const bp = gridToScreen(x, getOrigY(x) - 0.1625);
-            if (x === skyStartX) offCtxGround.moveTo(bp.x, bp.y);
-            else offCtxGround.lineTo(bp.x, bp.y);
+            if (x === skyStartX) targetCtx.moveTo(bp.x, bp.y);
+            else targetCtx.lineTo(bp.x, bp.y);
         }
-        offCtxGround.strokeStyle = 'rgba(35, 15, 5, 0.45)';
-        offCtxGround.lineWidth = 1.2;
-        offCtxGround.stroke();
+        targetCtx.strokeStyle = 'rgba(35, 15, 5, 0.45)';
+        targetCtx.lineWidth = 1.2;
+        targetCtx.stroke();
 
-        offCtxGround.restore(); // 클리핑 해제
+        targetCtx.restore(); // 클리핑 해제
 
         // 5. 폭발 구멍(craters) 타공 — 모든 지형 요소(통나무, 잔디, Dot Rim, 흙 띠)를 그리고 난 후 일괄 타공하여 뚫린 구멍 위 잔상 완벽 제거
-        if (typeof craters !== 'undefined' && craters.length > 0) {
-            offCtxGround.globalCompositeOperation = 'destination-out';
+        if (craterCanvas) {
+            targetCtx.globalCompositeOperation = 'destination-out';
             for (const crater of craters) {
                 const p = gridToScreen(crater.x, crater.y);
                 const pr = scaleLength(crater.r);
-                offCtxGround.beginPath();
-                offCtxGround.arc(p.x, p.y, pr, 0, Math.PI * 2);
-                offCtxGround.fill();
+                targetCtx.beginPath();
+                targetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                targetCtx.fill();
             }
-            offCtxGround.globalCompositeOperation = 'source-over';
+            targetCtx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(craterCanvas, 0, 0);
         }
-
-        // 베이스 오프스크린 지형을 메인 ctx에 복사 (동적 풀잎/들꽃/파티클 렌더링 전면 삭제하여 랙 완벽 방지)
-        ctx.drawImage(offCanvasGround, 0, 0);
     } else {
         // 지형 데이터는 -60~60 범위에서만 초기화됨.
         // 드래그로 카메라가 범위 밖으로 벗어나면 getOrigY가 -100을 리턴해 폴리곤이 붕괴되므로
