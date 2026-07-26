@@ -2830,68 +2830,57 @@ function render() {
         ctx.restore();
     }
 
-    // 왜곡된 차원('psychic') 지형 분위기: 보랏빛/분홍빛 성간 가스(성운) 덩어리가 기괴하게 일렁이는 효과 (월드 좌표 연동)
+    // 왜곡된 차원('psychic') 지형 분위기: 반중력으로 천천히 위로 떠오르는 몽환적인 보라색/핑크색 빛구슬들
     if (stage.terrain === 'psychic') {
         ctx.save();
         const now = Date.now();
-        const nebulaColors = [
-            '147, 51, 234',   // 짙은 보라
+        const orbColors = [
             '217, 70, 239',   // 밝은 자주/분홍
             '192, 38, 211',   // 마젠타
-            '168, 85, 247'    // 연한 보라
+            '168, 85, 247',   // 연한 보라
+            '232, 121, 249',  // 핑크
+            '139, 92, 246'    // 보라
         ];
         
         ctx.globalCompositeOperation = 'screen';
         
-        for (let i = 0; i < 8; i++) {
-            const seed = i * 8491;
-            // 수평/수직 무작위 아주 느린 표류
-            const driftSpeedX = 0.00008 + (seed % 3) * 0.00002;
-            const driftSpeedY = 0.00005 + (seed % 4) * 0.000015;
+        for (let i = 0; i < 45; i++) {
+            const seed = i * 7231;
+            const riseSpeed = 0.0005 + (seed % 5) * 0.0002; // 위로 떠오르는 속도
+            const swayAmp = 1.0 + (seed % 4) * 0.5; // 좌우 흔들림 진폭
+            const swayFreq = 0.0005 + (seed % 3) * 0.0002;
             
-            // 일렁임 (크게 너울)
-            const wobbleFreq = 0.0002 + (seed % 5) * 0.00005;
-            const wobbleAmp = 1.5 + (seed % 4) * 0.5;
-
+            const cycleY = 60.0;
             const cycleX = 60.0;
-            const cycleY = 40.0;
             
-            // X, Y 베이스 이동
-            const baseGx = -30.0 + ((now * driftSpeedX + (seed % 1000) * 0.06) % cycleX);
-            const baseGy = -5.0 + ((now * driftSpeedY + (seed % 800) * 0.05) % cycleY);
+            // X는 고정된 위치 베이스, Y는 시간 흐름에 따라 증가(위로 떠오름)
+            const baseY = -15.0 + ((now * riseSpeed + (seed % 1000) * 0.06) % cycleY);
+            const baseX = -30.0 + ((seed % 600) * 0.1);
             
-            // 최종 위치
-            const gx = baseGx + Math.sin(now * wobbleFreq + i * 3.1) * wobbleAmp;
-            const gy = baseGy + Math.cos(now * wobbleFreq * 1.2 + i * 2.3) * wobbleAmp;
+            const gx = baseX + Math.sin(now * swayFreq + i * 1.3) * swayAmp;
+            const gy = baseY; // gy가 커지면 화면에서 위로 올라감 (반중력)
             
             const sc = gridToScreen(gx, gy);
-            const radius = scaleLength(4.0 + (seed % 5) * 1.5);
+            const radius = scaleLength(0.25 + (seed % 6) * 0.15); // 크기 다양화
             
-            if (sc.x < -radius*1.5 || sc.x > canvas.width + radius*1.5 || 
-                sc.y < -radius*1.5 || sc.y > canvas.height + radius*1.5) continue;
+            if (sc.x < -radius*2 || sc.x > canvas.width + radius*2 || 
+                sc.y < -radius*2 || sc.y > canvas.height + radius*2) continue;
 
-            const color = nebulaColors[i % nebulaColors.length];
-            const pulse = Math.sin(now * 0.0005 + i * 1.7);
-            const alpha = 0.15 + pulse * 0.05; // 0.1 ~ 0.2
+            const color = orbColors[i % orbColors.length];
+            const pulse = Math.sin(now * 0.001 + i * 2.1);
+            const alpha = 0.4 + pulse * 0.3; // 0.1 ~ 0.7
             
-            const grad = ctx.createRadialGradient(sc.x, sc.y, 0, sc.x, sc.y, radius);
-            grad.addColorStop(0, `rgba(${color}, ${alpha})`);
-            grad.addColorStop(0.5, `rgba(${color}, ${alpha * 0.5})`);
-            grad.addColorStop(1, `rgba(${color}, 0)`);
-            
-            // 일그러진 타원 모양을 위해 약간 찌그러뜨림
-            ctx.save();
-            ctx.translate(sc.x, sc.y);
-            const rot = now * 0.0003 + seed;
-            ctx.rotate(rot);
-            const scaleY = 0.6 + Math.abs(Math.sin(now * 0.0002 + i)) * 0.3;
-            ctx.scale(1, scaleY);
-            
-            ctx.fillStyle = grad;
+            // 구슬 본체 (블러/글로우 느낌)
             ctx.beginPath();
-            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.arc(sc.x, sc.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${color}, ${alpha})`;
             ctx.fill();
-            ctx.restore();
+            
+            // 구슬 밝은 코어 (중심)
+            ctx.beginPath();
+            ctx.arc(sc.x, sc.y, radius * 0.4, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, alpha + 0.3)})`;
+            ctx.fill();
         }
         ctx.restore();
     }
