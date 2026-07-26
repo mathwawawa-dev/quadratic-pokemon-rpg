@@ -1184,13 +1184,16 @@ window.fireMissile = function (isCheat = false) {
         hasLeftPlayer: false, isCheat, dx: dir * 0.15,
         type: window.currentMissileType,
         hitTargets: new Set(),
-        powerBoosted: false,
+        powerBoostCount: 0,
         isReflected: false,
         isHoming: false,
         homingTarget: null,
         hasClimbed: false,
         launchBoost: launchBoost
     });
+    
+    // 파워업 구름 통과 플래그 초기화 (매 발사마다 리셋)
+    cloudParams.forEach(cp => { cp._hitByCurrentMissile = false; });
     
     document.getElementById('fire-btn').disabled = true;
 };
@@ -1498,7 +1501,9 @@ function applyDamageAndEffects(target, mx, my) {
     let mult = 1.0;
     if (stage.terrain === 'lava' && (selectedStarter||{}).type === 'fire') mult = 1.2;
     if (stage.terrain === 'sky'  && (selectedStarter||{}).type === 'flying') mult = 1.2;
-    const boostMult = missile.powerBoosted ? 1.5 : 1.0;
+    // 파워업 구름 누적 부스트: 1 + 0.5 * n^0.7 (수확체감)
+    const n = missile.powerBoostCount || 0;
+    const boostMult = n > 0 ? 1 + 0.5 * Math.pow(n, 0.7) : 1.0;
     // 초심자의 버프: 스테이지 첫 턴에 적을 맞히면 2배 데미지
     const firstTurnMult = (isFirstTurn && enemies.includes(target)) ? 2.0 : 1.0;
     const totalDamage = Math.floor((30 + fallHeight * 1.7) * mult * baseDamageBoost * boostMult * firstTurnMult);
@@ -2059,8 +2064,9 @@ function updateGame() {
                 const cloudLogicRadius = cp.radius * 1.5;
 
                 // 파워업 구름 통과 시 파워부스트
-                if (cp.isPowerCloud && !missile.powerBoosted && dist < cloudLogicRadius) {
-                    missile.powerBoosted = true;
+                if (cp.isPowerCloud && !cp._hitByCurrentMissile && dist < cloudLogicRadius) {
+                    cp._hitByCurrentMissile = true;
+                    missile.powerBoostCount = (missile.powerBoostCount || 0) + 1;
                     // 포켓몬 속성에 따른 이펙트 색상
                     const eColors = { fire: '#ef4444', electric: '#fbbf24', water: '#3b82f6', flying: '#38bdf8', grass: '#22c55e', normal: '#a8a29e', psychic: '#ec4899' };
                     const eColor = eColors[cp.colorType] || '#fbbf24';
