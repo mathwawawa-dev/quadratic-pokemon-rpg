@@ -805,6 +805,12 @@ function initStage() {
             { bx: -18, by: 6.0,  speed: 5000, radius: 1.6, alpha: 0.4 },
             { bx: -2,  by: 5.0,  speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
         ];
+    } else if (stage.terrain === 'sky') {
+        cloudParams = [
+            { bx: 4,  by: 14.0, speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
+            { bx: -6, by: 20.0, speed: 4500, radius: 1.2, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
+            { bx: 8,  by: 28.0, speed: 3500, radius: 1.4, stretchX: 1.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
+        ];
     } else {
         cloudParams = [
             { bx: 5,  by: 18, speed: 3000, radius: 2.2, alpha: 0.6 },
@@ -1889,7 +1895,8 @@ function updateGame() {
             cloudParams.forEach(cp => {
                 const cx = cp.bx + Math.sin(Date.now() / cp.speed) * 1.5;
                 const cy = cp.by + Math.cos(Date.now() / (cp.speed * 1.3)) * 0.5;
-                const dx = missile.x - cx;
+                const stretchX = cp.stretchX || 1.0;
+                const dx = (missile.x - cx) / stretchX;
                 const dy = missile.y - cy;
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 const cloudLogicRadius = cp.radius * 1.5;
@@ -3073,7 +3080,7 @@ function render() {
     offCanvas.height = canvas.height;
     const offCtx = offCanvas.getContext('2d');
 
-    const drawCloudOff = (octx, cx, cy, baseRadius, alpha, isPower, colorType, pulse) => {
+    const drawCloudOff = (octx, cx, cy, baseRadius, alpha, isPower, colorType, pulse, stretchX = 1.0) => {
         octx.save();
         if (isPower) {
             const colors = { fire: '239, 68, 68', water: '59, 130, 246', grass: '45, 106, 79', electric: '250, 204, 21', poison: '168, 85, 247', ground: '217, 119, 6', normal: '200, 200, 200', psychic: '168, 85, 247' };
@@ -3086,15 +3093,19 @@ function render() {
         }
         octx.beginPath();
         octx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
-        octx.moveTo(cx - baseRadius * 0.8 + baseRadius * 0.7, cy + baseRadius * 0.3);
-        octx.arc(cx - baseRadius * 0.8, cy + baseRadius * 0.3, baseRadius * 0.7, 0, Math.PI * 2);
-        octx.moveTo(cx + baseRadius * 0.8 + baseRadius * 0.7, cy + baseRadius * 0.3);
-        octx.arc(cx + baseRadius * 0.8, cy + baseRadius * 0.3, baseRadius * 0.7, 0, Math.PI * 2);
-        octx.moveTo(cx - baseRadius * 1.4 + baseRadius * 0.5, cy + baseRadius * 0.5);
-        octx.arc(cx - baseRadius * 1.4, cy + baseRadius * 0.5, baseRadius * 0.5, 0, Math.PI * 2);
-        octx.moveTo(cx + baseRadius * 1.4 + baseRadius * 0.5, cy + baseRadius * 0.5);
-        octx.arc(cx + baseRadius * 1.4, cy + baseRadius * 0.5, baseRadius * 0.5, 0, Math.PI * 2);
-        octx.rect(cx - baseRadius * 1.4, cy + baseRadius * 0.3, baseRadius * 2.8, baseRadius * 0.7);
+        
+        const w08 = baseRadius * 0.8 * stretchX;
+        const w14 = baseRadius * 1.4 * stretchX;
+        
+        octx.moveTo(cx - w08 + baseRadius * 0.7, cy + baseRadius * 0.3);
+        octx.arc(cx - w08, cy + baseRadius * 0.3, baseRadius * 0.7, 0, Math.PI * 2);
+        octx.moveTo(cx + w08 + baseRadius * 0.7, cy + baseRadius * 0.3);
+        octx.arc(cx + w08, cy + baseRadius * 0.3, baseRadius * 0.7, 0, Math.PI * 2);
+        octx.moveTo(cx - w14 + baseRadius * 0.5, cy + baseRadius * 0.5);
+        octx.arc(cx - w14, cy + baseRadius * 0.5, baseRadius * 0.5, 0, Math.PI * 2);
+        octx.moveTo(cx + w14 + baseRadius * 0.5, cy + baseRadius * 0.5);
+        octx.arc(cx + w14, cy + baseRadius * 0.5, baseRadius * 0.5, 0, Math.PI * 2);
+        octx.rect(cx - w14, cy + baseRadius * 0.3, w14 * 2.0, baseRadius * 0.7);
         octx.fill();
         octx.restore();
     };
@@ -3107,7 +3118,7 @@ function render() {
             pulse = Math.sin(Date.now() / 400);
             currentRadius = cp.radius * (1 + pulse * 0.055);
         }
-        drawCloudOff(offCtx, c.x, c.y, scaleLength(currentRadius), cp.alpha, cp.isPowerCloud, cp.colorType, pulse);
+        drawCloudOff(offCtx, c.x, c.y, scaleLength(currentRadius), cp.alpha, cp.isPowerCloud, cp.colorType, pulse, cp.stretchX || 1.0);
     });
 
     // destination-out으로 구멍 뚫기
