@@ -2047,15 +2047,21 @@ function updateGame() {
                     } // lateral-climb 아닐 때(정상 착지) else 종료
                 }
             }
-        } else if (!ent.isFlying) {
+        } else {
             const isGroundType = ent.type === 'ground' && !ent.isSurfaced;
             const groundOffset = (ent !== player) ? 0.95 : 0.75; // 적 포켓몬만 0.2 위로
             const groundY = getTerrainY(ent.x, ent.y) + (isGroundType ? -1.3 : groundOffset);
-            // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
-            const _np_islandB = getTerrainBottom(ent.x, ent.y);
-            const _np_below = _np_islandB !== -1000 && ent.y < _np_islandB - 0.3;
-            if (ent.y > groundY + 0.1 || _np_below) { ent.vy -= 0.03; ent.y += ent.vy; }
-            else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
+            // 비행 엔티티라도 발아래 지형이 완전히 파괴된 경우(groundY < deathZone) → 중력 적용하여 낙하
+            const _curDeathZone = (TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].deathZoneY !== undefined)
+                ? TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].deathZoneY : -8;
+            const _isOverVoid = groundY < _curDeathZone;
+            if (!ent.isFlying || _isOverVoid) {
+                // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
+                const _np_islandB = getTerrainBottom(ent.x, ent.y);
+                const _np_below = _np_islandB !== -1000 && ent.y < _np_islandB - 0.3;
+                if (ent.y > groundY + 0.1 || _np_below) { ent.vy -= 0.03; ent.y += ent.vy; }
+                else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
+            }
         }
         const currentTerrainData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
         const deathZoneY = currentTerrainData.deathZoneY !== undefined ? currentTerrainData.deathZoneY : -8;
