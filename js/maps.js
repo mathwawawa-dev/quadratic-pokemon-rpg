@@ -25,8 +25,8 @@ const TERRAINS = {
         name: "외나무다리",
         bg: ["#38bdf8", "#7dd3fc", "#bae6fd"],
         color: "#652810", outColor: "#3d1708",
-        deathZoneY: -10,
-        func: (x) => Math.sin((x + terrainSeed) / 5) * 0.8 + Math.cos((x - terrainSeed) / 3) * 0.4 - 1,
+        deathZoneY: -8,
+        func: (x) => Math.sin((x + terrainSeed) / 5) * 0.8 + Math.cos((x - terrainSeed) / 3) * 0.4 + 0.7,
         getThickness: (x) => {
             // 4.0 단위 블록 기반 해시 → 블록 경계에서만 두께 변화 (파도 너울 방지)
             const seed = terrainSeed || 0;
