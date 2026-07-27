@@ -2018,13 +2018,16 @@ function updateGame() {
                     // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지)
                     if (Math.abs(ent.vx) < 0.08 && Math.abs(ent.vy) < 0.15) {
                         // 부유맵: 섬 바닥 아래이거나, 하단→상단 레이어 점프(상향 텔레포트) 차단
+                        // groundLayerIdx=-1(flying 적) 및 같은 레이어 원거리 스냅까지 커버하는 거리 차단 추가
                         const _kb_islandB = getTerrainBottom(ent.x, ent.y);
                         const _kb_below = _kb_islandB !== -1000 && ent.y < _kb_islandB + 0.1;
                         const _kb_layerIdx = getTerrainLayerIndex(ent.x, ent.y);
                         const _kb_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-                        // 부유맵에서: 현재 감지 레이어가 이전 착지 레이어보다 높고(더 낮은 idx), 거리도 1.5초과 → 레이어 점프 → 스냅 차단
+                        // 레이어 점프 차단 (groundLayerIdx가 있을 때)
                         const _kb_layerJump = _kb_isFloating && ent.groundLayerIdx >= 0 && _kb_layerIdx >= 0 && _kb_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
-                        if (!_kb_below && !_kb_layerJump) { ent.y = groundY; if (_kb_layerIdx >= 0) ent.groundLayerIdx = _kb_layerIdx; }
+                        // 거리 차단: flying 적(groundLayerIdx=-1)이나 같은 레이어 원거리 스냅까지 보완
+                        const _kb_distBlock = _kb_isFloating && (groundY - ent.y) > 1.5;
+                        if (!_kb_below && !_kb_layerJump && !_kb_distBlock) { ent.y = groundY; if (_kb_layerIdx >= 0) ent.groundLayerIdx = _kb_layerIdx; }
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
                     }
                 } else {
@@ -2041,7 +2044,10 @@ function updateGame() {
                     const _eb_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
                     const _eb_layerIdx = _eb_isFloating ? getTerrainLayerIndex(ent.x, ent.y) : -1;
                     const _eb_layerJump = _eb_isFloating && ent.groundLayerIdx >= 0 && _eb_layerIdx >= 0 && _eb_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
-                    if (_eb_layerJump) {
+                    // 거리+방향 차단: vy>0(위로 이동) && dist>1.5 → flying 적 및 같은 레이어 원거리 상향 스냅 차단
+                    // vy≤0(낙하 중) 일 때는 차단 안 함 → 위에서 내려오는 정상 착지 허용
+                    const _eb_distBlock = _eb_isFloating && (groundY - ent.y) > 1.5 && ent.vy > 0;
+                    if (_eb_layerJump || _eb_distBlock) {
                         ent.vx *= -0.55; // 상단 구름으로의 순간이동 차단 → 벽 처리
                     } else {
                     ent.y = groundY; 
