@@ -2036,9 +2036,12 @@ function updateGame() {
                         // 머물러 있는 경우 즉시 착지. normal physics에서 4~5유닛 위로 순간이동(솟구침)하거나
                         // 그대로 추락하는 양쪽 버그를 동시에 차단하는 단일 보정 스냅.
                         if (_kb_isFloating && !_kb_below && _kb_layerIdx >= 0 && _kb_layerIdx === ent.groundLayerIdx) {
-                            const _kb_cleanupDist = groundY - ent.y;
+                            // ent.x가 steep wall 반사로 갱신됐으므로 groundY 재계산
+                            const _kb_cleanupGY = getTerrainY(ent.x, ent.y) + enemyGroundOffset;
+                            const _kb_cleanupDist = _kb_cleanupGY - ent.y;
                             if (_kb_cleanupDist > 0.05 && _kb_cleanupDist <= 5.5) {
-                                ent.y = groundY;
+                                ent.y = _kb_cleanupGY;
+                                ent.groundLayerIdx = _kb_layerIdx;
                             }
                         }
                     }
