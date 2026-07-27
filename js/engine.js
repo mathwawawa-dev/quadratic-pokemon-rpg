@@ -2110,6 +2110,17 @@ function updateGame() {
                 else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; if (_np_layerIdx >= 0) ent.groundLayerIdx = _np_layerIdx; }
             }
         }
+        // ── 부유맵 최종 방어선: 한 프레임에 2유닛 초과 y 상승은 물리적으로 불가능 ──
+        // (최대 vy=0.14/프레임, 정상 착지 스냅=0~1유닛) → 더 크면 무조건 버그 → 되돌림
+        const _isFinalFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
+        if (_isFinalFloating) {
+            if (ent._prevPhysicsY === undefined) ent._prevPhysicsY = ent.y;
+            if (ent.y - ent._prevPhysicsY > 2.0) {
+                ent.y = ent._prevPhysicsY;
+                ent.vy = Math.min(ent.vy, 0);
+            }
+            ent._prevPhysicsY = ent.y;
+        }
         const currentTerrainData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
         const deathZoneY = currentTerrainData.deathZoneY !== undefined ? currentTerrainData.deathZoneY : -8;
         if (ent.y < deathZoneY && ent.hp > 0) {
