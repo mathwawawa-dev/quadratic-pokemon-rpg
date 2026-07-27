@@ -303,9 +303,9 @@ function getTerrainY(x, currentY) {
             for (let i = 0; i < ys.length; i++) {
                 const y = ys[i];
                 const b = bs[i] !== undefined ? bs[i] : -1000;
-                // 엔티티 Y위치(currentY) 아래에 있는 섬(b <= currentY + 1.0) 중에서
-                // currentY와 지면 상단(y) 사이의 거리가 가장 가까운 층을 선택 (구 +2.0 → 축소로 구름 오탐 방지)
-                if (y !== -100 && b <= currentY + 1.0) {
+                // 엔티티 Y위치(currentY) 아래에 있는 섬(b <= currentY + 2.0) 중에서
+                // currentY와 지면 상단(y) 사이의 거리가 가장 가까운 층을 선택
+                if (y !== -100 && b <= currentY + 2.0) {
                     const diff = Math.abs(currentY - y);
                     if (diff < minDiff) {
                         minDiff = diff;
@@ -318,6 +318,28 @@ function getTerrainY(x, currentY) {
         }
     }
     return Math.max(...ys);
+}
+
+// 부유 맵에서 선택된 섬의 바닥 높이를 반환. 비부유 맵이거나 감지 불가 시 -1000.
+function getTerrainBottom(x, currentY) {
+    const key = (Math.round(x * 10) / 10).toFixed(1);
+    const ys = terrainHeights[key] || [-100];
+    const bs = terrainBottoms[key] || [];
+    const currentTerrain = LEVELS[currentStage % LEVELS.length].terrain;
+    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky') && currentY !== undefined) {
+        let bestB = -1000;
+        let minDiff = 9999;
+        for (let i = 0; i < ys.length; i++) {
+            const y = ys[i];
+            const b = bs[i] !== undefined ? bs[i] : -1000;
+            if (y !== -100 && b <= currentY + 2.0) {
+                const diff = Math.abs(currentY - y);
+                if (diff < minDiff) { minDiff = diff; bestB = b; }
+            }
+        }
+        return bestB;
+    }
+    return -1000;
 }
 
 function createCrater(cx, cy, radius) {
@@ -1975,8 +1997,10 @@ function updateGame() {
                     }
                     // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지)
                     if (Math.abs(ent.vx) < 0.08 && Math.abs(ent.vy) < 0.15) {
-                        // groundY가 너무 멀리 있으면(2유닛 초과) 스냅 금지 — 부유 맵 구름 위 순간이동 방지
-                        if (Math.abs(groundY - ent.y) <= 2.0) ent.y = groundY;
+                        // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
+                        const _kb_islandB = getTerrainBottom(ent.x, ent.y);
+                        const _kb_below = _kb_islandB !== -1000 && ent.y < _kb_islandB - 0.3;
+                        if (!_kb_below) ent.y = groundY;
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
                     }
                 } else {
@@ -2027,8 +2051,10 @@ function updateGame() {
             const isGroundType = ent.type === 'ground' && !ent.isSurfaced;
             const groundOffset = (ent !== player) ? 0.95 : 0.75; // 적 포켓몬만 0.2 위로
             const groundY = getTerrainY(ent.x, ent.y) + (isGroundType ? -1.3 : groundOffset);
-            // groundY가 2유닛 이상 위에 있으면 스냅 금지 — 부유 맵에서 섬 아래 엔티티가 섬 표면으로 순간이동하는 버그 방지
-            if (ent.y > groundY + 0.1 || Math.abs(groundY - ent.y) > 2.0) { ent.vy -= 0.03; ent.y += ent.vy; }
+            // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
+            const _np_islandB = getTerrainBottom(ent.x, ent.y);
+            const _np_below = _np_islandB !== -1000 && ent.y < _np_islandB - 0.3;
+            if (ent.y > groundY + 0.1 || _np_below) { ent.vy -= 0.03; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
         const currentTerrainData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
