@@ -2047,9 +2047,9 @@ function updateGame() {
                     const _eb_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
                     const _eb_layerIdx = _eb_isFloating ? getTerrainLayerIndex(ent.x, ent.y) : -1;
                     const _eb_layerJump = _eb_isFloating && ent.groundLayerIdx >= 0 && _eb_layerIdx >= 0 && _eb_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
-                    // 거리+방향 차단: vy>0(위로 이동) && dist>1.5 → flying 적 및 같은 레이어 원거리 상향 스냅 차단
-                    // vy≤0(낙하 중) 일 때는 차단 안 함 → 위에서 내려오는 정상 착지 허용
-                    const _eb_distBlock = _eb_isFloating && (groundY - ent.y) > 1.5 && ent.vy > 0;
+                    // 부유맵: 거리+방향 차단 강화
+                    // dist>3.0이면 레이어·방향 무관하게 무조건 차단 (vy=0으로 인해 vy>0 체크가 항상 실패하므로 제거)
+                    const _eb_distBlock = _eb_isFloating && (groundY - ent.y) > 3.0;
                     if (_eb_layerJump || _eb_distBlock) {
                         ent.vx *= -0.55; // 상단 구름으로의 순간이동 차단 → 벽 처리
                     } else {
@@ -2105,10 +2105,12 @@ function updateGame() {
                 const _np_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
                 // 부유맵: 이전 착지 레이어보다 높은 레이어가 감지되고 거리 1.5초과 → 레이어 점프 → 중력 적용 (고체 지형은 항상 스냅)
                 const _np_layerJump = _np_isFloating && ent.groundLayerIdx >= 0 && _np_layerIdx >= 0 && _np_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
-                // 부유맵 추가 차단: groundLayerIdx=-1(격추된 flying 적) 또는 다른 레이어 감지 시 원거리 상향 스냅 차단
-                // 단, 같은 레이어 내의 가파른 경사 스냅은 허용 (groundLayerIdx == _np_layerIdx 이면 차단 안 함)
-                const _np_distBlock = _np_isFloating && (groundY - ent.y) > 1.5 &&
-                    (ent.groundLayerIdx < 0 || _np_layerIdx < 0 || _np_layerIdx !== ent.groundLayerIdx);
+                // 부유맵: 스냅 차단 강화 — 3유닛 초과면 레이어 추적 무관 무조건 차단
+                // (normal physics에서 ent.vx=0이므로 3유닛 초과 상향 snap은 모두 지형 변화(폭발)로 인한 버그)
+                const _np_distBlock = _np_isFloating && (
+                    (groundY - ent.y) > 3.0 ||
+                    ((groundY - ent.y) > 1.5 && (ent.groundLayerIdx < 0 || _np_layerIdx < 0 || _np_layerIdx !== ent.groundLayerIdx))
+                );
                 if (ent.y > groundY + 0.1 || _np_below || _np_layerJump || _np_distBlock) { ent.vy -= 0.03; ent.y += ent.vy; }
                 else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; if (_np_layerIdx >= 0) ent.groundLayerIdx = _np_layerIdx; }
             }
