@@ -2530,15 +2530,14 @@ function drawEntity(ent) {
     const sw = scaleLength(ent.w), sh = scaleLength(ent.h);
     ctx.save();
     if (ent.shake > 0) { sc.x += (Math.random()-0.5)*10; sc.y += (Math.random()-0.5)*10; }
-    // 비행하지 않는 포켓몬은 바닥에 딱 붙게 (0.35), 비행하는 포켓몬은 공중에 띄우기 (-0.1)
     const isSkyTerrain = (LEVELS[currentStage % LEVELS.length].terrain === 'sky');
     let bobY = 0;
     if (ent.hasCloud && ent.hp > 0) {
         const ph = ent.x * 1.7; // 고유 위상
         bobY = Math.sin(Date.now() / 400 + ph) * scaleLength(0.12);
     }
-
-        const yOff = ent.isFlying ? -sh * 0.1 : sh * 0.35;
+    // 비행하지 않는 포켓몬은 바닥에 딱 붙게 오프셋 조정 (기존 0.35에서 파묻히지 않도록 0.1로 수정)
+    const yOff = ent.isFlying ? -sh * 0.1 : sh * 0.1;
     const animY = ent.yOffAnim ? -ent.yOffAnim : 0;
     let visualYOffset = 0;
     if (ent.name === '파이리') visualYOffset = scaleLength(0.2); // 파이리 전체(오라 포함) 오프셋
