@@ -2027,7 +2027,8 @@ function updateGame() {
             const isGroundType = ent.type === 'ground' && !ent.isSurfaced;
             const groundOffset = (ent !== player) ? 0.95 : 0.75; // 적 포켓몬만 0.2 위로
             const groundY = getTerrainY(ent.x, ent.y) + (isGroundType ? -1.3 : groundOffset);
-            if (ent.y > groundY + 0.1) { ent.vy -= 0.03; ent.y += ent.vy; }
+            // groundY가 2유닛 이상 위에 있으면 스냅 금지 — 부유 맵에서 섬 아래 엔티티가 섬 표면으로 순간이동하는 버그 방지
+            if (ent.y > groundY + 0.1 || Math.abs(groundY - ent.y) > 2.0) { ent.vy -= 0.03; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
         const currentTerrainData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
