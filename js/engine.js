@@ -1950,6 +1950,11 @@ function updateGame() {
                     if (isValleyBottom && Math.abs(ent.vx) < 0.25) {
                         ent.vx = 0; // 골짜기 바닥 감쇄
                     }
+                    // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지)
+                    if (Math.abs(ent.vx) < 0.05 && Math.abs(ent.vy) < 0.1) {
+                        ent.y = groundY;
+                        ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
+                    }
                 } else {
                     // 일반적인 바닥 충돌
                     ent.y = groundY; 
