@@ -1936,7 +1936,8 @@ function updateGame() {
             const limitX = 60;
             if (ent.x - ent.w/2 < -limitX) { ent.x = -limitX + ent.w/2; ent.vx *= -0.8; }
             if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
-            const groundY = getTerrainY(ent.x, ent.y) + 0.75;
+            const enemyGroundOffset = (ent !== player) ? 0.95 : 0.75; // 적 포켓몬만 0.2 위로 올려서 발이 지면에 잠기지 않게
+            const groundY = getTerrainY(ent.x, ent.y) + enemyGroundOffset;
             const slopeRightY = getTerrainY(ent.x + 0.2, ent.y) + 0.75;
             const slopeLeftY = getTerrainY(ent.x - 0.2, ent.y) + 0.75;
             const isValleyBottom = (slopeRightY > groundY + 0.01) && (slopeLeftY > groundY + 0.01);
@@ -1987,7 +1988,8 @@ function updateGame() {
             }
         } else if (!ent.isFlying) {
             const isGroundType = ent.type === 'ground' && !ent.isSurfaced;
-            const groundY = getTerrainY(ent.x, ent.y) + (isGroundType ? -1.3 : 0.75);
+            const groundOffset = (ent !== player) ? 0.95 : 0.75; // 적 포켓몬만 0.2 위로
+            const groundY = getTerrainY(ent.x, ent.y) + (isGroundType ? -1.3 : groundOffset);
             if (ent.y > groundY + 0.1) { ent.vy -= 0.03; ent.y += ent.vy; }
             else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
         }
