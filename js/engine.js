@@ -4154,59 +4154,41 @@ function render() {
         }
     } else {
         // 지형 데이터는 -60~60 범위에서만 초기화됨.
-        // 드래그로 카메라가 범위 밖으로 벗어나면 getOrigY가 -100을 리턴해 폴리곤이 붕괴되므로
-        // 렌더 범위를 데이터 유효 범위와 교집합으로 클램핑.
-        const getOrigY = (x) => {
+        // ★ terrainHeights(크레이터로 영구 수정된 값) 사용 → craters 배열 캡 오버플로우와 무관하게
+        //    파괴된 지형이 절대 복구되지 않음. destination-out 타공 단계 불필요.
+        const getTerrainYForRender = (x) => {
             const key = (Math.round(x * 10) / 10).toFixed(1);
-            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : getTerrainY(x);
+            const curr = terrainHeights[key];
+            if (curr && curr.length > 0 && curr[0] !== -100) return curr[0];
+            const orig = originalTerrainHeights[key];
+            return (orig && orig.length > 0) ? orig[0] : getTerrainY(x);
         };
         const TERRAIN_DATA_MIN = -60;
         const TERRAIN_DATA_MAX = 60;
         const drawMinX = Math.max(X_MIN, TERRAIN_DATA_MIN);
         const drawMaxX = Math.min(X_MAX, TERRAIN_DATA_MAX);
 
-        let targetCtx = ctx;
-        let craterCanvas = null;
-        if (typeof craters !== 'undefined' && craters.length > 0) {
-            const cc = getCraterCanvas(canvas.width, canvas.height);
-            craterCanvas = cc.canvas; targetCtx = cc.ctx;
-        }
-
-        targetCtx.beginPath();
+        ctx.beginPath();
         if (drawMinX <= drawMaxX) {
-            const startP = gridToScreen(drawMinX, getOrigY(drawMinX));
-            targetCtx.moveTo(startP.x, startP.y);
+            const startP = gridToScreen(drawMinX, getTerrainYForRender(drawMinX));
+            ctx.moveTo(startP.x, startP.y);
             for (let x = drawMinX; x <= drawMaxX; x += 0.2) {
-                const p = gridToScreen(x, getOrigY(x));
-                targetCtx.lineTo(p.x, p.y);
+                const p = gridToScreen(x, getTerrainYForRender(x));
+                ctx.lineTo(p.x, p.y);
             }
             const br = gridToScreen(drawMaxX, -1000);
             const bl = gridToScreen(drawMinX, -1000);
-            targetCtx.lineTo(br.x, br.y);
-            targetCtx.lineTo(bl.x, bl.y);
+            ctx.lineTo(br.x, br.y);
+            ctx.lineTo(bl.x, bl.y);
         }
-        targetCtx.closePath();
-        targetCtx.fillStyle = tData.color;
-        targetCtx.fill();
-        targetCtx.lineWidth = 2;
-        targetCtx.strokeStyle = 'rgba(255,255,255,0.2)';
-        targetCtx.stroke();
-
-        if (craterCanvas) {
-            targetCtx.globalCompositeOperation = 'destination-out';
-            for (const crater of craters) {
-                const p = gridToScreen(crater.x, crater.y);
-                const pr = scaleLength(crater.r);
-                if (pr > 0) {
-                    targetCtx.beginPath();
-                    targetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
-                    targetCtx.fill();
-                }
-            }
-            targetCtx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(craterCanvas, 0, 0);
-        }
+        ctx.closePath();
+        ctx.fillStyle = tData.color;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.stroke();
     }
+
 
     // Grid & Axes
     const isBright = ['sky', 'ice'].includes(LEVELS[currentStage % LEVELS.length].terrain);
