@@ -1963,7 +1963,10 @@ function updateGame() {
                     }
                     
                     const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.80 : 0.55;
-                    ent.vx *= isValleyBottom ? 0.3 : iceFriction; // 골짜기 골에서는 수평 마찰력 강화
+                    let friction = isValleyBottom ? 0.3 : iceFriction;
+                    // 골짜기 진동 방지: 오르막을 오를 때(속도 방향과 경사 방향이 같을 때) 운동에너지를 크게 깎음
+                    if (ent.vx * safeSlopeDiff > 0) friction = 0.2;
+                    ent.vx *= friction;
                     ent.angularVelocity *= 0.5;
                     
                     // 골짜기 저점이거나 속도가 적을 경우 즉시 착지 정지
