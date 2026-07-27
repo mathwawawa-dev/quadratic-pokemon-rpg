@@ -1980,8 +1980,17 @@ function updateGame() {
                     }
                 } else {
                     // 일반적인 바닥 충돌
+                    const snapDist = groundY - ent.y;
+                    // ★ 수평 이동으로 경사면 타고 솟구치는 버그 방지
+                    // 스냅 거리가 이번 프레임 낙하속도(|vy|)+여유(0.3)보다 크면
+                    // → 위에서 떨어진 게 아니라 옆으로 비탈을 타고 있는 것 → 벽 처리
+                    if (snapDist > Math.abs(ent.vy) + 0.3) {
+                        ent.vx *= -0.55;
+                        // y는 스냅하지 않음 (다음 프레임에서 자연스럽게 처리)
+                    } else {
                     ent.y = groundY; 
                     ent.vy *= -0.4; 
+
                     
                     const slopeDiff = slopeRightY - slopeLeftY;
                     let safeSlopeDiff = slopeDiff;
@@ -2010,6 +2019,7 @@ function updateGame() {
                             ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
                         }
                     }
+                    } // lateral-climb 아닐 때(정상 착지) else 종료
                 }
             }
         } else if (!ent.isFlying) {
