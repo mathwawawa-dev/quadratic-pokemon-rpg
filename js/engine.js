@@ -2032,6 +2032,15 @@ function updateGame() {
                         const _kb_distBlock = _kb_isFloating && (groundY - ent.y) > 1.5;
                         if (!_kb_below && !_kb_layerJump && !_kb_distBlock) { ent.y = groundY; if (_kb_layerIdx >= 0) ent.groundLayerIdx = _kb_layerIdx; }
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
+                        // KB 정리 스냅 (부유맵 전용): KB 종료 후에도 같은 레이어 구름 아래(0.05~5유닛)에
+                        // 머물러 있는 경우 즉시 착지. normal physics에서 4~5유닛 위로 순간이동(솟구침)하거나
+                        // 그대로 추락하는 양쪽 버그를 동시에 차단하는 단일 보정 스냅.
+                        if (_kb_isFloating && !_kb_below && _kb_layerIdx >= 0 && _kb_layerIdx === ent.groundLayerIdx) {
+                            const _kb_cleanupDist = groundY - ent.y;
+                            if (_kb_cleanupDist > 0.05 && _kb_cleanupDist <= 5.5) {
+                                ent.y = groundY;
+                            }
+                        }
                     }
                 } else {
                     // 일반적인 바닥 충돌
