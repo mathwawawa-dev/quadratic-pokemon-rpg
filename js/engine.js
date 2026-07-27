@@ -2091,17 +2091,29 @@ function updateGame() {
                     }
                 }
 
-                // 구멍 생성: 구름 반경 내에 있을 때 매 서브프레임마다 추가
+                // 구멍 생성: 거리 기반 제한으로 구멍 폭증 방지 (병목④ 최적화)
                 if (dist < cloudLogicRadius) {
                     const holeR = cp.radius * 0.4;
-                    cloudHoles.push({
-                        x: missile.x + (Math.random()-0.5) * 0.2,
-                        y: missile.y + (Math.random()-0.5) * 0.2,
-                        radius: holeR,
-                        maxRadius: holeR,
-                        life: 480,
-                        maxLife: 480
-                    });
+                    // 마지막 구멍과 일정 거리 이상 떨어져야만 새 구멍 생성
+                    let shouldPunch = true;
+                    if (cloudHoles.length > 0) {
+                        const last = cloudHoles[cloudHoles.length - 1];
+                        const hdx = last.x - missile.x;
+                        const hdy = last.y - missile.y;
+                        if (hdx * hdx + hdy * hdy < holeR * holeR * 0.64) {
+                            shouldPunch = false;
+                        }
+                    }
+                    if (shouldPunch) {
+                        cloudHoles.push({
+                            x: missile.x + (Math.random()-0.5) * 0.2,
+                            y: missile.y + (Math.random()-0.5) * 0.2,
+                            radius: holeR,
+                            maxRadius: holeR,
+                            life: 480,
+                            maxLife: 480
+                        });
+                    }
                 }
             });
             missile.trail.push({ x: missile.x, y: missile.y });
