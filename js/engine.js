@@ -2536,8 +2536,8 @@ function drawEntity(ent) {
         const ph = ent.x * 1.7; // 고유 위상
         bobY = Math.sin(Date.now() / 400 + ph) * scaleLength(0.12);
     }
-    // 비행하지 않는 포켓몬은 바닥에 딱 붙게 오프셋 조정 (기존 0.35에서 파묻히지 않도록 0.1로 수정)
-    const yOff = ent.isFlying ? -sh * 0.1 : sh * 0.1;
+    // 비행하지 않는 포켓몬은 바닥에 딱 붙게 오프셋 조정 (기존 0.35에서 파묻히지 않도록 0.1로 수정했다가 다시 0.2로 조정)
+    const yOff = ent.isFlying ? -sh * 0.1 : sh * 0.2;
     const animY = ent.yOffAnim ? -ent.yOffAnim : 0;
     let visualYOffset = 0;
     if (ent.name === '파이리') visualYOffset = scaleLength(0.2); // 파이리 전체(오라 포함) 오프셋
