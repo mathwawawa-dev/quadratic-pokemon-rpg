@@ -1559,7 +1559,7 @@ function applyDamageAndEffects(target, mx, my) {
         // 사망 시 넉백 속도를 초기화하여 그 자리(체력 0 이 된 위치)에서 영혼 유령 효과로 성불 (데스존 추락 방지)
         Object.assign(target, { isKnockedBack: false, vx: 0, vy: 0, angularVelocity: 0, rotation: 0 });
     } else {
-        Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.01+0.02), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
+        Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.02+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
     }
     if (missile.type !== 'pierce' && missile.type !== 'satellite') {
         createCrater(target.x, target.y - 0.75, explosionRadius);
@@ -1987,11 +1987,12 @@ function updateGame() {
                     if (safeSlopeDiff > 2.0) safeSlopeDiff = 2.0;
                     if (safeSlopeDiff < -2.0) safeSlopeDiff = -2.0;
                     
-                    // 아이스 맵: 경사 가속 제거 (중력+마찰로 자연스러운 미끄러짐 유도)
-                    // 그 외 맵: 경사도에 비례한 가속 적용
+                    // 아이스 맵: 경사 가속 0.05 (원본 0.15의 1/3) — 완전제거 시 vx 부족으로 벽반사 진동 발생
+                    // 그 외 맵: 경사도에 비례한 가속 0.15 적용
                     const isIceMap = LEVELS[currentStage % LEVELS.length].terrain === 'ice';
-                    if (!isIceMap && Math.abs(safeSlopeDiff) > 0.05 && !isValleyBottom) {
-                        ent.vx += -safeSlopeDiff * 0.15;
+                    const slopeAccel = isIceMap ? 0.05 : 0.15;
+                    if (Math.abs(safeSlopeDiff) > 0.05 && !isValleyBottom) {
+                        ent.vx += -safeSlopeDiff * slopeAccel;
                     }
                     
                     const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.80 : 0.55;
