@@ -4077,12 +4077,12 @@ function render() {
         targetCtx.beginPath();
         const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
         targetCtx.moveTo(gStartP.x, gStartP.y);
-        for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.2)) {
+        for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.4)) {
             const p = gridToScreen(x, getOrigY(x));
             targetCtx.lineTo(p.x, p.y);
             if (x >= skyEndX) break;
         }
-        for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
+        for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.4)) {
             const p = gridToScreen(x, getOrigY(x) - 0.1625);
             targetCtx.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
@@ -4099,20 +4099,35 @@ function render() {
         targetCtx.fillStyle = grassGrad;
         targetCtx.fill();
 
-        // [수정] Dot Rim 크기 현재의 절반으로 축소 (0.2~0.4px 반경 초미세 마이크로 도트)
-        for (let x = skyStartX; x <= skyEndX; x += 0.2) {
-            const topY = getOrigY(x);
-            const p = gridToScreen(x, topY);
-            const microDotR = scaleLength(0.01 + Math.abs(Math.sin(x * 6.3)) * 0.01); // 절반 크기
+        // Dot Rim: 2가지 색상 배치 path로 묶어 fill() 2회만 호출 (300→2회 GPU flush 절감)
+        {
+            const microDotStep = 0.4;
             targetCtx.beginPath();
-            targetCtx.arc(p.x, p.y + (Math.sin(x * 11) > 0 ? 0.3 : -0.3), microDotR, 0, Math.PI * 2);
-            targetCtx.fillStyle = (Math.round(x * 10) % 2 === 0) ? 'rgba(20, 83, 45, 0.45)' : 'rgba(22, 101, 52, 0.35)';
+            for (let x = skyStartX; x <= skyEndX; x += microDotStep * 2) {
+                const topY = getOrigY(x);
+                const p = gridToScreen(x, topY);
+                const microDotR = scaleLength(0.01 + Math.abs(Math.sin(x * 6.3)) * 0.01);
+                targetCtx.moveTo(p.x + microDotR, p.y + (Math.sin(x * 11) > 0 ? 0.3 : -0.3));
+                targetCtx.arc(p.x, p.y + (Math.sin(x * 11) > 0 ? 0.3 : -0.3), microDotR, 0, Math.PI * 2);
+            }
+            targetCtx.fillStyle = 'rgba(20, 83, 45, 0.45)';
+            targetCtx.fill();
+
+            targetCtx.beginPath();
+            for (let x = skyStartX + microDotStep; x <= skyEndX; x += microDotStep * 2) {
+                const topY = getOrigY(x);
+                const p = gridToScreen(x, topY);
+                const microDotR = scaleLength(0.01 + Math.abs(Math.sin(x * 6.3)) * 0.01);
+                targetCtx.moveTo(p.x + microDotR, p.y + (Math.sin(x * 11) > 0 ? 0.3 : -0.3));
+                targetCtx.arc(p.x, p.y + (Math.sin(x * 11) > 0 ? 0.3 : -0.3), microDotR, 0, Math.PI * 2);
+            }
+            targetCtx.fillStyle = 'rgba(22, 101, 52, 0.35)';
             targetCtx.fill();
         }
 
-        // 통나무 경계 얇은 흙/이끼 띠 (Soil Border: 하단에 얇고 자연스럽게 이어진 토양 마감)
+        // 통나무 경계 얇은 흙/이끼 띠 (Soil Border)
         targetCtx.beginPath();
-        for (let x = skyStartX; x <= skyEndX; x += 0.2) {
+        for (let x = skyStartX; x <= skyEndX; x += 0.4) {
             const bp = gridToScreen(x, getOrigY(x) - 0.1625);
             if (x === skyStartX) targetCtx.moveTo(bp.x, bp.y);
             else targetCtx.lineTo(bp.x, bp.y);
