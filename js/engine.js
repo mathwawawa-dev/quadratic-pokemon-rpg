@@ -42,7 +42,7 @@ let player = {
     img: null, isFlying: false,
     shake: 0, vx: 0, vy: 0,
     rotation: 0, angularVelocity: 0,
-    isKnockedBack: false, facing: 1,
+    isKnockedBack: false, facing: 1, groundLayerIdx: -1,
     name: '', movePoints: 2, maxMovePoints: 2
 };
 let enemies = [];
@@ -340,6 +340,26 @@ function getTerrainBottom(x, currentY) {
         return bestB;
     }
     return -1000;
+}
+
+// 부유 맵에서 getTerrainY가 선택한 레이어의 인덱스를 반환. 비부유맵/감지불가 = -1.
+function getTerrainLayerIndex(x, currentY) {
+    const key = (Math.round(x * 10) / 10).toFixed(1);
+    const ys = terrainHeights[key] || [-100];
+    const bs = terrainBottoms[key] || [];
+    const currentTerrain = LEVELS[currentStage % LEVELS.length].terrain;
+    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky') && currentY !== undefined) {
+        let bestIdx = -1, minDiff = 9999;
+        for (let i = 0; i < ys.length; i++) {
+            const y = ys[i], b = bs[i] !== undefined ? bs[i] : -1000;
+            if (y !== -100 && b <= currentY + 2.0) {
+                const diff = Math.abs(currentY - y);
+                if (diff < minDiff) { minDiff = diff; bestIdx = i; }
+            }
+        }
+        return bestIdx;
+    }
+    return -1;
 }
 
 function createCrater(cx, cy, radius) {
@@ -850,7 +870,7 @@ function initStage() {
             isFlying: e.isFlying || isSkyMap,
             hasCloud: isSkyMap,
             shake: 0, vx: 0, vy: 0,
-            rotation: 0, angularVelocity: 0, isKnockedBack: false,
+            rotation: 0, angularVelocity: 0, isKnockedBack: false, groundLayerIdx: -1,
             name: e.name, type: e.type,
             isSurfaced: TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating ? true : false,
             barrierType: barrierType,
@@ -1997,12 +2017,14 @@ function updateGame() {
                     }
                     // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지)
                     if (Math.abs(ent.vx) < 0.08 && Math.abs(ent.vy) < 0.15) {
-                        // 부유맵: 섬 바닥 아래이거나, 1.5유닛 초과 상향 스냅은 차단 (다른 층 구름으로 순간이동 방지)
+                        // 부유맵: 섬 바닥 아래이거나, 하단→상단 레이어 점프(상향 텔레포트) 차단
                         const _kb_islandB = getTerrainBottom(ent.x, ent.y);
                         const _kb_below = _kb_islandB !== -1000 && ent.y < _kb_islandB + 0.1;
+                        const _kb_layerIdx = getTerrainLayerIndex(ent.x, ent.y);
                         const _kb_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-                        const _kb_tooFar = _kb_isFloating && (groundY - ent.y) > 1.5;
-                        if (!_kb_below && !_kb_tooFar) ent.y = groundY;
+                        // 부유맵에서: 현재 감지 레이어가 이전 착지 레이어보다 높고(더 낮은 idx), 거리도 1.5초과 → 레이어 점프 → 스냅 차단
+                        const _kb_layerJump = _kb_isFloating && ent.groundLayerIdx >= 0 && _kb_layerIdx >= 0 && _kb_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
+                        if (!_kb_below && !_kb_layerJump) { ent.y = groundY; if (_kb_layerIdx >= 0) ent.groundLayerIdx = _kb_layerIdx; }
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
                     }
                 } else {
@@ -2061,11 +2083,12 @@ function updateGame() {
                 // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
                 const _np_islandB = getTerrainBottom(ent.x, ent.y);
                 const _np_below = _np_islandB !== -1000 && ent.y < _np_islandB + 0.1;
-                // 부유맵: 1.5유닛 초과 상향 스냅 차단 (하단 구름 파괴 후 상단 구름으로 순간이동 방지). 고체 지형은 항상 스냅.
+                const _np_layerIdx = getTerrainLayerIndex(ent.x, ent.y);
                 const _np_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-                const _np_tooFar = _np_isFloating && (groundY - ent.y) > 1.5;
-                if (ent.y > groundY + 0.1 || _np_below || _np_tooFar) { ent.vy -= 0.03; ent.y += ent.vy; }
-                else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
+                // 부유맵: 이전 착지 레이어보다 높은 레이어가 감지되고 거리 1.5초과 → 레이어 점프 → 중력 적용 (고체 지형은 항상 스냅)
+                const _np_layerJump = _np_isFloating && ent.groundLayerIdx >= 0 && _np_layerIdx >= 0 && _np_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
+                if (ent.y > groundY + 0.1 || _np_below || _np_layerJump) { ent.vy -= 0.03; ent.y += ent.vy; }
+                else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; if (_np_layerIdx >= 0) ent.groundLayerIdx = _np_layerIdx; }
             }
         }
         const currentTerrainData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
