@@ -2102,7 +2102,11 @@ function updateGame() {
                 const _np_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
                 // 부유맵: 이전 착지 레이어보다 높은 레이어가 감지되고 거리 1.5초과 → 레이어 점프 → 중력 적용 (고체 지형은 항상 스냅)
                 const _np_layerJump = _np_isFloating && ent.groundLayerIdx >= 0 && _np_layerIdx >= 0 && _np_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
-                if (ent.y > groundY + 0.1 || _np_below || _np_layerJump) { ent.vy -= 0.03; ent.y += ent.vy; }
+                // 부유맵 추가 차단: groundLayerIdx=-1(격추된 flying 적) 또는 다른 레이어 감지 시 원거리 상향 스냅 차단
+                // 단, 같은 레이어 내의 가파른 경사 스냅은 허용 (groundLayerIdx == _np_layerIdx 이면 차단 안 함)
+                const _np_distBlock = _np_isFloating && (groundY - ent.y) > 1.5 &&
+                    (ent.groundLayerIdx < 0 || _np_layerIdx < 0 || _np_layerIdx !== ent.groundLayerIdx);
+                if (ent.y > groundY + 0.1 || _np_below || _np_layerJump || _np_distBlock) { ent.vy -= 0.03; ent.y += ent.vy; }
                 else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; if (_np_layerIdx >= 0) ent.groundLayerIdx = _np_layerIdx; }
             }
         }
