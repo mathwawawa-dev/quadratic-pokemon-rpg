@@ -1997,10 +1997,12 @@ function updateGame() {
                     }
                     // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지)
                     if (Math.abs(ent.vx) < 0.08 && Math.abs(ent.vy) < 0.15) {
-                        // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
+                        // 부유맵: 섬 바닥 아래이거나, 1.5유닛 초과 상향 스냅은 차단 (다른 층 구름으로 순간이동 방지)
                         const _kb_islandB = getTerrainBottom(ent.x, ent.y);
                         const _kb_below = _kb_islandB !== -1000 && ent.y < _kb_islandB + 0.1;
-                        if (!_kb_below) ent.y = groundY;
+                        const _kb_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
+                        const _kb_tooFar = _kb_isFloating && (groundY - ent.y) > 1.5;
+                        if (!_kb_below && !_kb_tooFar) ent.y = groundY;
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
                     }
                 } else {
@@ -2059,7 +2061,10 @@ function updateGame() {
                 // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
                 const _np_islandB = getTerrainBottom(ent.x, ent.y);
                 const _np_below = _np_islandB !== -1000 && ent.y < _np_islandB + 0.1;
-                if (ent.y > groundY + 0.1 || _np_below) { ent.vy -= 0.03; ent.y += ent.vy; }
+                // 부유맵: 1.5유닛 초과 상향 스냅 차단 (하단 구름 파괴 후 상단 구름으로 순간이동 방지). 고체 지형은 항상 스냅.
+                const _np_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
+                const _np_tooFar = _np_isFloating && (groundY - ent.y) > 1.5;
+                if (ent.y > groundY + 0.1 || _np_below || _np_tooFar) { ent.vy -= 0.03; ent.y += ent.vy; }
                 else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
             }
         }
