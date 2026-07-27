@@ -1935,6 +1935,8 @@ function updateGame() {
             return;
         }
         if (ent.isKnockedBack) {
+            // ★ isFloatingMapLocal 반드시 첫 사용 이전에 선언 — TDZ ReferenceError 방지
+            const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
             // 다음 x 위치의 지형 높이를 미리 확인 — 급경사(언덕/스파이크 벽)에 올라타는 순간 점프 방지
             const nextX   = ent.x + ent.vx;
             const nextGY  = getTerrainY(nextX, ent.y) + 0.75;
@@ -1949,7 +1951,6 @@ function updateGame() {
             ent.y += ent.vy;
             ent.rotation += ent.angularVelocity;
             ent.vy -= 0.03; // 중력 가속도 1.5배 상향 (-0.02 -> -0.03)
-            const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
             const limitX = 60;
             if (ent.x - ent.w/2 < -limitX) { ent.x = -limitX + ent.w/2; ent.vx *= -0.8; }
             if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
