@@ -4356,12 +4356,15 @@ function render() {
             ctx.save();
             ctx.translate(sc.x, sc.y);
             
-            // 엔진 스크린 y축은 아래가 양수이므로:
-            // -h/2 (위쪽)을 넓게, h/2 (아래쪽)을 뾰족하게
+            // 뾰족한 화살촉 모양 대신 둔탁하고 둥글둥글한 바위 모양으로 변경
             ctx.beginPath();
-            ctx.moveTo(0, h/2);      // 아래쪽 끝 (뾰족)
-            ctx.lineTo(-w/2, -h/2);  // 왼쪽 위
-            ctx.lineTo(w/2, -h/2);   // 오른쪽 위
+            ctx.moveTo(0, h/2.5);
+            ctx.lineTo(-w/1.2, h/4);
+            ctx.lineTo(-w/1.2, -h/4);
+            ctx.lineTo(-w/2.5, -h/2.5);
+            ctx.lineTo(w/2.5, -h/2.5);
+            ctx.lineTo(w/1.2, -h/4);
+            ctx.lineTo(w/1.2, h/4);
             ctx.closePath();
             
             // 바위색 그라데이션
