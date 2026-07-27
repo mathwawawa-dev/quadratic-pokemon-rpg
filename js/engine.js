@@ -2043,12 +2043,12 @@ function updateGame() {
                         ent.vx *= -0.55;
                         // y는 스냅하지 않음 (다음 프레임에서 자연스럽게 처리)
                     } else {
-                    // 부유맵: 하단→상단 레이어 점프 스냅 차단 (빠른 상향 이동으로 상단 구름에 닿는 경우 포함)
+                    // 부유맵: else branch에서 dist는 항상 ≤1.5이므로 원래 dist>1.5 조건은 dead code
+                    // → 제거하여 layerJump 실제 작동: groundLayerIdx보다 낮은(높은 고도) 레이어 스냅 차단
                     const _eb_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
                     const _eb_layerIdx = _eb_isFloating ? getTerrainLayerIndex(ent.x, ent.y) : -1;
-                    const _eb_layerJump = _eb_isFloating && ent.groundLayerIdx >= 0 && _eb_layerIdx >= 0 && _eb_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
-                    // 부유맵: 거리+방향 차단 강화
-                    // dist>3.0이면 레이어·방향 무관하게 무조건 차단 (vy=0으로 인해 vy>0 체크가 항상 실패하므로 제거)
+                    const _eb_layerJump = _eb_isFloating && ent.groundLayerIdx >= 0 && _eb_layerIdx >= 0 && _eb_layerIdx < ent.groundLayerIdx;
+                    // dist>3.0 절대 차단 제거 (KB 종료 후 구름보다 3+유닛 아래 entity의 정상 스냅도 막는 회귀 유발)
                     const _eb_distBlock = _eb_isFloating && (groundY - ent.y) > 3.0;
                     if (_eb_layerJump || _eb_distBlock) {
                         ent.vx *= -0.55; // 상단 구름으로의 순간이동 차단 → 벽 처리
@@ -2105,12 +2105,10 @@ function updateGame() {
                 const _np_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
                 // 부유맵: 이전 착지 레이어보다 높은 레이어가 감지되고 거리 1.5초과 → 레이어 점프 → 중력 적용 (고체 지형은 항상 스냅)
                 const _np_layerJump = _np_isFloating && ent.groundLayerIdx >= 0 && _np_layerIdx >= 0 && _np_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
-                // 부유맵: 스냅 차단 강화 — 3유닛 초과면 레이어 추적 무관 무조건 차단
-                // (normal physics에서 ent.vx=0이므로 3유닛 초과 상향 snap은 모두 지형 변화(폭발)로 인한 버그)
-                const _np_distBlock = _np_isFloating && (
-                    (groundY - ent.y) > 3.0 ||
-                    ((groundY - ent.y) > 1.5 && (ent.groundLayerIdx < 0 || _np_layerIdx < 0 || _np_layerIdx !== ent.groundLayerIdx))
-                );
+                // 부유맵: 스냅 차단 — 다른 레이어(더 높은 구름)이면 원거리 스냅 차단
+                // dist>3.0 절대거리 차단은 제거: KB 종료 후 entity가 구름 아래 3+유닛에 있을 때 정상 스냅도 막는 회귀 유발
+                const _np_distBlock = _np_isFloating && (groundY - ent.y) > 1.5 &&
+                    (ent.groundLayerIdx < 0 || _np_layerIdx < 0 || _np_layerIdx !== ent.groundLayerIdx);
                 if (ent.y > groundY + 0.1 || _np_below || _np_layerJump || _np_distBlock) { ent.vy -= 0.03; ent.y += ent.vy; }
                 else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; if (_np_layerIdx >= 0) ent.groundLayerIdx = _np_layerIdx; }
             }
