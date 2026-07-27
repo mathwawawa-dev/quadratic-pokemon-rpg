@@ -71,6 +71,21 @@ let cloudParams = [
 let cloudHoles = []; // { x, y, radius, maxRadius, life, maxLife }
 // 크레이터 데이터 (도형 기반 지형을 지우기 위해 유지)
 let craters = [];
+// 크레이터 마스킹용 오프스크린 캔버스 — 매 프레임 new canvas 생성 방지 (GC 병목 제거)
+let _craterCanvas = null;
+let _craterCtx = null;
+function getCraterCanvas(w, h) {
+    if (!_craterCanvas) {
+        _craterCanvas = document.createElement('canvas');
+        _craterCtx = _craterCanvas.getContext('2d');
+    }
+    if (_craterCanvas.width !== w || _craterCanvas.height !== h) {
+        _craterCanvas.width = w;
+        _craterCanvas.height = h;
+    }
+    _craterCtx.clearRect(0, 0, w, h);
+    return { canvas: _craterCanvas, ctx: _craterCtx };
+}
 
 // ---------- 포켓볼 이미지 프리로드 ----------
 const pokeballImg = new Image();
@@ -308,6 +323,8 @@ function createCrater(cx, cy, radius) {
     
     if (typeof craters !== 'undefined') {
         craters.push({x: cx, y: cy, r: radius});
+        // terrainHeights는 이미 영구 수정됐으므로 오래된 crater 시각 데이터는 제거해도 무방
+        if (craters.length > 20) craters.shift();
     }
 
     for (let x = cx - radius; x <= cx + radius; x += 0.1) {
@@ -3851,10 +3868,8 @@ function render() {
         let targetCtx = ctx;
         let craterCanvas = null;
         if (typeof craters !== 'undefined' && craters.length > 0) {
-            craterCanvas = document.createElement('canvas');
-            craterCanvas.width = canvas.width;
-            craterCanvas.height = canvas.height;
-            targetCtx = craterCanvas.getContext('2d');
+            const cc = getCraterCanvas(canvas.width, canvas.height);
+            craterCanvas = cc.canvas; targetCtx = cc.ctx;
         }
 
         const getOrigY = (x) => {
@@ -3918,10 +3933,8 @@ function render() {
         let targetCtx = ctx;
         let craterCanvas = null;
         if (typeof craters !== 'undefined' && craters.length > 0) {
-            craterCanvas = document.createElement('canvas');
-            craterCanvas.width = canvas.width;
-            craterCanvas.height = canvas.height;
-            targetCtx = craterCanvas.getContext('2d');
+            const cc = getCraterCanvas(canvas.width, canvas.height);
+            craterCanvas = cc.canvas; targetCtx = cc.ctx;
         }
 
         const getOrigY = (x) => {
@@ -4136,10 +4149,8 @@ function render() {
         let targetCtx = ctx;
         let craterCanvas = null;
         if (typeof craters !== 'undefined' && craters.length > 0) {
-            craterCanvas = document.createElement('canvas');
-            craterCanvas.width = canvas.width;
-            craterCanvas.height = canvas.height;
-            targetCtx = craterCanvas.getContext('2d');
+            const cc = getCraterCanvas(canvas.width, canvas.height);
+            craterCanvas = cc.canvas; targetCtx = cc.ctx;
         }
 
         targetCtx.beginPath();
