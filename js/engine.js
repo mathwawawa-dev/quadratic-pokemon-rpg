@@ -1484,8 +1484,10 @@ function applyDamageAndEffects(target, mx, my) {
     
     if (target.hasCloud) {
         target.hasCloud = false;
-        target.isFlying = false;
         createCloudPop(target.x, target.y - 0.75);
+    }
+    if (target.isFlying) {
+        target.isFlying = false; // 공중에 떠있는 포켓몬이 피격 시 추락하여 지면에 정상적으로 정착하도록 비행 상태 해제
     }
     const dx = target.x - mx, dy = target.y - my;
     const dist = Math.sqrt(dx*dx + dy*dy);
