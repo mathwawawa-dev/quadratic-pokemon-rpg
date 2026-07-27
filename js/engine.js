@@ -26,6 +26,9 @@ canvas.addEventListener('mouseleave', () => {
 
 // ---------- Coordinate System ----------
 let X_MIN = -10, X_MAX = 20, Y_MIN = -15, Y_MAX = 25;
+
+let caveCeilingCanvas = null;
+let needsCaveRedraw = true;
 let CELL_SIZE = 1;
 
 // ---------- Game State ----------
@@ -101,6 +104,7 @@ function scaleLength(len) { return len * CELL_SIZE; }
 
 // ---------- Resize / Viewport ----------
 function resize() {
+    needsCaveRedraw = true;
     if (!window.innerWidth) return;
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -143,6 +147,7 @@ function resize() {
 window.addEventListener('resize', resize);
 
 function resetView() {
+    needsCaveRedraw = true;
     if (!window.innerWidth) return;
     const aspect = window.innerWidth / window.innerHeight;
     
@@ -2622,8 +2627,8 @@ function drawEntity(ent) {
     if (ent.hasCloud && ent.hp > 0) {
         ctx.save();
         ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
-        // 구름 받침 shadowBlur: IDLE 중에는 비활성화하여 CPU 부하 감소
-        if (isFiring) { ctx.shadowColor = 'rgba(255, 255, 255, 0.6)'; ctx.shadowBlur = 10; }
+        // 구름 받침 shadowBlur: 발사 중에는 완전히 비활성화하여 렉 방지
+        // if (isFiring) { ctx.shadowColor = 'rgba(255, 255, 255, 0.6)'; ctx.shadowBlur = 10; }
         
         const cloudW = drawW * 0.85;
         const cloudH = drawH * 0.32;
@@ -3507,7 +3512,8 @@ function render() {
             
             // 1. 베이스 색상 단단하게 채우기
             octx.fillStyle = `rgba(${rgb}, ${alpha})`;
-            if (isFiring) { octx.shadowColor = `rgba(${rgb}, 0.8)`; octx.shadowBlur = 15 + (pulse || 0) * 5; }
+            // 발사 중 shadowBlur 비활성화
+            // if (isFiring) { octx.shadowColor = `rgba(${rgb}, 0.8)`; octx.shadowBlur = 15 + (pulse || 0) * 5; }
             octx.fill();
             
             // 2. 은은한 파스텔(진주운) 효과만 덧입히기
@@ -3612,59 +3618,71 @@ function render() {
         return (typeof ceilHeights !== 'undefined' && ceilHeights[key] !== undefined) ? ceilHeights[key] : (tData.ceilFunc ? tData.ceilFunc(x) : 1000);
     };
     if (tData.hasCaveWall && tData.ceilFunc) {
-        const caveMinX = -60, caveMaxX = 60;
+        if (needsCaveRedraw || !caveCeilingCanvas) {
+            if (!caveCeilingCanvas) {
+                caveCeilingCanvas = document.createElement('canvas');
+            }
+            caveCeilingCanvas.width = canvas.width;
+            caveCeilingCanvas.height = canvas.height;
+            const cCtx = caveCeilingCanvas.getContext('2d');
+            const caveMinX = -60, caveMaxX = 60;
 
-        // 1. 외곽 어두운 영역 (evenodd 방식 사용) - 단색 #0d0d0d 배경 처리
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(-10, -10, canvas.width + 20, canvas.height + 20); // 전체 화면
+            // 1. 외곽 어두운 영역 (evenodd 방식 사용) - 단색 #0d0d0d 배경 처리
+            cCtx.save();
+            cCtx.beginPath();
+            cCtx.rect(-10, -10, caveCeilingCanvas.width + 20, caveCeilingCanvas.height + 20); // 전체 화면
+            
+            // 구멍 파기 (CCW)
+            const sp2 = gridToScreen(caveMinX, getCeilY(caveMinX));
+            cCtx.moveTo(-10, caveCeilingCanvas.height + 10);
+            cCtx.lineTo(caveCeilingCanvas.width + 10, caveCeilingCanvas.height + 10);
+            const ep2 = gridToScreen(caveMaxX, getCeilY(caveMaxX));
+            cCtx.lineTo(ep2.x, ep2.y);
+            for (let x = caveMaxX; x >= caveMinX; x -= 0.5) { // 0.2 -> 0.5로 캐시 렌더링 최적화
+                const p = gridToScreen(Math.max(x, caveMinX), getCeilY(Math.max(x, caveMinX)));
+                cCtx.lineTo(p.x, p.y);
+            }
+            cCtx.lineTo(-10, caveCeilingCanvas.height + 10);
+            cCtx.closePath();
+
+            cCtx.fillStyle = '#0d0d0d';
+            cCtx.fill('evenodd');
+            cCtx.restore();
+            
+            // 2. 천장 바위(암석) 내부 채우기 (화면 상단으로)
+            cCtx.save();
+            cCtx.beginPath();
+            const cEdge2 = gridToScreen(caveMinX, getCeilY(caveMinX));
+            cCtx.moveTo(cEdge2.x, cEdge2.y);
+            for (let x = caveMinX; x <= caveMaxX; x += 0.5) {
+                const p = gridToScreen(Math.min(x, caveMaxX), getCeilY(Math.min(x, caveMaxX)));
+                cCtx.lineTo(p.x, p.y);
+            }
+            cCtx.lineTo(caveCeilingCanvas.width + 10, -10);
+            cCtx.lineTo(-10, -10);
+            cCtx.closePath();
+            cCtx.fillStyle = tData.color || '#595959';
+            cCtx.fill();
+            cCtx.restore();
+
+            // 3. 천장 테두리선 (암석 윤곽)
+            cCtx.save();
+            cCtx.beginPath();
+            const cEdge = gridToScreen(caveMinX, getCeilY(caveMinX));
+            cCtx.moveTo(cEdge.x, cEdge.y);
+            for (let x = caveMinX; x <= caveMaxX; x += 0.5) {
+                const p = gridToScreen(Math.min(x, caveMaxX), getCeilY(Math.min(x, caveMaxX)));
+                cCtx.lineTo(p.x, p.y);
+            }
+            cCtx.strokeStyle = 'rgba(130,130,130,0.7)';
+            cCtx.lineWidth = 3;
+            cCtx.stroke();
+            cCtx.restore();
+
+            needsCaveRedraw = false;
+        }
         
-        // 구멍 파기 (CCW)
-        const sp2 = gridToScreen(caveMinX, getCeilY(caveMinX));
-        ctx.moveTo(-10, canvas.height + 10);
-        ctx.lineTo(canvas.width + 10, canvas.height + 10);
-        const ep2 = gridToScreen(caveMaxX, getCeilY(caveMaxX));
-        ctx.lineTo(ep2.x, ep2.y);
-        for (let x = caveMaxX; x >= caveMinX; x -= 0.2) {
-            const p = gridToScreen(Math.max(x, caveMinX), getCeilY(Math.max(x, caveMinX)));
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.lineTo(-10, canvas.height + 10);
-        ctx.closePath();
-
-        ctx.fillStyle = '#0d0d0d';
-        ctx.fill('evenodd');
-        ctx.restore();
-        
-        // 2. 천장 바위(암석) 내부 채우기 (화면 상단으로)
-        ctx.save();
-        ctx.beginPath();
-        const cEdge2 = gridToScreen(caveMinX, getCeilY(caveMinX));
-        ctx.moveTo(cEdge2.x, cEdge2.y);
-        for (let x = caveMinX; x <= caveMaxX; x += 0.2) {
-            const p = gridToScreen(Math.min(x, caveMaxX), getCeilY(Math.min(x, caveMaxX)));
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.lineTo(canvas.width + 10, -10);
-        ctx.lineTo(-10, -10);
-        ctx.closePath();
-        ctx.fillStyle = tData.color || '#595959';
-        ctx.fill();
-        ctx.restore();
-
-        // 3. 천장 테두리선 (암석 윤곽)
-        ctx.save();
-        ctx.beginPath();
-        const cEdge = gridToScreen(caveMinX, getCeilY(caveMinX));
-        ctx.moveTo(cEdge.x, cEdge.y);
-        for (let x = caveMinX; x <= caveMaxX; x += 0.2) {
-            const p = gridToScreen(Math.min(x, caveMaxX), getCeilY(Math.min(x, caveMaxX)));
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.strokeStyle = 'rgba(130,130,130,0.7)';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.restore();
+        ctx.drawImage(caveCeilingCanvas, 0, 0);
     }
 
     // Terrain polygon
@@ -4248,9 +4266,9 @@ function render() {
 
         ctx.save();
         // 글로우 (종류에 따라 색상)
-        // 포켓볼 글로우: IDLE 중에는 가벼운 고정값, FIRING 중에는 맥박 글로우
+        // 포켓볼 글로우: 발사 중에는 발광 끄기 (성능 최적화)
         ctx.shadowColor = b.type === 'gold' ? '#fbbf24' : '#ef4444';
-        ctx.shadowBlur  = isFiring ? 18 + Math.sin(tNow * 2.0 + b.phase) * 6 : 8;
+        ctx.shadowBlur  = isFiring ? 0 : 8;
         // 포켓볼 이미지 그리기
         if (pokeballImg && pokeballImg.complete && pokeballImg.naturalWidth > 0) {
             ctx.imageSmoothingEnabled = false;
