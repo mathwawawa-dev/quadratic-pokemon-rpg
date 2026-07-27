@@ -1602,7 +1602,10 @@ function applyDamageAndEffects(target, mx, my) {
         // 사망 시 넉백 속도를 초기화하여 그 자리(체력 0 이 된 위치)에서 영혼 유령 효과로 성불 (데스존 추락 방지)
         Object.assign(target, { isKnockedBack: false, vx: 0, vy: 0, angularVelocity: 0, rotation: 0 });
     } else {
-        Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.02+0.04), vy: 0.08+Math.random()*0.06, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
+        const _kb_isFloatingMap = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
+        // 부유맵: 넉백 시 위로 튀지 않도록 vy=0 (수평 넉백만 적용)
+        const _kb_vyInit = _kb_isFloatingMap ? 0 : 0.08 + Math.random() * 0.06;
+        Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.02+0.04), vy: _kb_vyInit, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
     }
     if (missile.type !== 'pierce' && missile.type !== 'satellite') {
         createCrater(target.x, target.y - 0.75, explosionRadius);
@@ -2109,17 +2112,6 @@ function updateGame() {
                 if (ent.y > groundY + 0.1 || _np_below || _np_layerJump || _np_distBlock) { ent.vy -= 0.03; ent.y += ent.vy; }
                 else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; if (_np_layerIdx >= 0) ent.groundLayerIdx = _np_layerIdx; }
             }
-        }
-        // ── 부유맵 최종 방어선: 한 프레임에 2유닛 초과 y 상승은 물리적으로 불가능 ──
-        // (최대 vy=0.14/프레임, 정상 착지 스냅=0~1유닛) → 더 크면 무조건 버그 → 되돌림
-        const _isFinalFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-        if (_isFinalFloating) {
-            if (ent._prevPhysicsY === undefined) ent._prevPhysicsY = ent.y;
-            if (ent.y - ent._prevPhysicsY > 2.0) {
-                ent.y = ent._prevPhysicsY;
-                ent.vy = Math.min(ent.vy, 0);
-            }
-            ent._prevPhysicsY = ent.y;
         }
         const currentTerrainData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
         const deathZoneY = currentTerrainData.deathZoneY !== undefined ? currentTerrainData.deathZoneY : -8;
