@@ -1938,8 +1938,8 @@ function updateGame() {
             if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
             const enemyGroundOffset = (ent !== player) ? 0.95 : 0.75; // 적 포켓몬만 0.2 위로 올려서 발이 지면에 잠기지 않게
             const groundY = getTerrainY(ent.x, ent.y) + enemyGroundOffset;
-            const slopeRightY = getTerrainY(ent.x + 0.2, ent.y) + 0.75;
-            const slopeLeftY = getTerrainY(ent.x - 0.2, ent.y) + 0.75;
+            const slopeRightY = getTerrainY(ent.x + 0.2, ent.y) + enemyGroundOffset; // groundY와 동일한 offset 사용해야 isValleyBottom 판정이 정확함
+            const slopeLeftY = getTerrainY(ent.x - 0.2, ent.y) + enemyGroundOffset;
             const isValleyBottom = (slopeRightY > groundY + 0.01) && (slopeLeftY > groundY + 0.01);
 
             if (ent.y < groundY) {
@@ -1951,8 +1951,8 @@ function updateGame() {
                     if (isValleyBottom && Math.abs(ent.vx) < 0.25) {
                         ent.vx = 0; // 골짜기 바닥 감쇄
                     }
-                    // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지)
-                    if (Math.abs(ent.vx) < 0.05 && Math.abs(ent.vy) < 0.1) {
+                    // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지) - 임계값 상향
+                    if (Math.abs(ent.vx) < 0.08 && Math.abs(ent.vy) < 0.15) {
                         ent.y = groundY;
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
                     }
