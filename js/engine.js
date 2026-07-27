@@ -1999,7 +1999,7 @@ function updateGame() {
                     if (Math.abs(ent.vx) < 0.08 && Math.abs(ent.vy) < 0.15) {
                         // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
                         const _kb_islandB = getTerrainBottom(ent.x, ent.y);
-                        const _kb_below = _kb_islandB !== -1000 && ent.y < _kb_islandB - 0.3;
+                        const _kb_below = _kb_islandB !== -1000 && ent.y < _kb_islandB + 0.1;
                         if (!_kb_below) ent.y = groundY;
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
                     }
@@ -2058,7 +2058,7 @@ function updateGame() {
             if (!ent.isFlying || _isOverVoid) {
                 // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
                 const _np_islandB = getTerrainBottom(ent.x, ent.y);
-                const _np_below = _np_islandB !== -1000 && ent.y < _np_islandB - 0.3;
+                const _np_below = _np_islandB !== -1000 && ent.y < _np_islandB + 0.1;
                 if (ent.y > groundY + 0.1 || _np_below) { ent.vy -= 0.03; ent.y += ent.vy; }
                 else { ent.y = Math.max(groundY, ent.y); ent.vy = 0; }
             }
