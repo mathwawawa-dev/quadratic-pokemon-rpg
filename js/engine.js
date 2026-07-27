@@ -1922,9 +1922,9 @@ function updateGame() {
             const nextX   = ent.x + ent.vx;
             const nextGY  = getTerrainY(nextX, ent.y) + 0.75;
             const currGY  = getTerrainY(ent.x, ent.y)  + 0.75;
-            // 다음 위치의 지형이 현재 y보다 0.3~3.0 높을 때만 같은 층의 "벽"으로 간주 → vx 반사, x는 유지
-            // (차이가 3.0 초과 시 상단 다른 부유섬 층이므로 수평 이동을 막지 않고 통과)
-            if (nextGY > ent.y + 0.3 && nextGY <= ent.y + 3.0) {
+            // 다음 위치의 지형이 현재 y보다 0.3 이상 높으면 "벽"으로 간주 → vx 반사, x는 유지
+            // 단, 부유 맵(isFloating)에서 차이가 3.0 초과인 경우만 "다른 섬 층"으로 간주하여 통과 허용
+            if (nextGY > ent.y + 0.3 && (nextGY <= ent.y + 3.0 || !isFloatingMapLocal)) {
                 ent.vx *= -0.55;
             } else {
                 ent.x = nextX;
