@@ -326,8 +326,9 @@ function createCrater(cx, cy, radius) {
     
     if (typeof craters !== 'undefined') {
         craters.push({x: cx, y: cy, r: radius});
-        // terrainHeights는 이미 영구 수정됐으므로 오래된 crater 시각 데이터는 제거해도 무방
-        if (craters.length > 20) craters.shift();
+        // 일반 지형은 terrainHeights 기반 렌더링으로 캡 무관; 부유·sky·log_bridge는 destination-out 방식을 사용하므로
+        // 캡을 100으로 높여 오래된 크레이터 제거로 인한 지형 복구 버그 방지
+        if (craters.length > 100) craters.shift();
     }
 
     for (let x = cx - radius; x <= cx + radius; x += 0.1) {
