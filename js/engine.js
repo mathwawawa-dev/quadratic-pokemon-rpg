@@ -303,9 +303,9 @@ function getTerrainY(x, currentY) {
             for (let i = 0; i < ys.length; i++) {
                 const y = ys[i];
                 const b = bs[i] !== undefined ? bs[i] : -1000;
-                // 대상의 현재 Y위치(currentY)보다 아래에 있는 섬(b <= currentY + 2.0) 중에서
-                // currentY와 지면 상단(y) 사이의 거리가 가장 가까운 층을 선택함! (상단 레이어로 껑충 점프 방지)
-                if (y !== -100 && b <= currentY + 2.0) {
+                // 엔티티 Y위치(currentY) 아래에 있는 섬(b <= currentY + 1.0) 중에서
+                // currentY와 지면 상단(y) 사이의 거리가 가장 가까운 층을 선택 (구 +2.0 → 축소로 구름 오탐 방지)
+                if (y !== -100 && b <= currentY + 1.0) {
                     const diff = Math.abs(currentY - y);
                     if (diff < minDiff) {
                         minDiff = diff;
@@ -1973,9 +1973,10 @@ function updateGame() {
                     if (isValleyBottom && Math.abs(ent.vx) < 0.25) {
                         ent.vx = 0; // 골짜기 바닥 감쇄
                     }
-                    // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지) - 임계값 상향
+                    // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지)
                     if (Math.abs(ent.vx) < 0.08 && Math.abs(ent.vy) < 0.15) {
-                        ent.y = groundY;
+                        // groundY가 너무 멀리 있으면(2유닛 초과) 스냅 금지 — 부유 맵 구름 위 순간이동 방지
+                        if (Math.abs(groundY - ent.y) <= 2.0) ent.y = groundY;
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
                     }
                 } else {
