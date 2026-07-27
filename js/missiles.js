@@ -78,7 +78,7 @@ window.drawMissileHead = function(ctx, missile, head, gridToScreenFunc) {
             ctx.rect(-12, -1.5, 24, 3);
         }
         ctx.fillStyle = '#fff';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 0; // 성능 최적화: 발사 중 비활성화
         ctx.shadowColor = mColor;
         ctx.fill();
         ctx.restore();
@@ -99,7 +99,7 @@ window.drawMissileHead = function(ctx, missile, head, gridToScreenFunc) {
         ctx.lineTo(0, -6);
         ctx.closePath();
         ctx.fillStyle = '#fff';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 0; // 성능 최적화: 발사 중 비활성화
         ctx.shadowColor = '#a855f7';
         ctx.fill();
         ctx.restore();
@@ -116,7 +116,7 @@ window.drawMissileHead = function(ctx, missile, head, gridToScreenFunc) {
         ctx.beginPath();
         ctx.rect(-6, -6, 12, 12);
         ctx.fillStyle = '#fff';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 0; // 성능 최적화: 발사 중 비활성화
         ctx.shadowColor = '#10b981';
         ctx.fill();
         ctx.restore();
@@ -135,7 +135,7 @@ window.drawMissileHead = function(ctx, missile, head, gridToScreenFunc) {
         }
         ctx.closePath();
         ctx.fillStyle = '#fff';
-        ctx.shadowBlur = 18;
+        ctx.shadowBlur = 0; // 성능 최적화: 발사 중 비활성화
         ctx.shadowColor = '#2dd4bf';
         ctx.fill();
         ctx.restore();
@@ -145,7 +145,7 @@ window.drawMissileHead = function(ctx, missile, head, gridToScreenFunc) {
         ctx.beginPath();
         ctx.arc(head.x, head.y, 8, 0, Math.PI * 2);
         ctx.fillStyle = '#fff';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 0; // 성능 최적화: 발사 중 비활성화
         ctx.shadowColor = mColor;
         ctx.fill();
         ctx.shadowBlur = 0;

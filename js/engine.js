@@ -4445,7 +4445,7 @@ function render() {
             ctx.globalAlpha = Math.max(0, e.life / 15);
             ctx.lineWidth = 15 + Math.random() * 10;
             ctx.strokeStyle = '#10b981'; // 에메랄드 그린 레이저
-            ctx.shadowBlur = isFiring ? 30 : 0; ctx.shadowColor = '#34d399';
+            ctx.shadowBlur = 0; ctx.shadowColor = '#34d399';
             ctx.beginPath(); ctx.moveTo(scTop.x, scTop.y); ctx.lineTo(scBottom.x, scBottom.y); ctx.stroke();
             
             // 바닥 충돌 광원
@@ -4500,7 +4500,7 @@ function render() {
             ctx.globalAlpha = Math.max(0, e.life / e.maxLife) * 0.85;
             ctx.strokeStyle = '#2dd4bf';
             ctx.lineWidth = 3;
-            ctx.shadowBlur = isFiring ? 10 : 0; ctx.shadowColor = '#2dd4bf';
+            ctx.shadowBlur = 0; ctx.shadowColor = '#2dd4bf';
             ctx.setLineDash([8, 8]);
             ctx.beginPath(); ctx.arc(sc.x, sc.y, rad, 0, Math.PI * 2); ctx.stroke();
             // 방사형 선 (8개)
