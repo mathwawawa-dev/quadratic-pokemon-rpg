@@ -2037,7 +2037,15 @@ function updateGame() {
                         ent.vx *= -0.55;
                         // y는 스냅하지 않음 (다음 프레임에서 자연스럽게 처리)
                     } else {
+                    // 부유맵: 하단→상단 레이어 점프 스냅 차단 (빠른 상향 이동으로 상단 구름에 닿는 경우 포함)
+                    const _eb_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
+                    const _eb_layerIdx = _eb_isFloating ? getTerrainLayerIndex(ent.x, ent.y) : -1;
+                    const _eb_layerJump = _eb_isFloating && ent.groundLayerIdx >= 0 && _eb_layerIdx >= 0 && _eb_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
+                    if (_eb_layerJump) {
+                        ent.vx *= -0.55; // 상단 구름으로의 순간이동 차단 → 벽 처리
+                    } else {
                     ent.y = groundY; 
+                    if (_eb_layerIdx >= 0) ent.groundLayerIdx = _eb_layerIdx;
                     ent.vy *= -0.4; 
 
                     
@@ -2068,6 +2076,7 @@ function updateGame() {
                             ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
                         }
                     }
+                    } // _eb_layerJump 아닐 때(정상 착지) else 종료
                     } // lateral-climb 아닐 때(정상 착지) else 종료
                 }
             }
