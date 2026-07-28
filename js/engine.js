@@ -688,10 +688,10 @@ function initStage() {
     let attempts = 0;
     do {
         if (['garden', 'cloud_garden'].includes(stage.terrain)) {
-            const midIslands = stage.terrain === 'cloud_garden2'
-                ? TERRAINS[stage.terrain].islands[0]
-                : TERRAINS[stage.terrain].islands[1];
-            // 중앙부(-15 ~ 15)에 가까운 2층 섬을 우선 선택하여 2층에 확정 스폰
+            // garden 맵은 단일 레이어(islands[0])만 사용. cloud_garden은 islands[1] 유지.
+            const layerIdx = stage.terrain === 'garden' ? 0 : 1;
+            const midIslands = TERRAINS[stage.terrain].islands[layerIdx] || TERRAINS[stage.terrain].islands[0];
+            // 중앙부(-15 ~ 15)에 가까운 섬을 우선 선택하여 확정 스폰
             const centerIslands = midIslands.filter(s => s.cx >= -15 && s.cx <= 15);
             const targetIsland = centerIslands.length > 0 ? centerIslands[Math.floor(Math.random() * centerIslands.length)] : midIslands[0];
             px = targetIsland.cx + (Math.random() - 0.5) * (targetIsland.rx * 0.8);
