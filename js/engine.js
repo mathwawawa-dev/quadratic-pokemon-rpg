@@ -925,6 +925,73 @@ function initStage() {
             { bx: -18, by: 6.0,  speed: 5000, radius: 1.6, alpha: 0.4 },
             { bx: -2,  by: 5.0,  speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
         ];
+    } else if (stage.terrain === 'cloud_garden2') {
+        const cloudStartX = -28;
+        const cloudEndX = 28;
+        
+        let targetCtx = ctx;
+        let craterCanvas = null;
+        if (typeof craters !== 'undefined' && craters.length > 0) {
+            const cc = getCraterCanvas(canvas.width, canvas.height);
+            craterCanvas = cc.canvas; targetCtx = cc.ctx;
+        }
+
+        const getOrigY = (x) => {
+            const key = (Math.round(x * 10) / 10).toFixed(1);
+            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
+        };
+        const getBotY = (x) => {
+            const key = (Math.round(x * 10) / 10).toFixed(1);
+            return (terrainBottoms[key] && terrainBottoms[key].length > 0) ? terrainBottoms[key][0] : -100;
+        };
+
+        targetCtx.beginPath();
+        const startP = gridToScreen(cloudStartX, getOrigY(cloudStartX));
+        targetCtx.moveTo(startP.x, startP.y);
+        
+        for (let x = cloudStartX; x <= cloudEndX; x += 0.2) {
+            const cx = Math.min(x, cloudEndX);
+            const p = gridToScreen(cx, getOrigY(cx));
+            targetCtx.lineTo(p.x, p.y);
+        }
+
+        const rightTopY = getOrigY(cloudEndX);
+        const rightBotY = getBotY(cloudEndX);
+        const rightMidP = gridToScreen(cloudEndX + 2.0, (rightTopY + rightBotY) / 2);
+        const rightBotP = gridToScreen(cloudEndX, rightBotY);
+        targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
+
+        for (let x = cloudEndX; x >= cloudStartX; x -= 0.2) {
+            const cx = Math.max(x, cloudStartX);
+            const p = gridToScreen(cx, getBotY(cx));
+            targetCtx.lineTo(p.x, p.y);
+        }
+
+        const leftTopY = getOrigY(cloudStartX);
+        const leftBotY = getBotY(cloudStartX);
+        const leftMidP = gridToScreen(cloudStartX - 2.0, (leftTopY + leftBotY) / 2);
+        const leftTopP = gridToScreen(cloudStartX, leftTopY);
+        targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
+
+        targetCtx.closePath();
+        targetCtx.fillStyle = tData.color;
+        targetCtx.fill();
+        targetCtx.strokeStyle = tData.outColor;
+        targetCtx.lineWidth = 3;
+        targetCtx.stroke();
+
+        if (craterCanvas) {
+            targetCtx.globalCompositeOperation = 'destination-out';
+            for (const crater of craters) {
+                const p = gridToScreen(crater.x, crater.y);
+                const pr = scaleLength(crater.r);
+                targetCtx.beginPath();
+                targetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                targetCtx.fill();
+            }
+            targetCtx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(craterCanvas, 0, 0);
+        }
     } else if (stage.terrain === 'sky') {
         cloudParams = [
             { bx: 4,  by: 14.0, speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },

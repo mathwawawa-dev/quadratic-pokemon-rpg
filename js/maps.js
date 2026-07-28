@@ -357,8 +357,7 @@ const TERRAINS_cloud_garden2 = {
             
             // 몽글몽글한 범프 (절댓값 사인파형을 겹쳐서 올록볼록하게)
             // x값에 따라 주기적으로 볼록 튀어나오게 함
-            const bumps = Math.abs(Math.sin(x * 1.5)) * 1.2 
-                        + Math.abs(Math.cos(x * 0.8)) * 0.6;
+            const bumps = Math.sin(x * 0.6) * 0.7 + Math.cos(x * 0.4) * 0.4;
 
             return mainArc + bumps;
         }
