@@ -633,28 +633,27 @@ function initStage() {
                       } else {
                           // garden: 섬마다 다른 하단 모양
                           const _isl3 = tData.islands3;
-                          let _botY = y - 4.5; // 기본(중앙 섬): 평평
+                          let _botY = y - 4.5; // 기본값 (폴백)
                           if (_isl3) {
-                              const L = _isl3.left, R = _isl3.right;
+                              const L = _isl3.left, M = _isl3.mid, R = _isl3.right;
                               if (L && x >= L.x0 - 0.1 && x <= L.x1 + 0.1) {
-                                  // 좌측 섬: 중앙이 아래로 처지는 부드러운 belly
+                                  // 좌측 섬: 중앙이 아래로 처지는 부드러운 belly (최대 1.6)
                                   const _lmid = (L.x0 + L.x1) / 2;
                                   const _lhw  = (L.x1 - L.x0) / 2;
                                   const _lt   = (x - _lmid) / _lhw;
-                                  const _belly = 1.6 * (1 - _lt * _lt); // 최대 1.6 아래
-                                  _botY = y - 4.5 - Math.max(0, _belly);
+                                  _botY = y - 4.5 - Math.max(0, 1.6 * (1 - _lt * _lt));
+                              } else if (M && x >= M.x0 - 0.1 && x <= M.x1 + 0.1) {
+                                  // 중앙 섬: baseY 기준으로 아래로 조금 내려오게 (상단 bumps 무관)
+                                  const _mmid = (M.x0 + M.x1) / 2;
+                                  const _mhw  = (M.x1 - M.x0) / 2;
+                                  const _mt   = (x - _mmid) / _mhw;
+                                  _botY = y - 4.5 - Math.max(0, 0.8 * (1 - _mt * _mt));
                               } else if (R && x >= R.x0 - 0.1 && x <= R.x1 + 0.1) {
-                                  // 우측 섬: 하단에 구름 봉우리 3개 (아래로 볼록)
-                                  const _cx1 = R.x0 + (R.x1 - R.x0) * 0.2;
-                                  const _cx2 = R.x0 + (R.x1 - R.x0) * 0.5;
-                                  const _cx3 = R.x0 + (R.x1 - R.x0) * 0.8;
-                                  const _d1 = (x - _cx1) / 3.5;
-                                  const _d2 = (x - _cx2) / 4.5;
-                                  const _d3 = (x - _cx3) / 3.5;
-                                  const _b1 = Math.abs(_d1) < 1 ? 1.1 * (1-_d1*_d1)**2 : 0;
-                                  const _b2 = Math.abs(_d2) < 1 ? 1.8 * (1-_d2*_d2)**2 : 0;
-                                  const _b3 = Math.abs(_d3) < 1 ? 1.1 * (1-_d3*_d3)**2 : 0;
-                                  _botY = y - 4.5 - Math.max(_b1, _b2, _b3);
+                                  // 우측 섬: 좌측과 유사한 belly (최대 1.4 - 좌측보다 살짝 작게)
+                                  const _rmid = (R.x0 + R.x1) / 2;
+                                  const _rhw  = (R.x1 - R.x0) / 2;
+                                  const _rt   = (x - _rmid) / _rhw;
+                                  _botY = y - 4.5 - Math.max(0, 1.4 * (1 - _rt * _rt));
                               }
                           }
                           terrainBottoms[key] = [_botY];
