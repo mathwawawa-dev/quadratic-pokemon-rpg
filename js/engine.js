@@ -627,10 +627,9 @@ function initStage() {
                   } else {
                       terrainHeights[key] = [y];
                       if (stage.terrain === 'cloud_garden2') {
-                          // 상단과 baseY 기준으로 대칭 → 뭉게구름 렌즈 모양 하단
-                          const _sole = tData.islands3 && tData.islands3.sole;
-                          const _baseY = _sole ? _sole.baseY : 0;
-                          terrainBottoms[key] = [2 * _baseY - y];
+                          // funcBottom으로 자연스러운 구름 바닥면 계산
+                          const botY = tData.funcBottom ? tData.funcBottom(x) : baseY - 5.0;
+                          terrainBottoms[key] = [botY > -99 ? botY : -100];
                       } else {
                           terrainBottoms[key] = [y - 4.5];
                       }
