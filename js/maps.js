@@ -270,73 +270,32 @@ const TERRAINS_cloud_garden2 = {
         bg: ["#0284c7", "#38bdf8", "#bae6fd"],
         color: "rgba(255, 228, 235, 0.95)",
         outColor: "rgba(244, 114, 182, 0.95)",
-        isFloating: true,
         deathZoneY: -25,
+        islands3: null,
         init: function(seed) {
-            this.islands = [[]]; // Single layer
             const rnd = (min, max) => Math.random() * (max - min) + min;
-
-            const startX = -25;
-            const endX = 25;
-            const baseY = 1.0;
-            const width = endX - startX;
-            const midX = (startX + endX) / 2;
-            
-            // 중심 타원 (전체를 받쳐주는 기둥 역할)
-            this.islands[0].push({
-                type: 'ellipse',
-                cx: midX,
-                cy: baseY,
-                rx: width / 2 + 0.5,
-                ry: 2.5 + (Math.abs(Math.sin(midX * 0.7 + seed)) * 0.5),
-                rot: 0
-            });
-            
-            // 폭신폭신 원형 구름 뭉치 배치
-            for (let x = startX; x <= endX; x += 1.6) {
-                const progress = (x - startX) / Math.max(1, width);
-                const edgeFactor = Math.sin(progress * Math.PI); // 양끝은 작고 가운데는 큼
-                
-                const rTop = 2.0 + edgeFactor * 1.5 + (Math.cos(x * 1.5 + seed) * 0.5);
-                const yOff = Math.sin(x * 1.1 + seed) * 0.5;
-                this.islands[0].push({
-                    type: 'circle',
-                    cx: x,
-                    cy: baseY + yOff,
-                    rx: rTop,
-                    ry: rTop,
-                    rot: 0
-                });
-
-                if (Math.random() > 0.3) {
-                    const rxSub = 2.0 + Math.random() * 1.2;
-                    const rySub = 1.2 + Math.random() * 1.5;
-                    this.islands[0].push({
-                        type: 'ellipse',
-                        cx: x + (Math.random() - 0.5) * 1.2,
-                        cy: baseY - 0.6 + (Math.random() - 0.5) * 0.8,
-                        rx: rxSub,
-                        ry: rySub,
-                        rot: 0
-                    });
-                }
-            }
+            this.islands3 = {
+                left:  { x0: -24, x1: -10, baseY: rnd(-1.0, 1.0)  },
+                mid:   { x0:  -6, x1:   6, baseY: rnd( 2.0, 3.5)  },
+                right: { x0:  10, x1:  24, baseY: rnd( 0.0, 1.5)  }
+            };
         },
-        layers: [
-            (x) => {
-                let maxY = -100;
-                if (!TERRAINS.cloud_garden2.islands || !TERRAINS.cloud_garden2.islands[0]) return maxY;
-                for (let s of TERRAINS.cloud_garden2.islands[0]) {
-                    const dx = Math.abs(x - s.cx);
-                    if (dx <= s.rx) {
-                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
-                        if (topY > maxY) maxY = topY;
-                    }
-                }
-                return maxY;
-            }
-        ],
-        func: (x) => -100
+        func: function(x) {
+            const isl = TERRAINS.cloud_garden2.islands3;
+            if (!isl) return -100;
+            let island = null;
+            if (x >= isl.left.x0 - 0.1 && x <= isl.left.x1 + 0.1) island = isl.left;
+            else if (x >= isl.mid.x0 - 0.1 && x <= isl.mid.x1 + 0.1) island = isl.mid;
+            else if (x >= isl.right.x0 - 0.1 && x <= isl.right.x1 + 0.1) island = isl.right;
+            if (!island) return -100;
+
+            const { x0, x1, baseY } = island;
+            const t = (x - (x0 + x1) / 2) / ((x1 - x0) / 2);
+            const edgeFade = Math.cos(Math.max(-1, Math.min(1, t)) * Math.PI / 2.2);
+
+            const bumps = Math.sin(x * 0.55) * 0.6 + Math.cos(x * 0.9 + 1.0) * 0.4;
+            return (baseY + bumps) * edgeFade + (1 - edgeFade) * (baseY - 1.5);
+        }
     }
 };
 Object.assign(TERRAINS, TERRAINS_cloud_garden2);
