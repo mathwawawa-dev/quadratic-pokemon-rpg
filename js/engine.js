@@ -295,7 +295,7 @@ function getTerrainY(x, currentY) {
     const ys = terrainHeights[key] || [-100];
     
     const currentTerrain = LEVELS[currentStage % LEVELS.length].terrain;
-    if (TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky') {
+    if (TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky' || currentTerrain === 'cloud_garden2') {
         if (currentY !== undefined) {
             const bs = terrainBottoms[key] || [];
             let bestY = -100;
@@ -326,7 +326,7 @@ function getTerrainBottom(x, currentY) {
     const ys = terrainHeights[key] || [-100];
     const bs = terrainBottoms[key] || [];
     const currentTerrain = LEVELS[currentStage % LEVELS.length].terrain;
-    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky') && currentY !== undefined) {
+    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky' || currentTerrain === 'cloud_garden2') && currentY !== undefined) {
         let bestB = -1000;
         let minDiff = 9999;
         for (let i = 0; i < ys.length; i++) {
@@ -348,7 +348,7 @@ function getTerrainLayerIndex(x, currentY) {
     const ys = terrainHeights[key] || [-100];
     const bs = terrainBottoms[key] || [];
     const currentTerrain = LEVELS[currentStage % LEVELS.length].terrain;
-    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky') && currentY !== undefined) {
+    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky' || currentTerrain === 'cloud_garden2') && currentY !== undefined) {
         let bestIdx = -1, minDiff = 9999;
         for (let i = 0; i < ys.length; i++) {
             const y = ys[i], b = bs[i] !== undefined ? bs[i] : -1000;
@@ -562,7 +562,7 @@ function initStage() {
     }
 
     const isFloatingMap = TERRAINS[stage.terrain].isFloating;
-    const stageHeightOffset = isFloatingMap ? 0 : (1 + Math.random() * 3); // 공중정원 제외 맵 지형 1~4 무작위 높이 상승
+    const stageHeightOffset = (isFloatingMap || stage.terrain === 'cloud_garden2') ? 0 : (1 + Math.random() * 3); // 공중정원 제외 맵 지형 1~4 무작위 높이 상승
 
     for (let x = -60; x <= 60; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -618,6 +618,15 @@ function initStage() {
                   } else {
                       terrainHeights[key] = [y];
                       terrainBottoms[key] = [y - 5.0];
+                  }
+              } else if (stage.terrain === 'cloud_garden2') {
+                  // 성층권 동일 물리: 지형 있으면 [y], 없으면 [-100]
+                  if (y <= -99) {
+                      terrainHeights[key] = [-100];
+                      terrainBottoms[key] = [-100];
+                  } else {
+                      terrainHeights[key] = [y];
+                      terrainBottoms[key] = [y - 4.0];
                   }
               } else if (stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
@@ -678,7 +687,7 @@ function initStage() {
     let px = 0;
     let attempts = 0;
     do {
-        if (['garden', 'cloud_garden', 'cloud_garden2'].includes(stage.terrain)) {
+        if (['garden', 'cloud_garden'].includes(stage.terrain)) {
             const midIslands = stage.terrain === 'cloud_garden2'
                 ? TERRAINS[stage.terrain].islands[0]
                 : TERRAINS[stage.terrain].islands[1];
@@ -686,6 +695,9 @@ function initStage() {
             const centerIslands = midIslands.filter(s => s.cx >= -15 && s.cx <= 15);
             const targetIsland = centerIslands.length > 0 ? centerIslands[Math.floor(Math.random() * centerIslands.length)] : midIslands[0];
             px = targetIsland.cx + (Math.random() - 0.5) * (targetIsland.rx * 0.8);
+        } else if (stage.terrain === 'cloud_garden2') {
+            // 중단 좌(-15~-5) 또는 중단 우(4~17) 랜덤 스폰
+            px = Math.random() < 0.5 ? -15 + Math.random() * 10 : 4 + Math.random() * 13;
         } else {
             const pxRoll = Math.random();
             if (pxRoll < 0.45)       px =  (2 + Math.random() * 4);
