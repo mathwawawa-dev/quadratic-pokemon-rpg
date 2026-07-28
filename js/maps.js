@@ -27,7 +27,7 @@ const TERRAINS = {
         bg: ["#38bdf8", "#7dd3fc", "#bae6fd"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -8,
-        cameraOffsetY: -3, // y=0축 화면상 3단위 위로 이동
+        cameraOffsetY: -4, // y=0축 화면상 4단위 위로 이동
         func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 + 0.7,
         getThickness: (x) => {
             // 4.0 단위 블록 기반 해시 → 블록 경계에서만 두께 변화 (파도 너울 방지)
