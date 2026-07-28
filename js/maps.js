@@ -298,14 +298,14 @@ const TERRAINS_cloud_garden2 = {
             // 우측: 선형 수렴으로 점점 얇아짐
             const _mid = x0 + W / 2;
             const _nT  = (x - _mid) / (W / 2);
-            if (_nT < -0.50) {
-                const _t    = (-0.50 - _nT) / 0.50; // 0→1
+            if (_nT < -0.75) {
+                const _t    = (-0.75 - _nT) / 0.25; // 0→1
                 const _fade = 0.5 * (1 + Math.cos(_t * Math.PI)); // cosine 1→0
                 const _topTargetL = baseY + 0.1; // 좌측 끝 상단 수렴점
                 topY = _topTargetL + (topY - _topTargetL) * _fade;
-            } else if (_nT > 0.80) {
+            } else if (_nT > 0.90) {
                 // 우측: cosine 수렴, 끝점은 baseY+0.8로 (일정 두께 유지)
-                const _t      = (_nT - 0.80) / 0.20;
+                const _t      = (_nT - 0.90) / 0.10;
                 const _cosFade = 0.5 * (1 + Math.cos(_t * Math.PI));
                 const _topTarget = baseY + 0.4; // 끝점 상단 최소값 (1.2→0.4)
                 topY = _topTarget + (topY - _topTarget) * _cosFade;
@@ -350,17 +350,17 @@ const TERRAINS_cloud_garden2 = {
             const mid = x0 + W / 2;
             const normT = (x - mid) / (W / 2);
 
-            if (normT < -0.50) {
+            if (normT < -0.75) {
                 // 좌측: cosine으로 수렴 + 끝 하단에 작은 굴곡
-                const _t    = (-0.50 - normT) / 0.50;
+                const _t    = (-0.75 - normT) / 0.25;
                 const _fade = 0.5 * (1 + Math.cos(_t * Math.PI));
                 // 수렴점에 sine 굴곡 추가 (진폭 0.7, 끝으로 갈수록 굴곡 비중 커짐)
                 const _ripple   = Math.sin((x - x0) * 1.8 + s * 2.3) * 0.3 * _t;
                 const _botTarget = baseY - 5.5 - _ripple; // 좌측 끝 하단 수렴점 (아래로 튀어나옴)
                 botY = _botTarget + (botY - _botTarget) * _fade;
-            } else if (normT > 0.80) {
-                // 우측: cosine 수렴, 끝점은 baseY-1.0으로 (야래에 남는 두께 유지)
-                const _t      = (normT - 0.80) / 0.20;
+            } else if (normT > 0.90) {
+                // 우측: cosine 수렴, 끝점은 baseY-1.0으로 (아래에 남는 두께 유지)
+                const _t      = (normT - 0.90) / 0.10;
                 const _cosFade = 0.5 * (1 + Math.cos(_t * Math.PI));
                 const _botTarget2 = baseY - 3.0; // 끝점 하단 최소값 (-1.5→-3.0)
                 botY = _botTarget2 + (botY - _botTarget2) * _cosFade;
