@@ -696,8 +696,8 @@ function initStage() {
             const targetIsland = centerIslands.length > 0 ? centerIslands[Math.floor(Math.random() * centerIslands.length)] : midIslands[0];
             px = targetIsland.cx + (Math.random() - 0.5) * (targetIsland.rx * 0.8);
         } else if (stage.terrain === 'cloud_garden2') {
-            // 중단 좌(-15~-5) 또는 중단 우(4~17) 랜덤 스폰
-            px = Math.random() < 0.5 ? -15 + Math.random() * 10 : 4 + Math.random() * 13;
+            // 상단 구름(-22~5) 또는 하단 구름(-5~22) 랜덤 스폰
+            px = Math.random() < 0.5 ? -22 + Math.random() * 27 : -5 + Math.random() * 27;
         } else {
             const pxRoll = Math.random();
             if (pxRoll < 0.45)       px =  (2 + Math.random() * 4);

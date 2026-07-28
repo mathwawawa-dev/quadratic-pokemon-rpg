@@ -333,7 +333,7 @@ const TERRAINS = {
     }
 };
 
-// ── 솜사탕(2): 성층권과 동일한 단일 func 물리, 솜사탕 색상 ──
+// ── 솜사탕(2): 긴 구름 2개, 시각=islands / 물리=단일 func ──
 const TERRAINS_cloud_garden2 = {
     cloud_garden2: {
         name: "솜사탕(2)",
@@ -341,13 +341,47 @@ const TERRAINS_cloud_garden2 = {
         color: "rgba(255, 228, 235, 0.95)",
         outColor: "rgba(244, 114, 182, 0.95)",
         deathZoneY: -25,
-        // isFloating 없음, islands 없음, layers 없음
-        // → 성층권(sky)과 완전히 동일한 단일 func 물리 경로 사용
+        // ★ isFloating 없음, layers 없음 → 성층권과 동일한 단일 func 물리
+        // ★ islands 있음 → 구름 시각 렌더링만 사용
+
+        init: function(seed) {
+            // 시각 전용: 두 긴 구름의 ellipse/circle 모양 생성
+            this.islands = [[]];
+            const addLongCloud = (startX, endX, baseY) => {
+                const width = endX - startX;
+                const midX  = (startX + endX) / 2;
+                // 중심 타원
+                this.islands[0].push({ type:'ellipse', cx:midX, cy:baseY, rx:width/2+0.8, ry:1.6, rot:0 });
+                // 폭신한 원형 구름 뭉치
+                for (let x = startX; x <= endX; x += 2.0) {
+                    const prog = (x - startX) / Math.max(1, width);
+                    const edge = Math.sin(prog * Math.PI);
+                    const rTop = 1.2 + edge * 1.5 + Math.cos(x * 1.3 + seed) * 0.4;
+                    const yOff = Math.sin(x * 0.9 + seed) * 0.35;
+                    this.islands[0].push({ type:'circle', cx:x, cy:baseY + yOff, rx:rTop, ry:rTop, rot:0 });
+                    if (Math.random() > 0.4) {
+                        this.islands[0].push({
+                            type:'ellipse',
+                            cx: x + (Math.random()-0.5)*1.5,
+                            cy: baseY - 0.5 + (Math.random()-0.5)*0.7,
+                            rx: 1.6 + Math.random()*1.0,
+                            ry: 0.8 + Math.random()*1.2,
+                            rot: 0
+                        });
+                    }
+                }
+            };
+            // 상단 구름: 좌측에서 중앙까지
+            addLongCloud(-22,  5,  3.2);
+            // 하단 구름: 중앙에서 우측까지
+            addLongCloud( -5, 22, -9.0);
+        },
+
+        // 물리 전용 func: 두 구름 플랫폼 상단 Y (성층권과 동일 원리)
         func: function(x) {
             const segs = [
-                { xMin: -15, xMax:  -5, cy:  3.0, ry: 2.0 },
-                { xMin:   4, xMax:  17, cy:  3.0, ry: 2.0 },
-                { xMin: -10, xMax:  13, cy: -11.0, ry: 2.5 },
+                { xMin: -22, xMax:  5, cy:  3.2, ry: 2.0 },
+                { xMin:  -5, xMax: 22, cy: -9.0, ry: 2.0 },
             ];
             let maxY = -100;
             for (const seg of segs) {
