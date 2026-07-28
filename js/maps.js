@@ -10,6 +10,7 @@ const LEVELS = [
     { title: "Stage 9", terrain: 'psychic',  count: 4, flyingCount: 2 },
     { title: "Stage 10", terrain: 'garden',   count: 4, flyingCount: 2 },
     { title: "Stage 11", terrain: 'cloud_garden', count: 4, flyingCount: 3 },
+    { title: "Stage 11", terrain: 'cloud_garden2', count: 4, flyingCount: 3 },
 ];
 
 let terrainSeed = 0;
@@ -331,3 +332,58 @@ const TERRAINS = {
         func: (x) => -100
     }
 };
+
+// ── 솜사탕(2): 성층권 물리 원리(단일 func) + 솜사탕 시각 ──
+const TERRAINS_cloud_garden2 = {
+    cloud_garden2: {
+        name: "솜사탕(2)",
+        bg: ["#0284c7", "#38bdf8", "#bae6fd"],
+        color: "rgba(255, 228, 235, 0.95)",
+        outColor: "rgba(244, 114, 182, 0.95)",
+        isFloating: true,   // 렌더링용 (구름 시각)
+        deathZoneY: -25,
+        // layers 없음 → buildTerrain이 단일 func 경로 사용 (솟구치기 버그 없음)
+        init: function(seed) {
+            // islands[0]: 모든 구름 모양 (렌더링 전용)
+            this.islands = [[]];
+
+            const addCluster = (startX, endX, baseY) => {
+                const width = endX - startX;
+                const midX  = (startX + endX) / 2;
+                // 중심 타원
+                this.islands[0].push({ type:'ellipse', cx:midX, cy:baseY, rx:width/2+0.5, ry:1.8+Math.abs(Math.sin(midX*0.7+seed))*0.4, rot:0 });
+                // 폭신한 원형 구름 뭉치
+                for (let x = startX; x <= endX; x += 1.6) {
+                    const prog = (x-startX)/Math.max(1,width);
+                    const edge = Math.sin(prog*Math.PI);
+                    const rTop = 1.5 + edge*1.3 + Math.cos(x*1.5+seed)*0.4;
+                    const yOff = Math.sin(x*1.1+seed)*0.4;
+                    this.islands[0].push({ type:'circle', cx:x, cy:baseY+yOff, rx:rTop, ry:rTop, rot:0 });
+                    if (Math.random() > 0.3) {
+                        this.islands[0].push({ type:'ellipse', cx:x+(Math.random()-0.5)*1.2, cy:baseY-0.6+(Math.random()-0.5)*0.8, rx:1.8+Math.random()*1.2, ry:0.9+Math.random()*1.5, rot:0 });
+                    }
+                }
+            };
+
+            // 중단 좌성: x=-15~-5, 중단 우성: x=4~17, 하단 길게: x=-10~13
+            addCluster(-15, -5,  3);   // 중단 좌
+            addCluster(  4, 17,  3);   // 중단 우
+            addCluster(-10, 13, -11);  // 하단 길게
+        },
+        // 단일 물리 함수: 모든 구름 모양의 최상단 Y 반환 (없으면 -100)
+        func: function(x) {
+            if (!this.islands || !this.islands[0]) return -100;
+            let maxY = -100;
+            for (const s of this.islands[0]) {
+                const dx = Math.abs(x - s.cx);
+                if (dx <= s.rx) {
+                    const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx*dx)/(s.rx*s.rx)));
+                    if (topY > maxY) maxY = topY;
+                }
+            }
+            return maxY;
+        }
+    }
+};
+Object.assign(TERRAINS, TERRAINS_cloud_garden2);
+

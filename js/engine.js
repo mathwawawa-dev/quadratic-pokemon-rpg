@@ -656,8 +656,10 @@ function initStage() {
     let px = 0;
     let attempts = 0;
     do {
-        if (['garden', 'cloud_garden'].includes(stage.terrain)) {
-            const midIslands = TERRAINS[stage.terrain].islands[1];
+        if (['garden', 'cloud_garden', 'cloud_garden2'].includes(stage.terrain)) {
+            const midIslands = stage.terrain === 'cloud_garden2'
+                ? TERRAINS[stage.terrain].islands[0]
+                : TERRAINS[stage.terrain].islands[1];
             // 중앙부(-15 ~ 15)에 가까운 2층 섬을 우선 선택하여 2층에 확정 스폰
             const centerIslands = midIslands.filter(s => s.cx >= -15 && s.cx <= 15);
             const targetIsland = centerIslands.length > 0 ? centerIslands[Math.floor(Math.random() * centerIslands.length)] : midIslands[0];
@@ -3336,7 +3338,7 @@ function render() {
     }
 
     // 솜사탕('cloud_garden') 지형 분위기: 반짝이는 별 먼지가 천천히 내려오는 효과
-    if (stage.terrain === 'cloud_garden') {
+    if (stage.terrain === 'cloud_garden' || stage.terrain === 'cloud_garden2') {
         ctx.save();
         const now = Date.now();
         const dustColors = [
