@@ -3994,7 +3994,6 @@ function render() {
             }
         }
     } else if (stage.terrain === 'garden' || stage.terrain === 'cloud_garden2') {
-    } else if (stage.terrain === 'garden') {
         const thickness = 4.5;
 
         let targetCtx = ctx;
