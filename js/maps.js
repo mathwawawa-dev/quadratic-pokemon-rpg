@@ -367,10 +367,12 @@ const TERRAINS_cloud_garden2 = {
             const normT = (x - mid) / (W / 2);
 
             if (normT < -0.50) {
-                // 좌측: cosine으로 (baseY-3.0)에 수렴 → 두께 2배
+                // 좌측: cosine으로 수렴 + 끝 하단에 작은 굴곡
                 const _t    = (-0.50 - normT) / 0.50;
                 const _fade = 0.5 * (1 + Math.cos(_t * Math.PI));
-                const _botTarget = baseY - 4.5; // baseY-3.0에서 강화 (1.5배)
+                // 수렴점에 sine 굴곡 추가 (진폭 0.7, 끝으로 갈수록 굴곡 비중 커짐)
+                const _ripple   = Math.sin((x - x0) * 1.8 + s * 2.3) * 0.7 * _t;
+                const _botTarget = baseY - 4.5 - _ripple;
                 botY = _botTarget + (botY - _botTarget) * _fade;
             } else if (normT > 0.80) {
                 // 우측: cosine 수렴, 끝점은 baseY-1.0으로 (야래에 남는 두께 유지)
