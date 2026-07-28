@@ -24,7 +24,7 @@ const TERRAINS = {
     },
     log_bridge: {
         name: "외나무다리",
-        bg: ["#d4f5a0", "#edffd4", "#f5fff0"],
+        bg: ["#7db84a", "#a8d96a", "#c8eeaa"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -8,
         cameraOffsetY: -3, // y=0축 화면상 3단위 위로 이동
