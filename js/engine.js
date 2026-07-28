@@ -951,6 +951,12 @@ function initStage() {
             { bx: 8,  by: 28.0, speed: 3500, radius: 1.4, stretchX: 1.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
             { bx: -3, by: 7.0,  speed: 3800, radius: 0.55, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
         ];
+    } else if (stage.terrain === 'cloud_garden2') {
+        cloudParams = [
+            { bx: -12, by: 3.0,  speed: 4000, radius: 0.65, alpha: 0.9, isPowerCloud: true, colorType: starterData.type },
+            { bx:   6, by: 1.5,  speed: 4500, radius: 0.75, alpha: 0.9, isPowerCloud: true, colorType: starterData.type },
+            { bx:  16, by: 2.5,  speed: 3800, radius: 0.55, alpha: 0.9, isPowerCloud: true, colorType: starterData.type }
+        ];
     } else if (stage.terrain === 'ocean') {
         cloudParams = [
             { bx: -8, by: 12, speed: 4200, radius: 0.7, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
@@ -2280,13 +2286,24 @@ function updateGame() {
                     const eColors = { fire: '#ef4444', electric: '#fbbf24', water: '#3b82f6', flying: '#38bdf8', grass: '#22c55e', normal: '#a8a29e', psychic: '#ec4899' };
                     const eColor = eColors[cp.colorType] || '#fbbf24';
                     if (currentTerrainKey === 'ocean') {
-                        // 버블이 터지는 이펙트 (파티클 수 증가, 퍼짐 증가)
+                        // 버블이 터지는 이펙트
                         for (let pi=0; pi<15; pi++) {
                             effects.push({ type: 'particle', x: cx, y: cy, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5, life: 30 + Math.random()*20, color: eColor });
                         }
-                        // 버블을 랜덤한 다른 곳으로 즉시 재생성
-                        cp.bx = (Math.random() - 0.5) * 20; // -10 ~ 10
-                        cp.by = 8 + Math.random() * 15;     // 8 ~ 23
+                        cp.bx = (Math.random() - 0.5) * 20;
+                        cp.by = 8 + Math.random() * 15;
+                    } else if (currentTerrainKey === 'cloud_garden2') {
+                        // 솜사탕 터지는 이펙트 (무지개색 파티클)
+                        const candyColors = ['#ff6eb4','#ffb347','#fffb47','#a8ff78','#78d9ff','#c39fff'];
+                        for (let pi=0; pi<18; pi++) {
+                            effects.push({ type: 'particle', x: cx, y: cy,
+                                vx: (Math.random()-0.5)*2.0, vy: (Math.random()-0.5)*2.0,
+                                life: 35 + Math.random()*20,
+                                color: candyColors[pi % candyColors.length] });
+                        }
+                        // 새 위치에 재생성 (지형 위 공중)
+                        cp.bx = (Math.random() - 0.5) * 44; // -22 ~ 22
+                        cp.by = -2.5 + Math.random() * 3.5; // -2.5 ~ 1.0 (지형 위 공중)
                     } else {
                         // 일반 파워업 구름의 통과 이펙트
                         for (let pi=0; pi<5; pi++) {
@@ -3764,8 +3781,34 @@ function render() {
             currentRadius = cp.radius * (1 + pulse * 0.055);
         }
 
-        // ocean 맵에서는 파워업 구름을 거품(버블) 모양으로 렌더링
-        if (stage.terrain === 'ocean' && cp.isPowerCloud) {
+        // cloud_garden2 맵에서 파워업 구름을 무지개색 솜사탕 구 형태로 렌더링
+        if (stage.terrain === 'cloud_garden2' && cp.isPowerCloud) {
+            const r = scaleLength(currentRadius);
+            offCtx.save();
+            // 무지개 방사형 그라데이션
+            const hue = (Date.now() / 20 + cp.bx * 30) % 360;
+            const grad = offCtx.createRadialGradient(c.x - r*0.3, c.y - r*0.3, 0, c.x, c.y, r);
+            grad.addColorStop(0,   `hsla(${hue},       100%, 95%, 0.95)`);
+            grad.addColorStop(0.4, `hsla(${(hue+60)%360}, 100%, 80%, 0.85)`);
+            grad.addColorStop(0.8, `hsla(${(hue+180)%360},100%, 65%, 0.70)`);
+            grad.addColorStop(1,   `hsla(${(hue+240)%360},100%, 50%, 0.40)`);
+            offCtx.beginPath();
+            offCtx.arc(c.x, c.y, r, 0, Math.PI * 2);
+            offCtx.fillStyle = grad;
+            offCtx.fill();
+            // 하이라이트
+            offCtx.beginPath();
+            offCtx.arc(c.x - r*0.28, c.y - r*0.28, r*0.2, 0, Math.PI*2);
+            offCtx.fillStyle = 'rgba(255,255,255,0.75)';
+            offCtx.fill();
+            // 윤곽 링
+            offCtx.beginPath();
+            offCtx.arc(c.x, c.y, r, 0, Math.PI*2);
+            offCtx.strokeStyle = `hsla(${(hue+120)%360},100%,75%,0.55)`;
+            offCtx.lineWidth = Math.max(1.5, r*0.07);
+            offCtx.stroke();
+            offCtx.restore();
+        } else if (stage.terrain === 'ocean' && cp.isPowerCloud) {
             const r = scaleLength(currentRadius);
             const typeColors = {
                 fire:    { main: 'rgba(255, 120, 50, 0.35)', rim: 'rgba(255, 180, 100, 0.6)', highlight: 'rgba(255, 220, 180, 0.8)' },
