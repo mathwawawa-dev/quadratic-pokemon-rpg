@@ -119,7 +119,7 @@ const TERRAINS = {
         isFloating: true,
         deathZoneY: -25,
         init: function(seed) {
-            this.islands = [[], [], []];
+            this.islands = [[]]; // 단일 레이어
             
             const addIslandCluster = (layer, startX, endX, baseY) => {
                 const width = endX - startX;
@@ -153,34 +153,27 @@ const TERRAINS = {
 
                     if (Math.random() > 0.3) {
                         const rxSub = 2.0 + Math.random() * 1.5;
-                        const rySub = 0.8 + Math.random() * 2.0; // 랜덤으로 얇게
+                        const rySub = 0.8 + Math.random() * 2.0;
                         this.islands[layer].push({
                             type: 'ellipse',
                             cx: x + (Math.random() - 0.5) * 1.5,
                             cy: baseY - 0.8 + (Math.random() - 0.5) * 1.0,
                             rx: rxSub,
                             ry: rySub,
-                            rot: 0 // 물리가 rot 0을 기준으로 계산되므로 일치시켜야 함
+                            rot: 0
                         });
                     }
                 }
             };
 
-            // 매 게임마다 조금씩 변화(랜덤성)를 주어 덜 단조롭게 구성
             const rnd = (min, max) => Math.random() * (max - min) + min;
 
-                        // Top Layer
-            addIslandCluster(0, rnd(12, 14), rnd(22, 24), rnd(9.5, 11.5));
-
-            // Middle Layer (1층) - 좌, 중, 우 3개 배치 (총 3개)
-            addIslandCluster(1, rnd(-26, -24), rnd(-16, -14), rnd(-3.0, -1.0));
-            addIslandCluster(1, rnd(-6, -4), rnd(4, 6), rnd(-5.0, -3.0));
-            addIslandCluster(1, rnd(14, 16), rnd(24, 26), rnd(-3.0, -1.0));
-
-            // Bottom Layer (2층) - 1층과 지그재그가 되도록 사이사이에 배치 (총 3개)
-            addIslandCluster(2, rnd(-36, -34), rnd(-26, -24), rnd(-16.0, -14.0)); // 1층 좌측의 더 왼쪽
-            addIslandCluster(2, rnd(-15, -13), rnd(-6, -4), rnd(-19.0, -17.0)); // 1층 좌측과 중앙 사이
-            addIslandCluster(2, rnd(4, 6), rnd(14, 16), rnd(-16.0, -14.0)); // 1층 중앙과 우측 사이
+            // 좌측 섬
+            addIslandCluster(0, rnd(-28, -24), rnd(-14, -10), rnd(-4.0, -2.0));
+            // 중앙 섬
+            addIslandCluster(0, rnd(-6, -4), rnd(6, 8), rnd(1.0, 3.0));
+            // 우측 섬
+            addIslandCluster(0, rnd(12, 14), rnd(24, 28), rnd(-3.0, -1.0));
         },
         layers: [
             (x) => {
@@ -194,35 +187,10 @@ const TERRAINS = {
                     }
                 }
                 return maxY;
-            },
-            (x) => {
-                let maxY = -100;
-                if (!TERRAINS.garden.islands || !TERRAINS.garden.islands[1]) return maxY;
-                for (let s of TERRAINS.garden.islands[1]) {
-                    const dx = Math.abs(x - s.cx);
-                    if (dx <= s.rx) {
-                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
-                        if (topY > maxY) maxY = topY;
-                    }
-                }
-                return maxY;
-            },
-            (x) => {
-                let maxY = -100;
-                if (!TERRAINS.garden.islands || !TERRAINS.garden.islands[2]) return maxY;
-                for (let s of TERRAINS.garden.islands[2]) {
-                    const dx = Math.abs(x - s.cx);
-                    if (dx <= s.rx) {
-                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
-                        if (topY > maxY) maxY = topY;
-                    }
-                }
-                return maxY;
             }
-        ],
-        func: (x) => -100
-    },
-    cloud_garden: {
+        ]
+    }
+    ,cloud_garden: {
         name: "솜사탕",
         bg: ["#0284c7", "#38bdf8", "#bae6fd"],
         color: "rgba(255, 228, 235, 0.95)",   // 파스텔 솜사탕 핑크 구름 (흰색 축/숫자와 뚜렷이 구별됨)
