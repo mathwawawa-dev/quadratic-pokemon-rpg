@@ -626,7 +626,7 @@ function initStage() {
                       terrainBottoms[key] = [-100];
                   } else {
                       terrainHeights[key] = [y];
-                      terrainBottoms[key] = [y - 4.0];
+                      terrainBottoms[key] = [-100.0]; // 솜사탕(2) 관통 방지
                   }
               } else if (stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
