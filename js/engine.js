@@ -3182,18 +3182,20 @@ function render() {
         ctx.restore();
     }
 
-    // 외나무다리('log_bridge') 고인돌 지지대: 양 끝에 두꺼운 통나무 기둥 (너비 3유닛, y=-15까지)
+    // 외나무다리('log_bridge') 고인돌 지지대: 통나무 좌우 끝에 두꺼운 기둥 (너비 3유닛, y=-15까지)
     if (stage.terrain === 'log_bridge') {
         ctx.save();
         const pillarHalfW = 1.5;   // 너비 3유닛 (±1.5)
         const pillarBotY  = -15.0; // 하단 고정 y
-        const pillarCenters = [-44.0, 44.0];
+        // 통나무 끝 = 현재 카메라 좌우 끝
+        const logLeftX  = Math.ceil(X_MIN)  + pillarHalfW;
+        const logRightX = Math.floor(X_MAX) - pillarHalfW;
+        const pillarCenters = [logLeftX, logRightX];
 
         for (const cx of pillarCenters) {
-            const keyL = (cx - pillarHalfW).toFixed(1);
-            const keyR = (cx + pillarHalfW).toFixed(1);
+            const key = (Math.round(cx * 10) / 10).toFixed(1);
             // 표면 y (stageHeightOffset 포함)
-            const surfY = terrainHeights[(cx).toFixed(1)] ?? (terrainHeights[keyL] ?? 1.7);
+            const surfY = terrainHeights[key] ?? 1.7;
             // 통나무 하단 = 표면 - getThickness
             const thick  = tData.getThickness ? tData.getThickness(cx) : 5.5;
             const pillarTopY = surfY - thick;
