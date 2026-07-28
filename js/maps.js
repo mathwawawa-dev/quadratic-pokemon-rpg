@@ -341,7 +341,8 @@ const TERRAINS_cloud_garden2 = {
         color: "rgb(247, 147, 185)",     // 이미지 핑크색
         outColor: "rgb(240, 120, 165)",  // 살짝 진한 핑크
         deathZoneY: -25,
-        // ★ isFloating 없음, layers 없음 → 성층권 동일 물리
+        isFloating: true,  // ★ 렌더링: 섬 렌더러 사용 (공중 구름 시각)
+        // ★ layers 없음 → func 경로 사용 (성층권 동일 단일 물리, 솟구치기 없음)
         // ★ islands 있음 → 구름 시각만 담당
 
         init: function(seed) {
