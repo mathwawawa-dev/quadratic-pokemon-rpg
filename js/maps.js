@@ -333,87 +333,92 @@ const TERRAINS = {
     }
 };
 
-// ── 솜사탕(2): 긴 구름 2개, 이미지 기반 시각 ──
+// ── 솜사탕(2): 폭신한 긴 구름 1개, 기존 솜사탕 색상 ──
 const TERRAINS_cloud_garden2 = {
     cloud_garden2: {
         name: "솜사탕(2)",
         bg: ["#0284c7", "#38bdf8", "#bae6fd"],
-        color: "rgb(247, 147, 185)",     // 이미지 핑크색
-        outColor: "rgb(240, 120, 165)",  // 살짝 진한 핑크
+        color: "rgba(255, 228, 235, 0.95)",    // 기존 솜사탕 색상
+        outColor: "rgba(244, 114, 182, 0.95)", // 기존 솜사탕 테두리
+        isFloating: true,   // ★ 렌더링: 섬 렌더러 (공중 구름)
         deathZoneY: -25,
-        isFloating: true,  // ★ 렌더링: 섬 렌더러 사용 (공중 구름 시각)
-        // ★ layers 없음 → func 경로 사용 (성층권 동일 단일 물리, 솟구치기 없음)
-        // ★ islands 있음 → 구름 시각만 담당
+        // ★ layers 없음 → func 단일 물리 (성층권 동일, 솟구치기 없음)
 
         init: function(seed) {
             this.islands = [[]];
             const push = (s) => this.islands[0].push(s);
 
-            // 하나의 긴 구름 생성: 타원 본체 + 상단 범프 + 하단 범프 + 양끝 돌출
-            const addCloud = (startX, endX, cy) => {
-                const width  = endX - startX;
-                const midX   = (startX + endX) / 2;
-                const mainRy = 2.1;   // 본체 타원 반높이
-                const bumpR  = 2.0;   // 상단 범프 반지름
-                const botR   = 1.55;  // 하단 범프 반지름
-                const edgeR  = 2.5;   // 양끝 돌출 반지름
+            // ── 폭신한 긴 구름 1개 ──
+            // 파라미터
+            const startX = -22, endX = 18;
+            const width  = endX - startX;   // 40 units
+            const midX   = (startX + endX) / 2;
+            const cy     = -1.5;             // 화면 중앙 약간 아래
+            const mainRy = 2.2;             // 본체 타원 반높이
+            const bumpR  = 2.1;             // 상단 범프 반지름 (크고 풍성하게)
+            const botR   = 1.5;             // 하단 범프 반지름
+            const edgeR  = 3.0;             // 양끝 돌출 반지름 (넉넉히)
 
-                // 본체 타원
-                push({ type:'ellipse', cx:midX,   cy:cy,           rx:width/2+0.5, ry:mainRy, rot:0 });
+            // 1. 본체 타원 (길고 납작한 중심)
+            push({ type:'ellipse', cx:midX, cy:cy, rx:width/2 + 1.0, ry:mainRy, rot:0 });
 
-                // 왼쪽 돌출 원
-                push({ type:'circle',  cx:startX, cy:cy,           rx:edgeR, ry:edgeR, rot:0 });
-                // 오른쪽 돌출 원
-                push({ type:'circle',  cx:endX,   cy:cy,           rx:edgeR, ry:edgeR, rot:0 });
+            // 2. 왼쪽 / 오른쪽 큰 돌출 원
+            push({ type:'circle', cx:startX - 0.5, cy:cy, rx:edgeR,   ry:edgeR,   rot:0 });
+            push({ type:'circle', cx:endX   + 0.5, cy:cy, rx:edgeR,   ry:edgeR,   rot:0 });
 
-                // 상단 범프 (8개, 균등 간격)
-                const nTop = 8;
-                for (let i = 0; i < nTop; i++) {
-                    const bx = startX + (i + 0.5) * width / nTop;
-                    push({ type:'circle', cx:bx, cy:cy + mainRy - 0.6, rx:bumpR, ry:bumpR, rot:0 });
-                }
+            // 3. 상단 범프: 10개, 크기 약간 변화 (중앙이 더 크게)
+            const nTop = 10;
+            for (let i = 0; i < nTop; i++) {
+                const t    = (i + 0.5) / nTop;                           // 0~1
+                const bx   = startX + t * width;
+                const edge = Math.sin(t * Math.PI);                     // 중앙↑ 양끝↓
+                const r    = bumpR * (0.78 + edge * 0.22);              // 1.64 ~ 2.10
+                const yOff = cy + mainRy - r * 0.55;
+                push({ type:'circle', cx:bx, cy:yOff, rx:r, ry:r, rot:0 });
+            }
 
-                // 하단 범프 (5개, 균등 간격)
-                const nBot = 5;
-                for (let i = 0; i < nBot; i++) {
-                    const bx = startX + (i + 0.5) * width / nBot;
-                    push({ type:'circle', cx:bx, cy:cy - mainRy + 0.5, rx:botR, ry:botR, rot:0 });
-                }
-            };
+            // 4. 하단 범프: 7개, 작고 부드럽게
+            const nBot = 7;
+            for (let i = 0; i < nBot; i++) {
+                const t    = (i + 0.5) / nBot;
+                const bx   = startX + t * width;
+                const edge = Math.sin(t * Math.PI);
+                const r    = botR * (0.75 + edge * 0.25);
+                const yOff = cy - mainRy + r * 0.55;
+                push({ type:'circle', cx:bx, cy:yOff, rx:r, ry:r, rot:0 });
+            }
 
-            addCloud(-22,  5,  3.5);   // 상단 구름
-            addCloud( -5, 22, -8.5);   // 하단 구름
+            // 5. 상단 중간 중간 풍성함 추가 (반범프 레이어)
+            const nMid = 6;
+            for (let i = 0; i < nMid; i++) {
+                const t  = (i + 0.9) / nMid;
+                const bx = startX + t * width - 1.5;
+                push({ type:'ellipse', cx:bx, cy:cy + mainRy + 0.4, rx:2.4, ry:1.3, rot:0 });
+            }
         },
 
-        // 물리 func: 성층권 동일 단일 높이 (솟구치기 없음)
+        // 물리 func: 구름 상단 단일 높이 (성층권과 동일 구조)
         func: function(x) {
-            // 각 구름의 물리 상단은 본체 + 범프 합산 높이
-            const clouds = [
-                { xMin: -22, xMax:  5, cy:  3.5, ry: 4.1, edgeRx: 2.5 },
-                { xMin:  -5, xMax: 22, cy: -8.5, ry: 4.1, edgeRx: 2.5 },
-            ];
-            let maxY = -100;
-            for (const c of clouds) {
-                // 양끝 돌출 원 영역
-                if (x >= c.xMin - c.edgeRx && x <= c.xMin) {
-                    const dx = x - c.xMin;
-                    const topY = c.cy + c.edgeRx * Math.sqrt(Math.max(0, 1 - (dx/c.edgeRx)*(dx/c.edgeRx)));
-                    if (topY > maxY) maxY = topY;
-                }
-                if (x >= c.xMax && x <= c.xMax + c.edgeRx) {
-                    const dx = x - c.xMax;
-                    const topY = c.cy + c.edgeRx * Math.sqrt(Math.max(0, 1 - (dx/c.edgeRx)*(dx/c.edgeRx)));
-                    if (topY > maxY) maxY = topY;
-                }
-                // 본체 범위
-                if (x >= c.xMin && x <= c.xMax) {
-                    const halfW = (c.xMax - c.xMin) / 2;
-                    const t = (x - (c.xMin + c.xMax) / 2) / halfW;
-                    const topY = c.cy + c.ry * Math.sqrt(Math.max(0, 1 - t * t));
-                    if (topY > maxY) maxY = topY;
-                }
+            const startX = -22, endX = 18;
+            const edgeExt = 2.5; // 양끝 돌출 원 반지름
+
+            // 양끝 돌출 원 범위
+            if (x >= startX - edgeExt && x < startX) {
+                const dx = x - startX;
+                return -1.5 + edgeExt * Math.sqrt(Math.max(0, 1 - (dx/edgeExt)*(dx/edgeExt)));
             }
-            return maxY;
+            if (x > endX && x <= endX + edgeExt) {
+                const dx = x - endX;
+                return -1.5 + edgeExt * Math.sqrt(Math.max(0, 1 - (dx/edgeExt)*(dx/edgeExt)));
+            }
+            // 본체 범위: 완만한 타원 상단 + 범프 높이
+            if (x >= startX && x <= endX) {
+                const halfW = (endX - startX) / 2;
+                const t     = (x - (startX + endX) / 2) / halfW;
+                const body  = -1.5 + 2.2 * Math.sqrt(Math.max(0, 1 - t * t));
+                return body + 2.1; // 본체 상단 + 범프 높이
+            }
+            return -100;
         }
     }
 };

@@ -697,8 +697,8 @@ function initStage() {
             px = targetIsland.cx + (Math.random() - 0.5) * (targetIsland.rx * 0.8);
         } else if (stage.terrain === 'cloud_garden2') {
             // 상단 구름(-22~5) 또는 하단 구름(-5~22) 랜덤 스폰
-            // 상단 구름(-22~5) 또는 하단 구름(-5~22) 중앙부에 스폰
-            px = Math.random() < 0.5 ? -18 + Math.random() * 20 : -1 + Math.random() * 18;
+            // 단일 긴 구름 (-22~18) 중앙부 스폰
+            px = -15 + Math.random() * 28;
         } else {
             const pxRoll = Math.random();
             if (pxRoll < 0.45)       px =  (2 + Math.random() * 4);
