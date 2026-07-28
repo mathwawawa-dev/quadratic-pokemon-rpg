@@ -310,11 +310,17 @@ const TERRAINS_cloud_garden2 = {
                 }
             }
 
-            // 양 끝 15%에서 부드럽게 낮아지게
-            const absT = Math.abs(x - (x0 + W / 2)) / (W / 2);
-            if (absT > 0.85) {
-                const fade = 1 - (absT - 0.85) / 0.15;
-                topY = baseY + (topY - baseY) * Math.max(0, fade);
+            // 좌측: cosine 이등변삼각형 테이퍼 (normT -0.50~-1.0)
+            // 우측: 선형 수렴으로 점점 얇아짐
+            const _mid = x0 + W / 2;
+            const _nT  = (x - _mid) / (W / 2);
+            if (_nT < -0.50) {
+                const _t    = (-0.50 - _nT) / 0.50; // 0→1
+                const _fade = 0.5 * (1 + Math.cos(_t * Math.PI)); // cosine 1→0
+                topY = baseY + (topY - baseY) * _fade;
+            } else if (_nT > 0.80) {
+                const _t    = (_nT - 0.80) / 0.20; // 0→1
+                topY = baseY + (topY - baseY) * Math.max(0, 1 - _t);
             }
 
             return topY;
@@ -330,15 +336,15 @@ const TERRAINS_cloud_garden2 = {
             const s = baseY;
             const cloudThickness = 5.0;
 
-            // 좌측 dip (relX 0.08, 0.22) 크게 강화, 나머지는 그대로
+             // 좌측 dip 적당히 강화, 나머지 완만
             const dips = [
-                { relX: 0.08, h: 2.0 + Math.sin(s * 3.1) * 0.2,  w: 5.5 }, // 강화 (0.35→2.0)
-                { relX: 0.22, h: 2.5 + Math.cos(s * 2.7) * 0.2,  w: 6.0 }, // 강화 (0.60→2.5)
-                { relX: 0.38, h: 0.80 + Math.sin(s * 1.9) * 0.1, w: 8.0 },
-                { relX: 0.52, h: 0.90 + Math.cos(s * 4.1) * 0.08,w: 8.5 },
-                { relX: 0.66, h: 0.75 + Math.sin(s * 2.3) * 0.12,w: 7.5 },
-                { relX: 0.80, h: 0.55 + Math.cos(s * 3.7) * 0.1, w: 7.0 },
-                { relX: 0.93, h: 0.30 + Math.sin(s * 1.7) * 0.08,w: 5.5 },
+                { relX: 0.08, h: 0.90 + Math.sin(s * 3.1) * 0.15, w: 5.5 }, // 완화 (2.0→0.9)
+                { relX: 0.22, h: 1.00 + Math.cos(s * 2.7) * 0.15, w: 6.0 }, // 완화 (2.5→1.0)
+                { relX: 0.38, h: 0.80 + Math.sin(s * 1.9) * 0.1,  w: 8.0 },
+                { relX: 0.52, h: 0.90 + Math.cos(s * 4.1) * 0.08, w: 8.5 },
+                { relX: 0.66, h: 0.75 + Math.sin(s * 2.3) * 0.12, w: 7.5 },
+                { relX: 0.80, h: 0.55 + Math.cos(s * 3.7) * 0.1,  w: 7.0 },
+                { relX: 0.93, h: 0.30 + Math.sin(s * 1.7) * 0.08, w: 5.5 },
             ];
 
             let botY = baseY - cloudThickness;
@@ -354,17 +360,17 @@ const TERRAINS_cloud_garden2 = {
             }
 
             const mid = x0 + W / 2;
-            const normT = (x - mid) / (W / 2); // -1(좌끝)~+1(우끝)
+            const normT = (x - mid) / (W / 2);
 
-            if (normT < -0.80) {
-                // 좌측 끝: 선형으로 각지게 수렴 (환형/각진 끝)
-                const linFade = (normT + 1.0) / 0.20; // 0→1
-                botY = baseY - cloudThickness + (botY - (baseY - cloudThickness)) * Math.max(0, linFade);
+            if (normT < -0.50) {
+                // 좌측: cosine으로 baseY에 수렴 (이등변삼각형 둥근 테이퍼, 상단과 동일 범위)
+                const _t    = (-0.50 - normT) / 0.50;
+                const _fade = 0.5 * (1 + Math.cos(_t * Math.PI));
+                botY = baseY + (botY - baseY) * _fade;
             } else if (normT > 0.80) {
-                // 우측 끝: cosine 반원형으로 더 둥글게
-                const t = (normT - 0.80) / 0.20; // 0→1
-                const cosFade = 0.5 * (1 + Math.cos(t * Math.PI)); // 1→0 with cosine
-                botY = baseY - cloudThickness + (botY - (baseY - cloudThickness)) * cosFade;
+                // 우측: 선형으로 baseY에 수렴 (위아래 동시 얇아짐)
+                const _t = (normT - 0.80) / 0.20;
+                botY = baseY + (botY - baseY) * Math.max(0, 1 - _t);
             }
 
             return botY;
