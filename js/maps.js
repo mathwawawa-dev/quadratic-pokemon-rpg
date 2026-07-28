@@ -9,7 +9,7 @@ const LEVELS = [
     { title: "Stage 8", terrain: 'ocean',    count: 4, flyingCount: 1 },
     { title: "Stage 9", terrain: 'psychic',  count: 4, flyingCount: 2 },
     { title: "Stage 10", terrain: 'garden',   count: 4, flyingCount: 2 },
-    { title: "Stage 11", terrain: 'cloud_garden', count: 4, flyingCount: 3 },
+    // { title: "Stage 11", terrain: 'cloud_garden', count: 4, flyingCount: 3 },  // 숨김 (버그 수정 후 복구 예정)
     { title: "Stage 11", terrain: 'cloud_garden2', count: 4, flyingCount: 3 },
 ];
 
