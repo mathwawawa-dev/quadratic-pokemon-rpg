@@ -34,7 +34,7 @@ const TERRAINS = {
             const blockIdx = Math.floor((x + seed * 1.7) / 4.0);
             const h1 = Math.abs(Math.sin(blockIdx * 13.7 + seed * 0.5) * 43758.5453) % 1;
             const h2 = Math.abs(Math.cos(blockIdx * 7.3 - seed * 0.3) * 19234.1234) % 1;
-            return 6.0; // 미사일 관통 방지: 상단 y≈-1, 하단 y≈-7
+            return 2.0; // 3연속 히트에 관통 (0.7x3=2.1>2.0), 시각/물리 동기화
         }
     },
     sky: {
