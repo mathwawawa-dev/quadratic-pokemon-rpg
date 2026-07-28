@@ -739,7 +739,7 @@ function initStage() {
     const sideAssignments = [...Array(leftCount).fill('L'), ...Array(rightCount).fill('R')]
         .sort(() => Math.random() - 0.5);
 
-    const isSkyMap = (stage.terrain === 'sky');
+    const isSkyMap = (stage.terrain === 'sky' || stage.terrain === 'cloud_garden2');
     const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
     let flyingYPool = isSkyMap
         ? [8, 10, 12, 14, 16].sort(() => Math.random() - 0.5)
@@ -4160,86 +4160,68 @@ function render() {
     } else if (stage.terrain === 'cloud_garden2') {
         const cg2StartX = -25;
         const cg2EndX = 25;
+        const thickness = 5.5;
 
-        const getTopY = (x) => {
-            const key = (Math.round(x * 10) / 10).toFixed(1);
-            const hs = originalTerrainHeights[key];
-            return (hs && hs.length > 0 && hs[0] !== -100) ? hs[0] : null;
-        };
-        const getBotY = (x) => {
-            const key = (Math.round(x * 10) / 10).toFixed(1);
-            const bs = terrainBottoms[key];
-            return (bs && bs.length > 0 && bs[0] !== -100) ? bs[0] : null;
-        };
-
-        let cg2TargetCtx = ctx;
-        let cg2CraterCanvas = null;
+        let targetCtx = ctx;
+        let craterCanvas = null;
         if (typeof craters !== 'undefined' && craters.length > 0) {
             const cc = getCraterCanvas(canvas.width, canvas.height);
-            cg2CraterCanvas = cc.canvas; cg2TargetCtx = cc.ctx;
+            craterCanvas = cc.canvas; targetCtx = cc.ctx;
         }
 
-        // 상단 경로: left -> right
-        cg2TargetCtx.beginPath();
-        let started = false;
-        for (let x = cg2StartX; x <= cg2EndX; x += 0.2) {
-            const ty = getTopY(x);
-            if (ty === null) continue;
-            const p = gridToScreen(x, ty);
-            if (!started) { cg2TargetCtx.moveTo(p.x, p.y); started = true; }
-            else cg2TargetCtx.lineTo(p.x, p.y);
-        }
-        // 우측 캡: 반타원
-        {
-            const rtY = getTopY(cg2EndX) ?? 6;
-            const rbY = getBotY(cg2EndX) ?? (rtY - 5.5);
-            const capMidY = (rtY + rbY) / 2;
-            const capHalfH = (rtY - rbY) / 2;
-            for (let i = 1; i <= 16; i++) {
-                const angle = (Math.PI / 2) - (Math.PI / 16) * i;
-                const ex = cg2EndX + Math.abs(capHalfH) * 0.5 * Math.cos(angle);
-                const ey = capMidY + capHalfH * Math.sin(angle);
-                cg2TargetCtx.lineTo(...Object.values(gridToScreen(ex, ey)));
-            }
-        }
-        // 하단 경로: right -> left
-        for (let x = cg2EndX; x >= cg2StartX; x -= 0.2) {
-            const by = getBotY(x);
-            if (by === null) continue;
-            const p = gridToScreen(x, by);
-            cg2TargetCtx.lineTo(p.x, p.y);
-        }
-        // 좌측 캡: 반타원
-        {
-            const ltY = getTopY(cg2StartX) ?? 6;
-            const lbY = getBotY(cg2StartX) ?? (ltY - 5.5);
-            const capMidY = (ltY + lbY) / 2;
-            const capHalfH = (ltY - lbY) / 2;
-            for (let i = 1; i <= 16; i++) {
-                const angle = (-Math.PI / 2) + (Math.PI / 16) * i;
-                const ex = cg2StartX - Math.abs(capHalfH) * 0.5 * Math.cos(angle);
-                const ey = capMidY + capHalfH * Math.sin(angle);
-                cg2TargetCtx.lineTo(...Object.values(gridToScreen(ex, ey)));
-            }
-        }
-        cg2TargetCtx.closePath();
-        cg2TargetCtx.fillStyle = tData.color;
-        cg2TargetCtx.fill();
-        cg2TargetCtx.strokeStyle = tData.outColor;
-        cg2TargetCtx.lineWidth = 3;
-        cg2TargetCtx.stroke();
+        const getOrigY = (x) => {
+            const key = (Math.round(x * 10) / 10).toFixed(1);
+            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
+        };
 
-        if (cg2CraterCanvas) {
-            cg2TargetCtx.globalCompositeOperation = 'destination-out';
+        // 1. 상단 표면 곡선 (cg2StartX -> cg2EndX)
+        targetCtx.beginPath();
+        const startP = gridToScreen(cg2StartX, getOrigY(cg2StartX));
+        targetCtx.moveTo(startP.x, startP.y);
+        for (let x = cg2StartX; x <= cg2EndX; x = Math.min(cg2EndX, x + 0.2)) {
+            const p = gridToScreen(x, getOrigY(x));
+            targetCtx.lineTo(p.x, p.y);
+            if (x >= cg2EndX) break;
+        }
+
+        // 2. 우측 끝 빑�한 볼록 둥른 곡선 쳪 마감
+        const rightTopY = getOrigY(cg2EndX);
+        const rightMidP = gridToScreen(cg2EndX + 2.0, rightTopY - thickness / 2);
+        const rightBotP = gridToScreen(cg2EndX, rightTopY - thickness);
+        targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
+
+        // 3. 하단 표면 곡선 (cg2EndX -> cg2StartX)
+        for (let x = cg2EndX; x >= cg2StartX; x = Math.max(cg2StartX, x - 0.2)) {
+            const p = gridToScreen(x, getOrigY(x) - thickness);
+            targetCtx.lineTo(p.x, p.y);
+            if (x <= cg2StartX) break;
+        }
+
+        // 4. 좌측 끝 빑�한 볼록 둥른 곡선 쳪 마감
+        const leftTopY = getOrigY(cg2StartX);
+        const leftMidP = gridToScreen(cg2StartX - 2.0, leftTopY - thickness / 2);
+        const leftTopP = gridToScreen(cg2StartX, leftTopY);
+        targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
+
+        targetCtx.closePath();
+        targetCtx.fillStyle = tData.color;
+        targetCtx.fill();
+        targetCtx.strokeStyle = tData.outColor;
+        targetCtx.lineWidth = 2;
+        targetCtx.stroke();
+
+        // 5. 폭발 구멍(craters) 타공
+        if (craterCanvas) {
+            targetCtx.globalCompositeOperation = 'destination-out';
             for (const crater of craters) {
                 const p = gridToScreen(crater.x, crater.y);
                 const pr = scaleLength(crater.r);
-                cg2TargetCtx.beginPath();
-                cg2TargetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
-                cg2TargetCtx.fill();
+                targetCtx.beginPath();
+                targetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                targetCtx.fill();
             }
-            cg2TargetCtx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(cg2CraterCanvas, 0, 0);
+            targetCtx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(craterCanvas, 0, 0);
         }
     } else if (stage.terrain === 'log_bridge') {
         const skyStartX = -30;
