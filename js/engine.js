@@ -569,7 +569,9 @@ function initStage() {
     }
 
     const isFloatingMap = TERRAINS[stage.terrain].isFloating;
-    const stageHeightOffset = (isFloatingMap || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden') ? 0 : (1 + Math.random() * 3); // 공중정원 제외 맵 지형 1~4 무작위 높이 상승
+    const stageHeightOffset = (isFloatingMap || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden') ? 0
+        : stage.terrain === 'log_bridge' ? (0.5 + Math.random() * 0.7) // 외나무다리: 0.5~1.2 랜덤
+        : (1 + Math.random() * 3); // 공중정원 제외 맵 지형 1~4 무작위 높이 상승
 
     for (let x = -60; x <= 60; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
