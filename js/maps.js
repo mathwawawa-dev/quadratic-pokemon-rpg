@@ -333,62 +333,82 @@ const TERRAINS = {
     }
 };
 
-// ── 솜사탕(2): 긴 구름 2개, 시각=islands / 물리=단일 func ──
+// ── 솜사탕(2): 긴 구름 2개, 이미지 기반 시각 ──
 const TERRAINS_cloud_garden2 = {
     cloud_garden2: {
         name: "솜사탕(2)",
         bg: ["#0284c7", "#38bdf8", "#bae6fd"],
-        color: "rgba(255, 228, 235, 0.95)",
-        outColor: "rgba(244, 114, 182, 0.95)",
+        color: "rgb(247, 147, 185)",     // 이미지 핑크색
+        outColor: "rgb(240, 120, 165)",  // 살짝 진한 핑크
         deathZoneY: -25,
-        // ★ isFloating 없음, layers 없음 → 성층권과 동일한 단일 func 물리
-        // ★ islands 있음 → 구름 시각 렌더링만 사용
+        // ★ isFloating 없음, layers 없음 → 성층권 동일 물리
+        // ★ islands 있음 → 구름 시각만 담당
 
         init: function(seed) {
-            // 시각 전용: 두 긴 구름의 ellipse/circle 모양 생성
             this.islands = [[]];
-            const addLongCloud = (startX, endX, baseY) => {
-                const width = endX - startX;
-                const midX  = (startX + endX) / 2;
-                // 중심 타원
-                this.islands[0].push({ type:'ellipse', cx:midX, cy:baseY, rx:width/2+0.8, ry:1.6, rot:0 });
-                // 폭신한 원형 구름 뭉치
-                for (let x = startX; x <= endX; x += 2.0) {
-                    const prog = (x - startX) / Math.max(1, width);
-                    const edge = Math.sin(prog * Math.PI);
-                    const rTop = 1.2 + edge * 1.5 + Math.cos(x * 1.3 + seed) * 0.4;
-                    const yOff = Math.sin(x * 0.9 + seed) * 0.35;
-                    this.islands[0].push({ type:'circle', cx:x, cy:baseY + yOff, rx:rTop, ry:rTop, rot:0 });
-                    if (Math.random() > 0.4) {
-                        this.islands[0].push({
-                            type:'ellipse',
-                            cx: x + (Math.random()-0.5)*1.5,
-                            cy: baseY - 0.5 + (Math.random()-0.5)*0.7,
-                            rx: 1.6 + Math.random()*1.0,
-                            ry: 0.8 + Math.random()*1.2,
-                            rot: 0
-                        });
-                    }
+            const push = (s) => this.islands[0].push(s);
+
+            // 하나의 긴 구름 생성: 타원 본체 + 상단 범프 + 하단 범프 + 양끝 돌출
+            const addCloud = (startX, endX, cy) => {
+                const width  = endX - startX;
+                const midX   = (startX + endX) / 2;
+                const mainRy = 2.1;   // 본체 타원 반높이
+                const bumpR  = 2.0;   // 상단 범프 반지름
+                const botR   = 1.55;  // 하단 범프 반지름
+                const edgeR  = 2.5;   // 양끝 돌출 반지름
+
+                // 본체 타원
+                push({ type:'ellipse', cx:midX,   cy:cy,           rx:width/2+0.5, ry:mainRy, rot:0 });
+
+                // 왼쪽 돌출 원
+                push({ type:'circle',  cx:startX, cy:cy,           rx:edgeR, ry:edgeR, rot:0 });
+                // 오른쪽 돌출 원
+                push({ type:'circle',  cx:endX,   cy:cy,           rx:edgeR, ry:edgeR, rot:0 });
+
+                // 상단 범프 (8개, 균등 간격)
+                const nTop = 8;
+                for (let i = 0; i < nTop; i++) {
+                    const bx = startX + (i + 0.5) * width / nTop;
+                    push({ type:'circle', cx:bx, cy:cy + mainRy - 0.6, rx:bumpR, ry:bumpR, rot:0 });
+                }
+
+                // 하단 범프 (5개, 균등 간격)
+                const nBot = 5;
+                for (let i = 0; i < nBot; i++) {
+                    const bx = startX + (i + 0.5) * width / nBot;
+                    push({ type:'circle', cx:bx, cy:cy - mainRy + 0.5, rx:botR, ry:botR, rot:0 });
                 }
             };
-            // 상단 구름: 좌측에서 중앙까지
-            addLongCloud(-22,  5,  3.2);
-            // 하단 구름: 중앙에서 우측까지
-            addLongCloud( -5, 22, -9.0);
+
+            addCloud(-22,  5,  3.5);   // 상단 구름
+            addCloud( -5, 22, -8.5);   // 하단 구름
         },
 
-        // 물리 전용 func: 두 구름 플랫폼 상단 Y (성층권과 동일 원리)
+        // 물리 func: 성층권 동일 단일 높이 (솟구치기 없음)
         func: function(x) {
-            const segs = [
-                { xMin: -22, xMax:  5, cy:  3.2, ry: 2.0 },
-                { xMin:  -5, xMax: 22, cy: -9.0, ry: 2.0 },
+            // 각 구름의 물리 상단은 본체 + 범프 합산 높이
+            const clouds = [
+                { xMin: -22, xMax:  5, cy:  3.5, ry: 4.1, edgeRx: 2.5 },
+                { xMin:  -5, xMax: 22, cy: -8.5, ry: 4.1, edgeRx: 2.5 },
             ];
             let maxY = -100;
-            for (const seg of segs) {
-                if (x >= seg.xMin && x <= seg.xMax) {
-                    const halfW = (seg.xMax - seg.xMin) / 2;
-                    const t    = (x - (seg.xMin + seg.xMax) / 2) / halfW;
-                    const topY = seg.cy + seg.ry * Math.sqrt(Math.max(0, 1 - t * t));
+            for (const c of clouds) {
+                // 양끝 돌출 원 영역
+                if (x >= c.xMin - c.edgeRx && x <= c.xMin) {
+                    const dx = x - c.xMin;
+                    const topY = c.cy + c.edgeRx * Math.sqrt(Math.max(0, 1 - (dx/c.edgeRx)*(dx/c.edgeRx)));
+                    if (topY > maxY) maxY = topY;
+                }
+                if (x >= c.xMax && x <= c.xMax + c.edgeRx) {
+                    const dx = x - c.xMax;
+                    const topY = c.cy + c.edgeRx * Math.sqrt(Math.max(0, 1 - (dx/c.edgeRx)*(dx/c.edgeRx)));
+                    if (topY > maxY) maxY = topY;
+                }
+                // 본체 범위
+                if (x >= c.xMin && x <= c.xMax) {
+                    const halfW = (c.xMax - c.xMin) / 2;
+                    const t = (x - (c.xMin + c.xMax) / 2) / halfW;
+                    const topY = c.cy + c.ry * Math.sqrt(Math.max(0, 1 - t * t));
                     if (topY > maxY) maxY = topY;
                 }
             }
