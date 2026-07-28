@@ -200,6 +200,13 @@ function resetView() {
     Y_MIN = centerY - reqYSpan * 0.61;
     Y_MAX = Y_MIN + reqYSpan;
 
+    // 맵별 카메라 오프셋 적용 (예: log_bridge cameraOffsetY: -3)
+    const _rvStage = LEVELS[currentStage % LEVELS.length];
+    const _rvTData = _rvStage && TERRAINS[_rvStage.terrain];
+    const _rvCamOff = (_rvTData && _rvTData.cameraOffsetY) || 0;
+    Y_MIN += _rvCamOff;
+    Y_MAX += _rvCamOff;
+
     resize();
 }
 window.resetView = resetView;
