@@ -133,7 +133,7 @@ const TERRAINS = {
 
         // 특정 x에서 y값 반환 (섬 위 = 부드러운 sin/cos 파형, 섬 밖 = -100)
         func: function(x) {
-            const isl = this.islands3;
+            const isl = TERRAINS.garden.islands3; // this 바인딩 손실 방지
             if (!isl) return -100;
             // 어느 섬에 속하는지 확인
             let island = null;

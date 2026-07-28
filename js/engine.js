@@ -591,7 +591,7 @@ function initStage() {
             }
         } else {
             let y = tData.func(x) + stageHeightOffset;
-            if (!isFloatingMap && stage.terrain !== 'sky') {
+            if (!isFloatingMap && stage.terrain !== 'sky' && stage.terrain !== 'garden') {
                 // 양 끝 경사 높은 언덕 주석 처리 (요청 시 언제든 복구 가능)
                 // if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
                 // else if (x > 20) { const dx = x - 20; y += dx * dx * 5; }
@@ -679,18 +679,18 @@ function initStage() {
     let px = 0;
     let attempts = 0;
     do {
-        if (['garden', 'cloud_garden'].includes(stage.terrain)) {
-            // garden 맵은 단일 레이어(islands[0])만 사용. cloud_garden은 islands[1] 유지.
-            const layerIdx = stage.terrain === 'garden' ? 0 : 1;
-            const midIslands = TERRAINS[stage.terrain].islands[layerIdx] || TERRAINS[stage.terrain].islands[0];
-            // 중앙부(-15 ~ 15)에 가까운 섬을 우선 선택하여 확정 스폰
+        if (stage.terrain === 'garden') {
+            // 중앙 섬(-5~5) 위에 스폰
+            px = -3 + Math.random() * 6;
+        } else if (stage.terrain === 'cloud_garden') {
+            // cloud_garden 이전 속 로직 유지
+            const midIslands = TERRAINS['cloud_garden'].islands[1] || TERRAINS['cloud_garden'].islands[0];
             const centerIslands = midIslands.filter(s => s.cx >= -15 && s.cx <= 15);
             const targetIsland = centerIslands.length > 0 ? centerIslands[Math.floor(Math.random() * centerIslands.length)] : midIslands[0];
             px = targetIsland.cx + (Math.random() - 0.5) * (targetIsland.rx * 0.8);
         } else if (stage.terrain === 'cloud_garden2') {
-            // 상단 구름(-22~5) 또는 하단 구름(-5~22) 랜덤 스폰
-            // 단일 긴 구름 (-22~18) 중앙부 스폰
-            px = -15 + Math.random() * 28;
+            // 단일 긴 구름 중앙부 스폰
+            px = -12 + Math.random() * 24;
         } else {
             const pxRoll = Math.random();
             if (pxRoll < 0.45)       px =  (2 + Math.random() * 4);
