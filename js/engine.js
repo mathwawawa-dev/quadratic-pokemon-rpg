@@ -2143,7 +2143,7 @@ function updateGame() {
             const _curDeathZone = (TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].deathZoneY !== undefined)
                 ? TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].deathZoneY : -8;
             const _isOverVoid = groundY < _curDeathZone;
-            if (!ent.isFlying || _isOverVoid) {
+            if (!ent.isFlying || (_isOverVoid && !ent.hasCloud)) {
                 // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
                 const _np_islandB = getTerrainBottom(ent.x, ent.y);
                 const _np_below = _np_islandB !== -1000 && ent.y < _np_islandB + 0.1;
