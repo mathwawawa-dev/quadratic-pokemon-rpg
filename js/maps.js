@@ -284,11 +284,40 @@ const TERRAINS_cloud_garden2 = {
             const { x0, x1, baseY } = isl.sole;
             if (x < x0 - 0.1 || x > x1 + 0.1) return -100;
 
-            const t = (x - (x0 + x1) / 2) / ((x1 - x0) / 2);
-            const edgeFade = Math.cos(Math.max(-1, Math.min(1, t)) * Math.PI / 2.2);
+            const W  = x1 - x0;  // 40 units
+            const s  = baseY;    // 매 게임마다 달라지는 보조 시드
 
-            const bumps = Math.sin(x * 0.55) * 0.6 + Math.cos(x * 0.9 + 1.0) * 0.4;
-            return (baseY + bumps) * edgeFade + (1 - edgeFade) * (baseY - 1.5);
+            // 뭉게구름 봉우리 7개 (상대 위치 relX, 높이 h, 폭 w)
+            // (1 - d²)² 형태의 쿼틱 범프 → 둥글고 부드러운 솜사탕 모양
+            const puffs = [
+                { relX: 0.06, h: 2.0 + Math.sin(s * 3.1) * 0.5, w: 4.5 },
+                { relX: 0.20, h: 3.4 + Math.cos(s * 2.7) * 0.6, w: 5.5 },
+                { relX: 0.35, h: 4.2 + Math.sin(s * 1.9) * 0.5, w: 6.5 },
+                { relX: 0.50, h: 4.8 + Math.cos(s * 4.1) * 0.4, w: 7.0 },
+                { relX: 0.65, h: 4.0 + Math.sin(s * 2.3) * 0.6, w: 6.0 },
+                { relX: 0.80, h: 3.0 + Math.cos(s * 3.7) * 0.5, w: 5.0 },
+                { relX: 0.93, h: 1.8 + Math.sin(s * 1.7) * 0.4, w: 4.0 },
+            ];
+
+            let topY = baseY; // 최솟값 = baseY (섬 바닥선)
+            for (const p of puffs) {
+                const cx = x0 + W * p.relX;
+                const d  = (x - cx) / p.w;
+                if (Math.abs(d) < 1.0) {
+                    const t    = 1 - d * d;
+                    const bump = p.h * t * t; // 쿼틱: 꼭대기 둥글고 가장자리 완만
+                    if (baseY + bump > topY) topY = baseY + bump;
+                }
+            }
+
+            // 양 끝 15% 구간에서 부드럽게 낮아지게 (엣지 드롭)
+            const absT = Math.abs(x - (x0 + W / 2)) / (W / 2);
+            if (absT > 0.85) {
+                const fade = 1 - (absT - 0.85) / 0.15;
+                topY = baseY + (topY - baseY) * Math.max(0, fade);
+            }
+
+            return topY;
         }
     }
 };
