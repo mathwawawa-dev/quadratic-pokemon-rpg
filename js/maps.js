@@ -371,7 +371,7 @@ const TERRAINS_cloud_garden2 = {
                 const _t    = (-0.50 - normT) / 0.50;
                 const _fade = 0.5 * (1 + Math.cos(_t * Math.PI));
                 // 수렴점에 sine 굴곡 추가 (진폭 0.7, 끝으로 갈수록 굴곡 비중 커짐)
-                const _ripple   = Math.sin((x - x0) * 1.8 + s * 2.3) * 0.7 * _t;
+                const _ripple   = Math.sin((x - x0) * 1.8 + s * 2.3) * 0.3 * _t;
                 const _botTarget = baseY - 4.5 - _ripple;
                 botY = _botTarget + (botY - _botTarget) * _fade;
             } else if (normT > 0.80) {
