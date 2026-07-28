@@ -668,7 +668,7 @@ function initStage() {
                   } else {
                       // 렌더링 thickness=5.0(고정)과 물리 바닥 일치 - getThickness 가변값 불일치 방지
                       terrainHeights[key] = [y];
-                      terrainBottoms[key] = [y - 8.0]; // 상단 y≈6 → 하단 y≈-2
+                      terrainBottoms[key] = [y - 4.0]; // 물리 하단 y≈-6 (deathZoneY=-8 바로 위, 시각적 두께=8 유지)
                   }
               } else if (stage.terrain === 'grass' || stage.terrain === 'ice' || stage.terrain === 'lava' || stage.terrain === 'cave' || stage.terrain === 'electric' || stage.terrain === 'ocean' || stage.terrain === 'psychic') {
                   const roundedX = Math.round(x * 10) / 10;
