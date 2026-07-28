@@ -161,6 +161,7 @@ const TERRAINS = {
         deathZoneY: -25,
         init: function(seed) {
             this.islands = [[]];
+            this._islandCache = null; // 신규 스테이지 시작 시 캐시 무효화
             const rnd = (min, max) => Math.random() * (max - min) + min;
 
             const addCloudCluster = (layer, startX, endX, baseY) => {
@@ -178,7 +179,7 @@ const TERRAINS = {
                 });
                 
                 // 폭신폭신 원형 구름 뭉치 배치
-                for (let x = startX; x <= endX; x += 1.6) {
+                for (let x = startX; x <= endX; x += 2.2) {
                     const progress = (x - startX) / Math.max(1, width);
                     const edgeFactor = Math.sin(progress * Math.PI);
                     

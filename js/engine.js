@@ -3993,23 +3993,49 @@ function render() {
         const numLayers = tData.layers ? tData.layers.length : 1;
         
     if (tData.islands) {
-            // 원형/타원(도형) 기반 렌더링 + 크레이터 지우기 (구름 방식)
-            const islandCanvas = document.createElement('canvas');
-            islandCanvas.width = canvas.width;
-            islandCanvas.height = canvas.height;
-            const ictx = islandCanvas.getContext('2d');
-            
-            const scaleX = canvas.width / (X_MAX - X_MIN);
-            const scaleY = canvas.height / (Y_MAX - Y_MIN);
+            // 원형/타원(도형) 기반 렌더링 + 크레이터 지우기
+            // ★ 성능 최적화: 크레이터 없을 때는 캐시 캔버스 재사용
+            const hasCraters = typeof craters !== 'undefined' && craters.length > 0;
+            const needsRebuild = !tData._islandCache
+                || tData._islandCache.width  !== canvas.width
+                || tData._islandCache.height !== canvas.height
+                || hasCraters; // 크레이터 있으면 매 프레임 재그림
 
-            // 1. 테두리/아웃라인 (outColor)
-            if (tData.outColor) {
-                ictx.fillStyle = tData.outColor;
+            if (needsRebuild) {
+                const islandCanvas = document.createElement('canvas');
+                islandCanvas.width  = canvas.width;
+                islandCanvas.height = canvas.height;
+                const ictx = islandCanvas.getContext('2d');
+
+                const scaleX = canvas.width  / (X_MAX - X_MIN);
+                const scaleY = canvas.height / (Y_MAX - Y_MIN);
+
+                // 1. 테두리/아웃라인 (outColor)
+                if (tData.outColor) {
+                    ictx.fillStyle = tData.outColor;
+                    for (let l = 0; l < tData.islands.length; l++) {
+                        for (const s of tData.islands[l]) {
+                            const p = gridToScreen(s.cx, s.cy);
+                            const prx = (s.rx + 0.06) * scaleX;
+                            const pry = (s.ry + 0.06) * scaleY;
+                            ictx.beginPath();
+                            if (s.type === 'ellipse' || s.rx !== s.ry) {
+                                ictx.ellipse(p.x, p.y, prx, pry, s.rot || 0, 0, Math.PI * 2);
+                            } else {
+                                ictx.arc(p.x, p.y, prx, 0, Math.PI * 2);
+                            }
+                            ictx.fill();
+                        }
+                    }
+                }
+
+                // 2. 본체 도형 색상 (color)
+                ictx.fillStyle = tData.color || '#22c55e';
                 for (let l = 0; l < tData.islands.length; l++) {
                     for (const s of tData.islands[l]) {
                         const p = gridToScreen(s.cx, s.cy);
-                        const prx = (s.rx + 0.06) * scaleX;
-                        const pry = (s.ry + 0.06) * scaleY;
+                        const prx = s.rx * scaleX;
+                        const pry = s.ry * scaleY;
                         ictx.beginPath();
                         if (s.type === 'ellipse' || s.rx !== s.ry) {
                             ictx.ellipse(p.x, p.y, prx, pry, s.rot || 0, 0, Math.PI * 2);
@@ -4019,38 +4045,27 @@ function render() {
                         ictx.fill();
                     }
                 }
-            }
 
-            // 2. 본체 도형 색상 (color)
-            ictx.fillStyle = tData.color || '#22c55e';
-            for (let l = 0; l < tData.islands.length; l++) {
-                for (const s of tData.islands[l]) {
-                    const p = gridToScreen(s.cx, s.cy);
-                    const prx = s.rx * scaleX;
-                    const pry = s.ry * scaleY;
-                    ictx.beginPath();
-                    if (s.type === 'ellipse' || s.rx !== s.ry) {
-                        ictx.ellipse(p.x, p.y, prx, pry, s.rot || 0, 0, Math.PI * 2);
-                    } else {
-                        ictx.arc(p.x, p.y, prx, 0, Math.PI * 2);
+                // 3. 크레이터 지우기
+                if (hasCraters) {
+                    ictx.globalCompositeOperation = 'destination-out';
+                    for (const crater of craters) {
+                        const p = gridToScreen(crater.x, crater.y);
+                        const pr = crater.r * scaleX;
+                        ictx.beginPath();
+                        ictx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                        ictx.fill();
                     }
-                    ictx.fill();
+                    ictx.globalCompositeOperation = 'source-over';
                 }
-            }
 
-            // 3. 크레이터 지우기
-            if (typeof craters !== 'undefined' && craters.length > 0) {
-                ictx.globalCompositeOperation = 'destination-out';
-                for (const crater of craters) {
-                    const p = gridToScreen(crater.x, crater.y);
-                    const pr = crater.r * scaleX;
-                    ictx.beginPath();
-                    ictx.arc(p.x, p.y, pr, 0, Math.PI * 2);
-                    ictx.fill();
-                }
-                ictx.globalCompositeOperation = 'source-over';
+                // 크레이터 없을 때만 캐시 저장 (크레이터 있으면 매 프레임 다시 그려야 함)
+                if (!hasCraters) tData._islandCache = islandCanvas;
+                ctx.drawImage(islandCanvas, 0, 0);
+            } else {
+                // 캐시 캔버스 그대로 사용 (핵심 최적화)
+                ctx.drawImage(tData._islandCache, 0, 0);
             }
-            ctx.drawImage(islandCanvas, 0, 0);
         } else {
             for (let l = 0; l < numLayers; l++) {
                 let inIsland = false;
