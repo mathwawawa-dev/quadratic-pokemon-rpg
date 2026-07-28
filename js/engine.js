@@ -620,14 +620,20 @@ function initStage() {
                       terrainBottoms[key] = [y - 5.0];
                   }
               } else if (stage.terrain === 'garden' || stage.terrain === 'cloud_garden2') {
-                  // sky와 동일한 단일 func 방식: 3개 섬, 섬 밖은 -100
-                  const roundedX = Math.round(x * 10) / 10;
+                  // sky와 동일한 단일 func 방식: 섬 밖은 -100
                   if (y <= -99) {
                       terrainHeights[key] = [-100];
                       terrainBottoms[key] = [-100];
                   } else {
                       terrainHeights[key] = [y];
-                      terrainBottoms[key] = [y - 4.5];
+                      if (stage.terrain === 'cloud_garden2') {
+                          // 상단과 baseY 기준으로 대칭 → 뭉게구름 렌즈 모양 하단
+                          const _sole = tData.islands3 && tData.islands3.sole;
+                          const _baseY = _sole ? _sole.baseY : 0;
+                          terrainBottoms[key] = [2 * _baseY - y];
+                      } else {
+                          terrainBottoms[key] = [y - 4.5];
+                      }
                   }
               } else if (stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
@@ -667,10 +673,12 @@ function initStage() {
     let attempts = 0;
     do {
         if (stage.terrain === 'cloud_garden2') {
-            // 단일 넓은 섬(-20~20) 위에 스폰
-            const _cg2 = TERRAINS.cloud_garden2.islands3;
-            const _sole = _cg2 && _cg2.sole;
-            px = _sole ? _sole.x0 + 2 + Math.random() * (_sole.x1 - _sole.x0 - 4) : Math.random() * 16 - 8;
+            // 단일 섬: side에 따라 x<0(좌)/x>0(우) 분리 스폰
+            const _sole = TERRAINS.cloud_garden2.islands3 && TERRAINS.cloud_garden2.islands3.sole;
+            const _half = _sole ? Math.max(2, (_sole.x1 - _sole.x0) / 4 - 1) : 8;
+            px = side === 'L'
+                ? -(1 + Math.random() * _half)   // x < 0
+                : (1 + Math.random() * _half);    // x > 0
         } else if (stage.terrain === 'garden') {
             // 중앙 섬(-5~5) 위에 스폰
             px = -3 + Math.random() * 6;
@@ -4036,10 +4044,25 @@ function render() {
             const rightBotP = gridToScreen(isle.x1, rtY - thickness);
             targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
             // 하단
-            for (let x = isle.x1; x >= isle.x0; x = Math.max(isle.x0, x - 0.2)) {
-                const p = gridToScreen(x, getOrigY(x) - thickness);
-                targetCtx.lineTo(p.x, p.y);
-                if (x <= isle.x0) break;
+            if (stage.terrain === 'cloud_garden2') {
+                // 거울 하단면: terrainBottoms에서 읽어서 뭉게 실루엣 그대로 반영
+                const getBotY = (bx) => {
+                    const bkey = (Math.round(bx * 10) / 10).toFixed(1);
+                    return (terrainBottoms[bkey] && terrainBottoms[bkey].length > 0) ? terrainBottoms[bkey][0] : -100;
+                };
+                for (let x = isle.x1; x >= isle.x0; x = Math.max(isle.x0, x - 0.2)) {
+                    const by = getBotY(x);
+                    if (by <= -50) break;
+                    const p = gridToScreen(x, by);
+                    targetCtx.lineTo(p.x, p.y);
+                    if (x <= isle.x0) break;
+                }
+            } else {
+                for (let x = isle.x1; x >= isle.x0; x = Math.max(isle.x0, x - 0.2)) {
+                    const p = gridToScreen(x, getOrigY(x) - thickness);
+                    targetCtx.lineTo(p.x, p.y);
+                    if (x <= isle.x0) break;
+                }
             }
             // 좌측 캡
             const ltY = getOrigY(isle.x0);
