@@ -116,79 +116,40 @@ const TERRAINS = {
         name: "부유하는 섬",
         bg: ["#0ea5e9", "#7dd3fc", "#e0f2fe"],
         color: "#22c55e", outColor: "#15803d",
-        isFloating: true,
+        // isFloating 없음 - sky(성층권)와 동일한 단일 func 방식으로 3개 섬 구현
         deathZoneY: -25,
+
+        // 섬별 x 범위를 저장 (buildTerrain에서 사용)
+        islands3: null, // {left:{x0,x1,baseY}, mid:{x0,x1,baseY}, right:{x0,x1,baseY}}
+
         init: function(seed) {
-            this.islands = [[]]; // 단일 레이어
-            
-            const addIslandCluster = (layer, startX, endX, baseY) => {
-                const width = endX - startX;
-                const midX = (startX + endX) / 2;
-                
-                // 1. Central main ellipse
-                this.islands[layer].push({
-                    type: 'ellipse',
-                    cx: midX,
-                    cy: baseY,
-                    rx: width / 2 + 0.6,
-                    ry: 2.2 + (Math.abs(Math.sin(midX * 0.7 + seed)) * 0.6),
-                    rot: 0
-                });
-                
-                // 2. Overlapping circles & ellipses along the island body
-                for (let x = startX; x <= endX; x += 1.8) {
-                    const progress = (x - startX) / Math.max(1, width);
-                    const edgeFactor = Math.sin(progress * Math.PI);
-                    
-                    const rTop = 1.8 + edgeFactor * 1.5 + (Math.cos(x * 1.5 + seed) * 0.5);
-                    const yOff = Math.sin(x * 1.1 + seed) * 0.5;
-                    this.islands[layer].push({
-                        type: 'circle',
-                        cx: x,
-                        cy: baseY + yOff,
-                        rx: rTop,
-                        ry: rTop,
-                        rot: 0
-                    });
-
-                    if (Math.random() > 0.3) {
-                        const rxSub = 2.0 + Math.random() * 1.5;
-                        const rySub = 0.8 + Math.random() * 2.0;
-                        this.islands[layer].push({
-                            type: 'ellipse',
-                            cx: x + (Math.random() - 0.5) * 1.5,
-                            cy: baseY - 0.8 + (Math.random() - 0.5) * 1.0,
-                            rx: rxSub,
-                            ry: rySub,
-                            rot: 0
-                        });
-                    }
-                }
-            };
-
             const rnd = (min, max) => Math.random() * (max - min) + min;
-
-            // 좌측 섬
-            addIslandCluster(0, rnd(-28, -24), rnd(-14, -10), rnd(-4.0, -2.0));
-            // 중앙 섬
-            addIslandCluster(0, rnd(-6, -4), rnd(6, 8), rnd(1.0, 3.0));
-            // 우측 섬
-            addIslandCluster(0, rnd(12, 14), rnd(24, 28), rnd(-3.0, -1.0));
+            this.islands3 = {
+                left:  { x0: -24, x1: -12, baseY: rnd(-1.0, 1.0)  },
+                mid:   { x0:  -5, x1:   5, baseY: rnd( 2.0, 3.5)  },
+                right: { x0:  12, x1:  24, baseY: rnd( 0.0, 1.5)  }
+            };
         },
-        layers: [
-            (x) => {
-                let maxY = -100;
-                if (!TERRAINS.garden.islands || !TERRAINS.garden.islands[0]) return maxY;
-                for (let s of TERRAINS.garden.islands[0]) {
-                    const dx = Math.abs(x - s.cx);
-                    if (dx <= s.rx) {
-                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
-                        if (topY > maxY) maxY = topY;
-                    }
-                }
-                return maxY;
-            }
-        ]
+
+        // 특정 x에서 y값 반환 (섬 위 = 부드러운 sin/cos 파형, 섬 밖 = -100)
+        func: function(x) {
+            const isl = this.islands3;
+            if (!isl) return -100;
+            // 어느 섬에 속하는지 확인
+            let island = null;
+            if (x >= isl.left.x0  && x <= isl.left.x1)  island = isl.left;
+            else if (x >= isl.mid.x0 && x <= isl.mid.x1) island = isl.mid;
+            else if (x >= isl.right.x0 && x <= isl.right.x1) island = isl.right;
+            if (!island) return -100;
+
+            const { x0, x1, baseY } = island;
+            const t = (x - (x0 + x1) / 2) / ((x1 - x0) / 2); // -1 ~ +1
+            const edgeFade = Math.sqrt(Math.max(0, 1 - t * t * 0.96)); // 양끝 부드럽게 마감
+
+            // 섬 위 지형 굴곡 (적당히 자연스럽게)
+            const bumps = Math.sin(x * 0.55) * 0.6 + Math.cos(x * 0.9 + 1.0) * 0.4;
+            return (baseY + bumps) * edgeFade + (1 - edgeFade) * (baseY - 1.0);
+        }
     }
     ,cloud_garden: {
         name: "솜사탕",

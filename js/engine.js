@@ -295,7 +295,7 @@ function getTerrainY(x, currentY) {
     const ys = terrainHeights[key] || [-100];
     
     const currentTerrain = LEVELS[currentStage % LEVELS.length].terrain;
-    if (TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky') {
+    if (TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky' || currentTerrain === 'garden') {
         if (currentY !== undefined) {
             const bs = terrainBottoms[key] || [];
             let bestY = -100;
@@ -326,7 +326,7 @@ function getTerrainBottom(x, currentY) {
     const ys = terrainHeights[key] || [-100];
     const bs = terrainBottoms[key] || [];
     const currentTerrain = LEVELS[currentStage % LEVELS.length].terrain;
-    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky') && currentY !== undefined) {
+    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky' || currentTerrain === 'garden') && currentY !== undefined) {
         let bestB = -1000;
         let minDiff = 9999;
         for (let i = 0; i < ys.length; i++) {
@@ -348,7 +348,7 @@ function getTerrainLayerIndex(x, currentY) {
     const ys = terrainHeights[key] || [-100];
     const bs = terrainBottoms[key] || [];
     const currentTerrain = LEVELS[currentStage % LEVELS.length].terrain;
-    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky') && currentY !== undefined) {
+    if ((TERRAINS[currentTerrain].isFloating || currentTerrain === 'sky' || currentTerrain === 'garden') && currentY !== undefined) {
         let bestIdx = -1, minDiff = 9999;
         for (let i = 0; i < ys.length; i++) {
             const y = ys[i], b = bs[i] !== undefined ? bs[i] : -1000;
@@ -388,7 +388,7 @@ function createCrater(cx, cy, radius) {
             // 폭발 구체 범위(craterBottomY ~ craterTopY) 내에 위치한 표면 지형만 파괴되도록 정밀 검증 (상단 천장 언덕 유지를 통해 순간이동 슬라이딩 버그 예방)
             if (y !== -100 && y >= craterBottomY && y <= craterTopY + 0.3) {
                 terrainHeights[key][i] = Math.min(y, craterBottomY);
-                if (isFloating || stage.terrain === 'sky' || stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2') {
+                if (isFloating || stage.terrain === 'sky' || stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden') {
                     // terrainBottoms는 부유맵·log_bridge 모두 buildTerrain에서 초기화됨
                     //   <  조건: 바닥보다 0.5 아래 갔을 때 -> 1발 늦음
                     //   <= 조건: 표면이 정확히 바닥에 닿을 때 -> 타이밍 정확
@@ -543,7 +543,7 @@ function initStage() {
     // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 최대 1개의 뾰족한 언덕 배치 ('log_bridge' 외나무다리 맵은 제외)
     // 내 포켓몬(approxPx) 주변 반경 8.0 이내에는 스파이크가 절대 생성되지 않도록 제한 (자폭 방지)
     terrainSpikes = [];
-    const isNoSpikeTerrain = stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2';
+    const isNoSpikeTerrain = stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden';
     const spikeProb = stage.terrain === 'ice' ? 0.5 : 0.3;
     const spikeCount = (!isNoSpikeTerrain && Math.random() < spikeProb) ? 1 : 0;
     for (let s = 0; s < spikeCount; s++) {
@@ -562,7 +562,7 @@ function initStage() {
     }
 
     const isFloatingMap = TERRAINS[stage.terrain].isFloating;
-    const stageHeightOffset = (isFloatingMap || stage.terrain === 'cloud_garden2') ? 0 : (1 + Math.random() * 3); // 공중정원 제외 맵 지형 1~4 무작위 높이 상승
+    const stageHeightOffset = (isFloatingMap || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden') ? 0 : (1 + Math.random() * 3); // 공중정원 제외 맵 지형 1~4 무작위 높이 상승
 
     for (let x = -60; x <= 60; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -618,6 +618,16 @@ function initStage() {
                   } else {
                       terrainHeights[key] = [y];
                       terrainBottoms[key] = [y - 5.0];
+                  }
+              } else if (stage.terrain === 'garden') {
+                  // sky와 동일한 단일 func 방식: 3개 섬, 섬 밖은 -100
+                  const roundedX = Math.round(x * 10) / 10;
+                  if (y <= -99) {
+                      terrainHeights[key] = [-100];
+                      terrainBottoms[key] = [-100];
+                  } else {
+                      terrainHeights[key] = [y];
+                      terrainBottoms[key] = [y - 4.5];
                   }
               } else if (stage.terrain === 'cloud_garden2') {
                   // sky와 동일한 단일 func 방식: 아랫면은 거의 평탄 (두께 5.5)
@@ -739,7 +749,7 @@ function initStage() {
     const sideAssignments = [...Array(leftCount).fill('L'), ...Array(rightCount).fill('R')]
         .sort(() => Math.random() - 0.5);
 
-    const isSkyMap = (stage.terrain === 'sky' || stage.terrain === 'cloud_garden2');
+    const isSkyMap = (stage.terrain === 'sky' || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden');
     const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
     let flyingYPool = isSkyMap
         ? [8, 10, 12, 14, 16].sort(() => Math.random() - 0.5)
@@ -4092,7 +4102,74 @@ function render() {
             targetCtx.globalCompositeOperation = 'source-over';
             ctx.drawImage(craterCanvas, 0, 0);
         }
-    } else if (stage.terrain === 'sky') {
+    } else if (stage.terrain === 'garden') {
+        const thickness = 4.5;
+
+        let targetCtx = ctx;
+        let craterCanvas = null;
+        if (typeof craters !== 'undefined' && craters.length > 0) {
+            const cc = getCraterCanvas(canvas.width, canvas.height);
+            craterCanvas = cc.canvas; targetCtx = cc.ctx;
+        }
+
+        const getOrigY = (x) => {
+            const key = (Math.round(x * 10) / 10).toFixed(1);
+            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
+        };
+
+        const gardenIslands = tData.islands3;
+        const islandRanges = gardenIslands
+            ? [gardenIslands.left, gardenIslands.mid, gardenIslands.right]
+            : [];
+
+        // 각 섬을 sky 맵과 동일한 방식으로 개별 폴리곤으로 렌더링
+        for (const isle of islandRanges) {
+            targetCtx.beginPath();
+            const startP = gridToScreen(isle.x0, getOrigY(isle.x0));
+            targetCtx.moveTo(startP.x, startP.y);
+            for (let x = isle.x0; x <= isle.x1; x = Math.min(isle.x1, x + 0.2)) {
+                const p = gridToScreen(x, getOrigY(x));
+                targetCtx.lineTo(p.x, p.y);
+                if (x >= isle.x1) break;
+            }
+            // 우측 캡
+            const rtY = getOrigY(isle.x1);
+            const rightMidP = gridToScreen(isle.x1 + 1.5, rtY - thickness / 2);
+            const rightBotP = gridToScreen(isle.x1, rtY - thickness);
+            targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
+            // 하단
+            for (let x = isle.x1; x >= isle.x0; x = Math.max(isle.x0, x - 0.2)) {
+                const p = gridToScreen(x, getOrigY(x) - thickness);
+                targetCtx.lineTo(p.x, p.y);
+                if (x <= isle.x0) break;
+            }
+            // 좌측 캡
+            const ltY = getOrigY(isle.x0);
+            const leftMidP = gridToScreen(isle.x0 - 1.5, ltY - thickness / 2);
+            const leftTopP = gridToScreen(isle.x0, ltY);
+            targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
+            targetCtx.closePath();
+            targetCtx.fillStyle = tData.color;
+            targetCtx.fill();
+            targetCtx.strokeStyle = tData.outColor;
+            targetCtx.lineWidth = 2;
+            targetCtx.stroke();
+        }
+
+        // 크레이터 타공
+        if (craterCanvas) {
+            targetCtx.globalCompositeOperation = 'destination-out';
+            for (const crater of craters) {
+                const p = gridToScreen(crater.x, crater.y);
+                const pr = scaleLength(crater.r);
+                targetCtx.beginPath();
+                targetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+                targetCtx.fill();
+            }
+            targetCtx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(craterCanvas, 0, 0);
+        }
+        } else if (stage.terrain === 'sky') {
         const skyStartX = -30;
         const skyEndX = 30;
         const thickness = 5.0;
