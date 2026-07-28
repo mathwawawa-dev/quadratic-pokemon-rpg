@@ -642,6 +642,28 @@ function initStage() {
                   }
                   
                   terrainHeights[key] = [y];
+              } else if (stage.terrain === 'cloud_garden2') {
+                  // cloud_garden2: isFloating이지만 단일 func 물리.
+                  // terrainBottoms를 섬 모양에서 직접 계산하여 "아래서 솟구치기" 방지
+                  if (y <= -99) {
+                      terrainHeights[key] = [-100];
+                      terrainBottoms[key] = [-100];
+                  } else {
+                      let minBottom = 1000;
+                      let found = false;
+                      const isShapes = TERRAINS.cloud_garden2.islands && TERRAINS.cloud_garden2.islands[0];
+                      if (isShapes) {
+                          for (const s of TERRAINS.cloud_garden2.islands[0]) {
+                              const dx = x - s.cx;
+                              if (Math.abs(dx) <= s.rx) {
+                                  const bY = s.cy - s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
+                                  if (bY < minBottom) { minBottom = bY; found = true; }
+                              }
+                          }
+                      }
+                      terrainHeights[key] = [y];
+                      terrainBottoms[key] = [found ? minBottom : y - 4.0];
+                  }
               } else {
                   terrainHeights[key] = [y];
               }
