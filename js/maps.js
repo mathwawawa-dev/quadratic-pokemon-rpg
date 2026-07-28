@@ -24,7 +24,7 @@ const TERRAINS = {
     },
     log_bridge: {
         name: "외나무다리",
-        bg: ["#041008", "#0d2b14", "#1f5c2e", "#4a9c5a"],
+        bg: ["#1a4a25", "#3a8a48", "#80cc90", "#c8f0d0"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -8,
         func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 - 2.0,
