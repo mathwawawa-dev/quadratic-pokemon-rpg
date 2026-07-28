@@ -319,7 +319,7 @@ const TERRAINS_cloud_garden2 = {
 
             return topY;
         },
-        // 아랫면: 기존 윗면(완만한 물결)을 아래로 반전
+        // 아랫면: 기존 윗면(완만한 물결)을 아래로 반전 + 좌측 dip 강화 + 끝 모양 차별화
         funcBottom: function(x) {
             const isl = TERRAINS.cloud_garden2.islands3;
             if (!isl || !isl.sole) return -100;
@@ -330,15 +330,15 @@ const TERRAINS_cloud_garden2 = {
             const s = baseY;
             const cloudThickness = 5.0;
 
-            // 기존 윗면 puff 위치(0.08,0.22,0.38,0.52,0.66,0.80,0.93)를 아래로 반전
+            // 좌측 dip (relX 0.08, 0.22) 크게 강화, 나머지는 그대로
             const dips = [
-                { relX: 0.08, h: 0.35 + Math.sin(s * 3.1) * 0.1,  w: 6.0 },
-                { relX: 0.22, h: 0.60 + Math.cos(s * 2.7) * 0.12, w: 7.0 },
-                { relX: 0.38, h: 0.80 + Math.sin(s * 1.9) * 0.1,  w: 8.0 },
-                { relX: 0.52, h: 0.90 + Math.cos(s * 4.1) * 0.08, w: 8.5 },
-                { relX: 0.66, h: 0.75 + Math.sin(s * 2.3) * 0.12, w: 7.5 },
-                { relX: 0.80, h: 0.55 + Math.cos(s * 3.7) * 0.1,  w: 7.0 },
-                { relX: 0.93, h: 0.30 + Math.sin(s * 1.7) * 0.08, w: 5.5 },
+                { relX: 0.08, h: 2.0 + Math.sin(s * 3.1) * 0.2,  w: 5.5 }, // 강화 (0.35→2.0)
+                { relX: 0.22, h: 2.5 + Math.cos(s * 2.7) * 0.2,  w: 6.0 }, // 강화 (0.60→2.5)
+                { relX: 0.38, h: 0.80 + Math.sin(s * 1.9) * 0.1, w: 8.0 },
+                { relX: 0.52, h: 0.90 + Math.cos(s * 4.1) * 0.08,w: 8.5 },
+                { relX: 0.66, h: 0.75 + Math.sin(s * 2.3) * 0.12,w: 7.5 },
+                { relX: 0.80, h: 0.55 + Math.cos(s * 3.7) * 0.1, w: 7.0 },
+                { relX: 0.93, h: 0.30 + Math.sin(s * 1.7) * 0.08,w: 5.5 },
             ];
 
             let botY = baseY - cloudThickness;
@@ -347,17 +347,24 @@ const TERRAINS_cloud_garden2 = {
                 const d  = (x - cx) / p.w;
                 if (Math.abs(d) < 1.0) {
                     const t    = 1 - d * d;
-                    const dip  = p.h * t * t; // 아래로
+                    const dip  = p.h * t * t;
                     const candidate = baseY - cloudThickness - dip;
                     if (candidate < botY) botY = candidate;
                 }
             }
 
-            // 양 끝에서 자연스럽게 닫힘
-            const absT = Math.abs(x - (x0 + W / 2)) / (W / 2);
-            if (absT > 0.85) {
-                const fade = 1 - (absT - 0.85) / 0.15;
-                botY = baseY - cloudThickness + (botY - (baseY - cloudThickness)) * Math.max(0, fade);
+            const mid = x0 + W / 2;
+            const normT = (x - mid) / (W / 2); // -1(좌끝)~+1(우끝)
+
+            if (normT < -0.80) {
+                // 좌측 끝: 선형으로 각지게 수렴 (환형/각진 끝)
+                const linFade = (normT + 1.0) / 0.20; // 0→1
+                botY = baseY - cloudThickness + (botY - (baseY - cloudThickness)) * Math.max(0, linFade);
+            } else if (normT > 0.80) {
+                // 우측 끝: cosine 반원형으로 더 둥글게
+                const t = (normT - 0.80) / 0.20; // 0→1
+                const cosFade = 0.5 * (1 + Math.cos(t * Math.PI)); // 1→0 with cosine
+                botY = baseY - cloudThickness + (botY - (baseY - cloudThickness)) * cosFade;
             }
 
             return botY;
