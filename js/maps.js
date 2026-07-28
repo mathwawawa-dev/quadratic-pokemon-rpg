@@ -301,7 +301,7 @@ const TERRAINS_cloud_garden2 = {
             if (_nT < -0.50) {
                 const _t    = (-0.50 - _nT) / 0.50; // 0→1
                 const _fade = 0.5 * (1 + Math.cos(_t * Math.PI)); // cosine 1→0
-                const _topTargetL = baseY - 1.0; // 좌측 끝 상단 수렴점 (살짝 체짐)
+                const _topTargetL = baseY + 0.5; // 좌측 끝 상단 수렴점 (위로 튀어나옴)
                 topY = _topTargetL + (topY - _topTargetL) * _fade;
             } else if (_nT > 0.80) {
                 // 우측: cosine 수렴, 끝점은 baseY+0.8로 (일정 두께 유지)
