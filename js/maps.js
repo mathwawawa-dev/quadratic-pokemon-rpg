@@ -24,10 +24,10 @@ const TERRAINS = {
     },
     log_bridge: {
         name: "외나무다리",
-        bg: ["#0a2010", "#1a4a20", "#2d7a3a"],
+        bg: ["#041008", "#0d2b14", "#1f5c2e", "#4a9c5a"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -8,
-        func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 + 6.0,
+        func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 - 2.0,
         getThickness: (x) => {
             // 4.0 단위 블록 기반 해시 → 블록 경계에서만 두께 변화 (파도 너울 방지)
             const seed = terrainSeed || 0;
