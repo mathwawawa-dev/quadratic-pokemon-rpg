@@ -673,12 +673,8 @@ function initStage() {
     let attempts = 0;
     do {
         if (stage.terrain === 'cloud_garden2') {
-            // 단일 섬: side에 따라 x<0(좌)/x>0(우) 분리 스폰
-            const _sole = TERRAINS.cloud_garden2.islands3 && TERRAINS.cloud_garden2.islands3.sole;
-            const _half = _sole ? Math.max(2, (_sole.x1 - _sole.x0) / 4 - 1) : 8;
-            px = side === 'L'
-                ? -(1 + Math.random() * _half)   // x < 0
-                : (1 + Math.random() * _half);    // x > 0
+            // 습치 수정: side가 플레이어 블록에서 미정의이므로 단순 랜덤 중앙 스폰
+            px = (Math.random() - 0.5) * 6; // 콴테스트 근처 중심
         } else if (stage.terrain === 'garden') {
             // 중앙 섬(-5~5) 위에 스폰
             px = -3 + Math.random() * 6;
@@ -799,10 +795,19 @@ function initStage() {
             const yOffset = (isGroundType && !isFloatingMapLocal) ? -1.3 : 0.75;
             
             do {
-                const spread = 12 + (attempts / 20); 
-                rx = side === 'L'
-                    ? player.x - 5 - Math.random() * spread
-                    : player.x + 5 + Math.random() * spread;
+                const spread = 12 + (attempts / 20);
+                if (stage.terrain === 'cloud_garden2') {
+                    // 절대 좌우 분리: L → x<0, R → x>0
+                    const _sole2 = TERRAINS.cloud_garden2.islands3 && TERRAINS.cloud_garden2.islands3.sole;
+                    const _hw = _sole2 ? Math.abs(_sole2.x1) - 1 : 17;
+                    rx = side === 'L'
+                        ? -(1 + Math.random() * (_hw - 1))
+                        : (1 + Math.random() * (_hw - 1));
+                } else {
+                    rx = side === 'L'
+                        ? player.x - 5 - Math.random() * spread
+                        : player.x + 5 + Math.random() * spread;
+                }
                 const spawnLimitX = 18;
                 rx = Math.max(-spawnLimitX, Math.min(spawnLimitX, rx));
                 
