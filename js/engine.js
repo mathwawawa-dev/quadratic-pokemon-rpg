@@ -628,10 +628,36 @@ function initStage() {
                       terrainHeights[key] = [y];
                       if (stage.terrain === 'cloud_garden2') {
                           // funcBottom으로 자연스러운 구름 바닥면 계산
-                          const botY = tData.funcBottom ? tData.funcBottom(x) : baseY - 5.0;
+                          const botY = tData.funcBottom ? tData.funcBottom(x) : y - 5.0;
                           terrainBottoms[key] = [botY > -99 ? botY : -100];
                       } else {
-                          terrainBottoms[key] = [y - 4.5];
+                          // garden: 섬마다 다른 하단 모양
+                          const _isl3 = tData.islands3;
+                          let _botY = y - 4.5; // 기본(중앙 섬): 평평
+                          if (_isl3) {
+                              const L = _isl3.left, R = _isl3.right;
+                              if (L && x >= L.x0 - 0.1 && x <= L.x1 + 0.1) {
+                                  // 좌측 섬: 중앙이 아래로 처지는 부드러운 belly
+                                  const _lmid = (L.x0 + L.x1) / 2;
+                                  const _lhw  = (L.x1 - L.x0) / 2;
+                                  const _lt   = (x - _lmid) / _lhw;
+                                  const _belly = 1.6 * (1 - _lt * _lt); // 최대 1.6 아래
+                                  _botY = y - 4.5 - Math.max(0, _belly);
+                              } else if (R && x >= R.x0 - 0.1 && x <= R.x1 + 0.1) {
+                                  // 우측 섬: 하단에 구름 봉우리 3개 (아래로 볼록)
+                                  const _cx1 = R.x0 + (R.x1 - R.x0) * 0.2;
+                                  const _cx2 = R.x0 + (R.x1 - R.x0) * 0.5;
+                                  const _cx3 = R.x0 + (R.x1 - R.x0) * 0.8;
+                                  const _d1 = (x - _cx1) / 3.5;
+                                  const _d2 = (x - _cx2) / 4.5;
+                                  const _d3 = (x - _cx3) / 3.5;
+                                  const _b1 = Math.abs(_d1) < 1 ? 1.1 * (1-_d1*_d1)**2 : 0;
+                                  const _b2 = Math.abs(_d2) < 1 ? 1.8 * (1-_d2*_d2)**2 : 0;
+                                  const _b3 = Math.abs(_d3) < 1 ? 1.1 * (1-_d3*_d3)**2 : 0;
+                                  _botY = y - 4.5 - Math.max(_b1, _b2, _b3);
+                              }
+                          }
+                          terrainBottoms[key] = [_botY];
                       }
                   }
               } else if (stage.terrain === 'log_bridge') {
@@ -4042,37 +4068,36 @@ function render() {
                 targetCtx.lineTo(p.x, p.y);
                 if (x >= isle.x1) break;
             }
-            // 우측 캡
-            const rtY = getOrigY(isle.x1);
-            const rightMidP = gridToScreen(isle.x1 + 1.5, rtY - thickness / 2);
-            const rightBotP = gridToScreen(isle.x1, rtY - thickness);
-            targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
+
             // 하단
-            if (stage.terrain === 'cloud_garden2') {
-                // 거울 하단면: terrainBottoms에서 읽어서 뭉게 실루엣 그대로 반영
-                const getBotY = (bx) => {
+            {
+                // garden, cloud_garden2 모두 terrainBottoms 사용
+                const _getBotY = (bx) => {
                     const bkey = (Math.round(bx * 10) / 10).toFixed(1);
                     return (terrainBottoms[bkey] && terrainBottoms[bkey].length > 0) ? terrainBottoms[bkey][0] : -100;
                 };
+                // 우측 캡의 bottom 기준점을 실제 bottom으로 갱신
+                const _rtBotY = _getBotY(isle.x1);
+                const _rtTopY = getOrigY(isle.x1);
+                const _rtCapMid = gridToScreen(isle.x1 + 1.5, (_rtTopY + _rtBotY) / 2);
+                const _rtCapBot = gridToScreen(isle.x1, _rtBotY > -50 ? _rtBotY : _rtTopY - thickness);
+                // 기존 우측 캡 라인을 대체 (이미 moveTo+top trace 완료 상태)
+                targetCtx.quadraticCurveTo(_rtCapMid.x, _rtCapMid.y, _rtCapBot.x, _rtCapBot.y);
                 for (let x = isle.x1; x >= isle.x0; x = Math.max(isle.x0, x - 0.2)) {
-                    const by = getBotY(x);
+                    const by = _getBotY(x);
                     if (by <= -50) break;
                     const p = gridToScreen(x, by);
                     targetCtx.lineTo(p.x, p.y);
                     if (x <= isle.x0) break;
                 }
-            } else {
-                for (let x = isle.x1; x >= isle.x0; x = Math.max(isle.x0, x - 0.2)) {
-                    const p = gridToScreen(x, getOrigY(x) - thickness);
-                    targetCtx.lineTo(p.x, p.y);
-                    if (x <= isle.x0) break;
-                }
+                // 좌측 캡도 실제 bottom 기준
+                const _ltBotY = _getBotY(isle.x0);
+                const _ltTopY = getOrigY(isle.x0);
+                const _ltCapMid = gridToScreen(isle.x0 - 1.5, (_ltTopY + (_ltBotY > -50 ? _ltBotY : _ltTopY - thickness)) / 2);
+                const _ltCapTop = gridToScreen(isle.x0, _ltTopY);
+                targetCtx.quadraticCurveTo(_ltCapMid.x, _ltCapMid.y, _ltCapTop.x, _ltCapTop.y);
             }
-            // 좌측 캡
-            const ltY = getOrigY(isle.x0);
-            const leftMidP = gridToScreen(isle.x0 - 1.5, ltY - thickness / 2);
-            const leftTopP = gridToScreen(isle.x0, ltY);
-            targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
+
             targetCtx.closePath();
             targetCtx.fillStyle = tData.color;
             targetCtx.fill();
