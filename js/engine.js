@@ -543,7 +543,7 @@ function initStage() {
     // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 최대 1개의 뾰족한 언덕 배치 ('log_bridge' 외나무다리 맵은 제외)
     // 내 포켓몬(approxPx) 주변 반경 8.0 이내에는 스파이크가 절대 생성되지 않도록 제한 (자폭 방지)
     terrainSpikes = [];
-    const isNoSpikeTerrain = stage.terrain === 'log_bridge';
+    const isNoSpikeTerrain = stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2';
     const spikeProb = stage.terrain === 'ice' ? 0.5 : 0.3;
     const spikeCount = (!isNoSpikeTerrain && Math.random() < spikeProb) ? 1 : 0;
     for (let s = 0; s < spikeCount; s++) {
@@ -626,9 +626,9 @@ function initStage() {
                       terrainBottoms[key] = [-100];
                   } else {
                       terrainHeights[key] = [y];
-                      // 아랫면 울퉁불퉁: 윗면(y)에서 두께 6.0 + 아랫면 범프
-                      const botBumps = Math.abs(Math.sin(x * 0.45 + 1.5)) * 0.8 + Math.abs(Math.cos(x * 0.3 + 0.8)) * 0.5 - 0.3;
-                      terrainBottoms[key] = [y - 6.0 - botBumps];
+                      // 아랫면 거의 평탄: 윗면(y)에서 두께 5.5, 극미세 굴곡만
+                      const botBumps = Math.sin(x * 0.18) * 0.2;
+                      terrainBottoms[key] = [y - 5.5 + botBumps];
                   }
               } else if (stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
@@ -947,33 +947,59 @@ function initStage() {
             return (terrainBottoms[key] && terrainBottoms[key].length > 0) ? terrainBottoms[key][0] : -100;
         };
 
-        targetCtx.beginPath();
-        const startP = gridToScreen(cloudStartX, getOrigY(cloudStartX));
-        targetCtx.moveTo(startP.x, startP.y);
+        // 타원형 마감: 양 끝에서 부드럽게 수렴하는 구름 형태
+        const capSteps = 20;
         
-        for (let x = cloudStartX; x <= cloudEndX; x += 0.2) {
-            const cx = Math.min(x, cloudEndX);
-            const p = gridToScreen(cx, getOrigY(cx));
-            targetCtx.lineTo(p.x, p.y);
+        // 상단 곡선: cloudStartX -> cloudEndX
+        targetCtx.beginPath();
+        {
+            const p0 = gridToScreen(cloudStartX, getOrigY(cloudStartX));
+            targetCtx.moveTo(p0.x, p0.y);
+            for (let x = cloudStartX; x <= cloudEndX; x += 0.2) {
+                const cx = Math.min(x, cloudEndX);
+                const p = gridToScreen(cx, getOrigY(cx));
+                targetCtx.lineTo(p.x, p.y);
+            }
         }
 
-        const rightTopY = getOrigY(cloudEndX);
-        const rightBotY = getBotY(cloudEndX);
-        const rightMidP = gridToScreen(cloudEndX + 2.0, (rightTopY + rightBotY) / 2);
-        const rightBotP = gridToScreen(cloudEndX, rightBotY);
-        targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
+        // 우측 타원형 캡: 상단 끝 -> 하단 끝 (반타원)
+        {
+            const rtY = getOrigY(cloudEndX);
+            const rbY = getBotY(cloudEndX);
+            const capMidY = (rtY + rbY) / 2;
+            const capHalfH = (rtY - rbY) / 2;
+            for (let i = 0; i <= capSteps; i++) {
+                const angle = (Math.PI / 2) - (Math.PI / capSteps) * i; // π/2 -> -π/2
+                const ex = cloudEndX + Math.abs(capHalfH) * 0.6 * Math.cos(angle);
+                const ey = capMidY + capHalfH * Math.sin(angle);
+                const p = gridToScreen(ex, ey);
+                targetCtx.lineTo(p.x, p.y);
+            }
+        }
 
+        // 하단 곡선: cloudEndX -> cloudStartX (거의 평탄)
         for (let x = cloudEndX; x >= cloudStartX; x -= 0.2) {
             const cx = Math.max(x, cloudStartX);
-            const p = gridToScreen(cx, getBotY(cx));
+            const by = getBotY(cx);
+            if (by <= -50) continue;
+            const p = gridToScreen(cx, by);
             targetCtx.lineTo(p.x, p.y);
         }
 
-        const leftTopY = getOrigY(cloudStartX);
-        const leftBotY = getBotY(cloudStartX);
-        const leftMidP = gridToScreen(cloudStartX - 2.0, (leftTopY + leftBotY) / 2);
-        const leftTopP = gridToScreen(cloudStartX, leftTopY);
-        targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
+        // 좌측 타원형 캡: 하단 끝 -> 상단 끝
+        {
+            const ltY = getOrigY(cloudStartX);
+            const lbY = getBotY(cloudStartX);
+            const capMidY = (ltY + lbY) / 2;
+            const capHalfH = (ltY - lbY) / 2;
+            for (let i = 0; i <= capSteps; i++) {
+                const angle = (-Math.PI / 2) + (Math.PI / capSteps) * i; // -π/2 -> π/2
+                const ex = cloudStartX - Math.abs(capHalfH) * 0.6 * Math.cos(angle);
+                const ey = capMidY + capHalfH * Math.sin(angle);
+                const p = gridToScreen(ex, ey);
+                targetCtx.lineTo(p.x, p.y);
+            }
+        }
 
         targetCtx.closePath();
         targetCtx.fillStyle = tData.color;
