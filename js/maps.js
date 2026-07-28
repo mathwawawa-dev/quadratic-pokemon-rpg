@@ -258,7 +258,7 @@ const TERRAINS_cloud_garden2 = {
         init: function(seed) {
             const rnd = (min, max) => Math.random() * (max - min) + min;
             this.islands3 = {
-                sole: { x0: -26, x1: 26, baseY: rnd(-6.0, -4.5) }
+                sole: { x0: -26, x1: 26, baseY: rnd(-3.5, -2.0) }
             };
         },
         func: function(x) {
