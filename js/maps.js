@@ -24,7 +24,7 @@ const TERRAINS = {
     },
     log_bridge: {
         name: "외나무다리",
-        bg: ["#38bdf8", "#7dd3fc", "#bae6fd"],
+        bg: ["#0a2010", "#1a4a20", "#2d7a3a"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -8,
         func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 + 6.0,
@@ -34,7 +34,7 @@ const TERRAINS = {
             const blockIdx = Math.floor((x + seed * 1.7) / 4.0);
             const h1 = Math.abs(Math.sin(blockIdx * 13.7 + seed * 0.5) * 43758.5453) % 1;
             const h2 = Math.abs(Math.cos(blockIdx * 7.3 - seed * 0.3) * 19234.1234) % 1;
-            return 7.5; // 상단 y=6 ~ 하단 y=-1.5 고정 두꾼
+            return 8.0; // 상단 y=6 ~ 하단 y=-2 고정 두꾼
         }
     },
     sky: {
