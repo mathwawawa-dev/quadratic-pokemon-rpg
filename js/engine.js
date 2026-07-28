@@ -1,5 +1,5 @@
 // ============================================================
-// engine.js  —  Core game loop, physics, rendering
+// engine.js  ?? Core game loop, physics, rendering
 // ============================================================
 
 // ---------- Canvas & Context ----------
@@ -10,7 +10,7 @@ window.gameMouseX = -1000;
 window.gameMouseY = -1000;
 window.showAllEnemyHP = false;
 
-// shadowBlur 조건부 비활성화 플래그: IDLE 중에는 0, FIRING 또는 이펙트 있을 때만 1
+// shadowBlur 조건부 비활?�화 ?�래�? IDLE 중에??0, FIRING ?�는 ?�펙???�을 ?�만 1
 let isFiring = false;
 
 canvas.addEventListener('mousemove', (e) => {
@@ -57,21 +57,21 @@ let terrainHeights = {};
 let originalTerrainHeights = {};
 let terrainBottoms = {};
 let ceilHeights = {};
-let explosionRadius = 0.7; // 폭발 반경 (0.7로 축소)
+let explosionRadius = 0.7; // ??�� 반경 (0.7�?축소)
 let playerGold = 0;
-let baseDamageBoost = 1.0; // 파워업 풍선 획득 시 데미지 배율 증가
-let isFirstTurn = true;    // 스테이지 첫 턴 여부 (초심자의 버프 2배 데미지용)
-let balloons = [];          // 공중 풍선 목록
+let baseDamageBoost = 1.0; // ?�워???�선 ?�득 ???��?지 배율 증�?
+let isFirstTurn = true;    // ?�테?��? �????��? (초심?�의 버프 2�??��?지??
+let balloons = [];          // 공중 ?�선 목록
 let cloudParams = [
     { bx: 5,  by: 18, speed: 3000, radius: 2.2, alpha: 0.6 },
     { bx: -4, by: 12, speed: 5000, radius: 1.6, alpha: 0.4 }
 ];
 
-// 구름 구멍 데이터 (미사일 관통 시 생성)
+// 구름 구멍 ?�이??(미사??관?????�성)
 let cloudHoles = []; // { x, y, radius, maxRadius, life, maxLife }
-// 크레이터 데이터 (도형 기반 지형을 지우기 위해 유지)
+// ?�레?�터 ?�이??(?�형 기반 지?�을 지?�기 ?�해 ?��?)
 let craters = [];
-// 크레이터 마스킹용 오프스크린 캔버스 — 매 프레임 new canvas 생성 방지 (GC 병목 제거)
+// ?�레?�터 마스?�용 ?�프?�크�?캔버????�??�레??new canvas ?�성 방�? (GC 병목 ?�거)
 let _craterCanvas = null;
 let _craterCtx = null;
 function getCraterCanvas(w, h) {
@@ -87,7 +87,7 @@ function getCraterCanvas(w, h) {
     return { canvas: _craterCanvas, ctx: _craterCtx };
 }
 
-// ---------- 포켓볼 이미지 프리로드 ----------
+// ---------- ?�켓�??��?지 ?�리로드 ----------
 const pokeballImg = new Image();
 pokeballImg.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
 
@@ -147,7 +147,7 @@ function resize() {
     X_MIN = xCenter - xRange / 2;
     X_MAX = xCenter + xRange / 2;
 
-    // Pan limit: Y_MIN >= -40 (log_bridge는 -20), Y_MAX <= 50
+    // Pan limit: Y_MIN >= -40 (log_bridge??-20), Y_MAX <= 50
     const stage = LEVELS[currentStage % LEVELS.length];
     const minYLimit = (stage && stage.terrain === 'log_bridge') ? -20 : -40;
     
@@ -179,22 +179,22 @@ function resetView() {
         }
     });
 
-    // 1. 아군 및 적군 포켓몬 X좌표 / Y좌표의 각각 평균값 (화면 중심)
+    // 1. ?�군 �??�군 ?�켓�?X좌표 / Y좌표??각각 ?�균�?(?�면 중심)
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
 
-    // 2. 포켓몬들이 가려지지 않고 선명하게 보일 수 있는 최대 확대 배율 계산
+    // 2. ?�켓몬들??가?��?지 ?�고 ?�명?�게 보일 ???�는 최�? ?��? 배율 계산
     let spanX = (maxX - minX) + 3.8;
     let rawYSpan = (maxY - minY) + 2.8;
     
-    // 하단 계기판 UI 패널(약 22% 영역) 고려하여 상단 가시 영역에 가득 차도록 계산
+    // ?�단 계기??UI ?�널(??22% ?�역) 고려?�여 ?�단 가???�역??가??차도�?계산
     let spanY = rawYSpan / 0.78;
 
-    let reqXSpan = Math.max(spanX, spanY * aspect) * 1.18; // 초기 진입 시 배율 1단계 축소(줌아웃)
+    let reqXSpan = Math.max(spanX, spanY * aspect) * 1.18; // 초기 진입 ??배율 1?�계 축소(줌아??
     if (reqXSpan < 19) reqXSpan = 19;
     let reqYSpan = reqXSpan / aspect;
 
-    // 3. 하단 계기판 UI 영역(22%)을 감안해 시각적 유효 영역 중앙에 포켓몬 평균 좌표(centerX, centerY) 배치
+    // 3. ?�단 계기??UI ?�역(22%)??감안???�각???�효 ?�역 중앙???�켓�??�균 좌표(centerX, centerY) 배치
     X_MIN = centerX - reqXSpan / 2;
     X_MAX = centerX + reqXSpan / 2;
     Y_MIN = centerY - reqYSpan * 0.61;
@@ -283,7 +283,7 @@ window.addEventListener('touchmove', (e) => { if (e.touches.length === 1) { if (
 window.addEventListener('touchend', () => { pointerTooltip.active = false; isDragging = false; });
 
 // ---------- Terrain ----------
-let terrainSpikes = []; // 스테이지마다 랜덤으로 생성되는 뾰족한 언덕 목록
+let terrainSpikes = []; // ?�테?��?마다 ?�덤?�로 ?�성?�는 뾰족???�덕 목록
 
 function getTerrainYAll(x) {
     const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -303,8 +303,8 @@ function getTerrainY(x, currentY) {
             for (let i = 0; i < ys.length; i++) {
                 const y = ys[i];
                 const b = bs[i] !== undefined ? bs[i] : -1000;
-                // 엔티티 Y위치(currentY) 아래에 있는 섬(b <= currentY + 2.0) 중에서
-                // currentY와 지면 상단(y) 사이의 거리가 가장 가까운 층을 선택
+                // ?�티??Y?�치(currentY) ?�래???�는 ??b <= currentY + 2.0) 중에??
+                // currentY?� 지�??�단(y) ?�이??거리가 가??가까운 층을 ?�택
                 if (y !== -100 && b <= currentY + 2.0) {
                     const diff = Math.abs(currentY - y);
                     if (diff < minDiff) {
@@ -320,7 +320,7 @@ function getTerrainY(x, currentY) {
     return Math.max(...ys);
 }
 
-// 부유 맵에서 선택된 섬의 바닥 높이를 반환. 비부유 맵이거나 감지 불가 시 -1000.
+// 부??맵에???�택???�의 바닥 ?�이�?반환. 비�???맵이거나 감�? 불�? ??-1000.
 function getTerrainBottom(x, currentY) {
     const key = (Math.round(x * 10) / 10).toFixed(1);
     const ys = terrainHeights[key] || [-100];
@@ -342,7 +342,7 @@ function getTerrainBottom(x, currentY) {
     return -1000;
 }
 
-// 부유 맵에서 getTerrainY가 선택한 레이어의 인덱스를 반환. 비부유맵/감지불가 = -1.
+// 부??맵에??getTerrainY가 ?�택???�이?�의 ?�덱?��? 반환. 비�??�맵/감�?불�? = -1.
 function getTerrainLayerIndex(x, currentY) {
     const key = (Math.round(x * 10) / 10).toFixed(1);
     const ys = terrainHeights[key] || [-100];
@@ -368,8 +368,8 @@ function createCrater(cx, cy, radius) {
     
     if (typeof craters !== 'undefined') {
         craters.push({x: cx, y: cy, r: radius});
-        // 일반 지형은 terrainHeights 기반 렌더링으로 캡 무관; 부유·sky·log_bridge는 destination-out 방식을 사용하므로
-        // 캡을 100으로 높여 오래된 크레이터 제거로 인한 지형 복구 버그 방지
+        // ?�반 지?��? terrainHeights 기반 ?�더링으�?�?무�?; 부?�·sky·log_bridge??destination-out 방식???�용?��?�?
+        // 캡을 100?�로 ?�여 ?�래???�레?�터 ?�거�??�한 지??복구 버그 방�?
         if (craters.length > 100) craters.shift();
     }
 
@@ -385,18 +385,15 @@ function createCrater(cx, cy, radius) {
         
         for (let i = 0; i < terrainHeights[key].length; i++) {
             const y = terrainHeights[key][i];
-            // 폭발 구체 범위(craterBottomY ~ craterTopY) 내에 위치한 표면 지형만 파괴되도록 정밀 검증 (상단 천장 언덕 유지를 통해 순간이동 슬라이딩 버그 예방)
+            // ??�� 구체 범위(craterBottomY ~ craterTopY) ?�에 ?�치???�면 지?�만 ?�괴?�도�??��? 검�?(?�단 천장 ?�덕 ?��?�??�해 ?�간?�동 ?�라?�딩 버그 ?�방)
             if (y !== -100 && y >= craterBottomY && y <= craterTopY + 0.3) {
                 terrainHeights[key][i] = Math.min(y, craterBottomY);
                 if (isFloating || stage.terrain === 'sky' || stage.terrain === 'log_bridge') {
-                    // terrainBottoms는 부유맵·log_bridge 모두 buildTerrain에서 초기화됨
-                    // log_bridge: 폭발 1발당 표면 -0.5유닛. 엄격 부등호(<)만 사용 시
-                    // 마지막 한 방에서 craterBottomY = terrainBottoms - ε → 딱 경계 → "한 방 더" 현상
-                    // → 0.5유닛 마진 추가로 시각 파괴 시점과 물리 파괴 시점 동기화
-                    const _destroyThreshold = (stage.terrain === 'log_bridge' && terrainBottoms[key])
-                        ? terrainBottoms[key][i] + 0.5
-                        : (terrainBottoms[key] ? terrainBottoms[key][i] : -Infinity);
-                    if (terrainBottoms[key] && terrainHeights[key][i] < _destroyThreshold) {
+                    // terrainBottoms??부?�맵·log_bridge 모두 buildTerrain?�서 초기?�됨
+                    // ??�� 1�?= ?�면 -0.5?�닛.
+                    //   <  조건: 바닥보다 0.5 ?�래 갔을 ????1�???�� (?�각 0?�데 ???�어�?
+                    //   <= 조건: ?�면???�확??바닥???�을 ?????�각 ?�께=0 ???�?�밍 ?�확
+                    if (terrainBottoms[key] && terrainHeights[key][i] <= terrainBottoms[key][i]) {
                         terrainHeights[key][i] = -100;
                     }
                 }
@@ -429,18 +426,18 @@ function createCrater(cx, cy, radius) {
         }
     }
 
-    // 숨겨진 땅 포켓몬 근처(X 반경 1.0, Y 반경 2.0 이내)의 지형이 폭발로 파여질 때만 파헤쳐짐 처리
+    // ?�겨�????�켓�?근처(X 반경 1.0, Y 반경 2.0 ?�내)??지?�이 ??���??�여�??�만 ?�헤쳐짐 처리
     if (typeof enemies !== 'undefined') {
         enemies.forEach(ent => {
             if (ent.hp > 0 && ent.type === 'ground' && !ent.isSurfaced) {
                 const xNear = Math.abs(ent.x - cx) <= 1.0;
-                // 타격 Y좌표가 포켓몬 Y 기준 2.0 이내(지형 표면 부근)일 때만 파헤치기
-                const surfaceY = getTerrainY(ent.x, ent.y); // 해당 위치의 지형 표면 Y
+                // ?��?Y좌표가 ?�켓�?Y 기�? 2.0 ?�내(지???�면 부�????�만 ?�헤치기
+                const surfaceY = getTerrainY(ent.x, ent.y); // ?�당 ?�치??지???�면 Y
                 const yNear = Math.abs(cy - surfaceY) <= 2.0;
                 if (xNear && yNear) {
                     ent.isSurfaced = true;
                     if (typeof effects !== 'undefined') {
-                        effects.push({ type: 'text', x: ent.x, y: ent.y + 2, text: '파헤치기 성공!', color: '#fbbf24', life: 200 });
+                        effects.push({ type: 'text', x: ent.x, y: ent.y + 2, text: '?�헤치기 ?�공!', color: '#fbbf24', life: 200 });
                     }
                 }
             }
@@ -455,11 +452,11 @@ function showMessage(title, desc, isError = true) {
     document.getElementById('message-overlay').style.borderColor = isError ? 'var(--danger)' : 'var(--success)';
     document.getElementById('msg-desc').innerHTML = desc;
     const btn = document.getElementById('msg-btn');
-    btn.innerHTML = (GAME_STATE === 'OVER' && enemies.filter(e => e.hp <= 0).length >= 2) ? '다음 단계로 <span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>' : '다시 시도 <span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>';
+    btn.innerHTML = (GAME_STATE === 'OVER' && enemies.filter(e => e.hp <= 0).length >= 2) ? '?�음 ?�계�?<span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>' : '?�시 ?�도 <span style="font-size:0.85rem;font-weight:normal;color:#ffffff;">[Enter]</span>';
     document.getElementById('message-overlay').classList.add('show');
     document.getElementById('fire-btn').disabled = true;
     
-    // 창이 뜨면 즉시 버튼에 포커스를 주어 엔터키로 바로 닫을 수 있게 함
+    // 창이 ?�면 즉시 버튼???�커?��? 주어 ?�터?�로 바로 ?�을 ???�게 ??
     setTimeout(() => { btn.focus(); }, 10);
 }
 window.closeMessage = function () {
@@ -478,7 +475,7 @@ function updateHPUI() {
     document.getElementById('ui-player-hp-fill').style.width = `${Math.max(0, player.hp)}%`;
     document.getElementById('ui-player-hp-text').innerText = `HP: ${Math.floor(player.hp)}/${player.maxHp}`;
     const ap = document.getElementById('ui-player-ap-text');
-    if (ap) ap.innerText = `행동력: ${player.movePoints.toFixed(1)}/${player.maxMovePoints.toFixed(1)}`;
+    if (ap) ap.innerText = `?�동?? ${player.movePoints.toFixed(1)}/${player.maxMovePoints.toFixed(1)}`;
 }
 function resetTurn() {
     GAME_STATE = 'IDLE';
@@ -486,7 +483,7 @@ function resetTurn() {
     updateHPUI();
     document.getElementById('fire-btn').disabled = false;
     
-    // 턴이 리셋될 때 다시 수식창으로 포커스
+    // ?�이 리셋?????�시 ?�식창으�??�커??
     const mf = document.getElementById('math-input');
     if (mf) mf.focus();
 }
@@ -497,7 +494,7 @@ function initStage() {
         clearTimeout(window.stageClearTimeout);
         window.stageClearTimeout = null;
     }
-    // 오버레이를 맨 먼저 띄워서 다음 스테이지가 슬쩍 보이는 현상 방지
+    // ?�버?�이�?�?먼�? ?�워???�음 ?�테?��?가 ?�쩍 보이???�상 방�?
     const overlay = document.getElementById('loading-overlay');
     if (overlay) overlay.classList.remove('hidden');
     GAME_STATE = 'LOADING';
@@ -508,7 +505,7 @@ function initStage() {
     const mathField = document.getElementById('math-input');
     if (mathField) mathField.value = '';
 
-    // 선택된 스타팅 포켓몬으로 플레이어 설정
+    // ?�택???��????�켓몬으�??�레?�어 ?�정
     const starterData = selectedStarter || STARTERS.pikachu;
     player.img        = loadSprite(starterData.img);
     player.isFlying      = false;
@@ -519,7 +516,7 @@ function initStage() {
     player.name          = starterData.name;
     player.visualScale   = 1.0;
 
-    // 지형 높이맵 + 랜덤 스파이크 언덕 생성
+    // 지???�이�?+ ?�덤 ?�파?�크 ?�덕 ?�성
     const tData = TERRAINS[stage.terrain];
     if (tData.init) tData.init(terrainSeed);
     terrainHeights = {};
@@ -528,12 +525,12 @@ function initStage() {
     ceilHeights = {};
     terrainSpikes = [];
     craters = [];
-    window.caveCeilOffset = 5.0 + Math.random() * 5.0; // 동굴 천장 높이 5~10 무작위 상승 오프셋
+    window.caveCeilOffset = 5.0 + Math.random() * 5.0; // ?�굴 천장 ?�이 5~10 무작???�승 ?�프??
     window.lastElectricLightningTime = Date.now();
     window.lastCaveWarningTime = Date.now();
     window.caveStalactiteWarned = false;
 
-    // 플레이어 스폰 위치 사전 산출 (스파이크가 플레이어 주변 8.0 이내에 생기는 것 방지)
+    // ?�레?�어 ?�폰 ?�치 ?�전 ?�출 (?�파?�크가 ?�레?�어 주�? 8.0 ?�내???�기??�?방�?)
     let approxPx = 0;
     if (stage.terrain === 'garden') {
         approxPx = 0;
@@ -544,8 +541,8 @@ function initStage() {
         else                    approxPx = 0;
     }
 
-    // 스파이크: 얼음 설산('ice')에서는 50%, 그 외 지형은 30% 확률로 최대 1개의 뾰족한 언덕 배치 ('log_bridge' 외나무다리 맵은 제외)
-    // 내 포켓몬(approxPx) 주변 반경 8.0 이내에는 스파이크가 절대 생성되지 않도록 제한 (자폭 방지)
+    // ?�파?�크: ?�음 ?�산('ice')?�서??50%, �???지?��? 30% ?�률�?최�? 1개의 뾰족???�덕 배치 ('log_bridge' ?�나무다�?맵�? ?�외)
+    // ???�켓�?approxPx) 주�? 반경 8.0 ?�내?�는 ?�파?�크가 ?��? ?�성?��? ?�도�??�한 (?�폭 방�?)
     terrainSpikes = [];
     const isNoSpikeTerrain = stage.terrain === 'log_bridge';
     const spikeProb = stage.terrain === 'ice' ? 0.5 : 0.3;
@@ -560,13 +557,13 @@ function initStage() {
 
         terrainSpikes.push({
             cx: scx,
-            height: 3 + Math.random() * 3,         // 솟아오르는 높이 완화 (3~6)
-            width:  1.0 + Math.random() * 1.0      // 스파이크 너비
+            height: 3 + Math.random() * 3,         // ?�아?�르???�이 ?�화 (3~6)
+            width:  1.0 + Math.random() * 1.0      // ?�파?�크 ?�비
         });
     }
 
     const isFloatingMap = TERRAINS[stage.terrain].isFloating;
-    const stageHeightOffset = isFloatingMap ? 0 : (1 + Math.random() * 3); // 공중정원 제외 맵 지형 1~4 무작위 높이 상승
+    const stageHeightOffset = isFloatingMap ? 0 : (1 + Math.random() * 3); // 공중?�원 ?�외 �?지??1~4 무작???�이 ?�승
 
     for (let x = -60; x <= 60; x += 0.1) {
         const key = (Math.round(x * 10) / 10).toFixed(1);
@@ -596,11 +593,11 @@ function initStage() {
         } else {
             let y = tData.func(x) + stageHeightOffset;
             if (!isFloatingMap && stage.terrain !== 'sky') {
-                // 양 끝 경사 높은 언덕 주석 처리 (요청 시 언제든 복구 가능)
+                // ????경사 ?��? ?�덕 주석 처리 (?�청 ???�제??복구 가??
                 // if (x < -20) { const dx = -20 - x; y += dx * dx * 5; }
                 // else if (x > 20) { const dx = x - 20; y += dx * dx * 5; }
 
-                // x = ±60 외곽 경계선에서 수직으로 뚝 떨어지지 않고 낭떠러지로 자연스럽게 부드럽게 깎이도록 하향 슬로프 적용
+                // x = ±60 ?�곽 경계?�에???�직?�로 ???�어지지 ?�고 ??��?��?�??�연?�럽�?부?�럽�?깎이?�록 ?�향 ?�로???�용
                 if (x < -45) { const dx = -45 - x; y -= dx * dx * 0.15; }
                 else if (x > 45) { const dx = x - 45; y -= dx * dx * 0.15; }
                 const baseY = tData.func(x) + stageHeightOffset;
@@ -608,7 +605,7 @@ function initStage() {
                     const d = x - sp.cx;
                     y += sp.height * Math.exp(-(d * d) / (2 * sp.width * sp.width));
                 }
-                // 지형 최저점과의 높이차가 20을 넘지 않도록 안전 제한
+                // 지??최�??�과???�이차�? 20???��? ?�도�??�전 ?�한
                 if (y - baseY > 20.0) {
                     y = baseY + 20.0;
                 }
@@ -630,13 +627,13 @@ function initStage() {
                       terrainHeights[key] = [-100];
                       terrainBottoms[key] = [-100];
                   } else {
-                      const thick = tData.getThickness ? tData.getThickness(x) : 5.0;
+                      // ������ thickness=5.0�� ���� �ٴ� ��ġ (getThickness 4~7 ���� -> ����ġ ����)
                       terrainHeights[key] = [y];
-                      terrainBottoms[key] = [y - thick];
+                      terrainBottoms[key] = [y - 5.0];
                   }
               } else if (stage.terrain === 'grass' || stage.terrain === 'ice' || stage.terrain === 'lava' || stage.terrain === 'cave' || stage.terrain === 'electric' || stage.terrain === 'ocean' || stage.terrain === 'psychic') {
                   const roundedX = Math.round(x * 10) / 10;
-                  // x < -20 또는 x > 20일 때 서서히 둥글게 깎아지르도록 (내리막)
+                  // x < -20 ?�는 x > 20?????�서???��?�?깎아지르도�?(?�리�?
                   if (x < -20) {
                       const dx = -20 - x;
                       y -= dx * dx * 4;
@@ -656,13 +653,13 @@ function initStage() {
         }
     }
 
-    // 플레이어의 x 위치 설정 (스파이크 언덕 정상이거나 지나치게 높은 곳은 피하도록 검증 루프 적용)
+    // ?�레?�어??x ?�치 ?�정 (?�파?�크 ?�덕 ?�상?�거??지?�치�??��? 곳�? ?�하?�록 검�?루프 ?�용)
     let px = 0;
     let attempts = 0;
     do {
         if (['garden', 'cloud_garden'].includes(stage.terrain)) {
             const midIslands = TERRAINS[stage.terrain].islands[1];
-            // 중앙부(-15 ~ 15)에 가까운 2층 섬을 우선 선택하여 2층에 확정 스폰
+            // 중앙부(-15 ~ 15)??가까운 2�??�을 ?�선 ?�택?�여 2층에 ?�정 ?�폰
             const centerIslands = midIslands.filter(s => s.cx >= -15 && s.cx <= 15);
             const targetIsland = centerIslands.length > 0 ? centerIslands[Math.floor(Math.random() * centerIslands.length)] : midIslands[0];
             px = targetIsland.cx + (Math.random() - 0.5) * (targetIsland.rx * 0.8);
@@ -673,12 +670,12 @@ function initStage() {
             else                     px = 0;
         }
 
-        // 해당 위치의 지형 높이가 3 이상 솟아오른 스파이크 영향권인지 체크
+        // ?�당 ?�치??지???�이가 3 ?�상 ?�아?�른 ?�파?�크 ?�향권인지 체크
         const key = (Math.round(px * 10) / 10).toFixed(1);
         const yVal = terrainHeights[key] ? Math.max(...terrainHeights[key]) : (tData.layers ? Math.max(...tData.layers.map(l=>l(px))) : tData.func(px));
         const isSpikePeak = terrainSpikes.some(sp => Math.abs(px - sp.cx) < 8.0);
 
-        // 골짜기(Concave Valley: 좌우 주변 지형보다 0.4 이상 패여 있는 구덩이/바닥) 검출
+        // 골짜�?Concave Valley: 좌우 주�? 지?�보??0.4 ?�상 ?�여 ?�는 구덩??바닥) 검�?
         const keyLeft = (Math.round((px - 1.8) * 10) / 10).toFixed(1);
         const keyRight = (Math.round((px + 1.8) * 10) / 10).toFixed(1);
         const yLeft = terrainHeights[keyLeft] ? Math.max(...terrainHeights[keyLeft]) : yVal;
@@ -686,12 +683,12 @@ function initStage() {
         const isValley = (yLeft > yVal + 0.4) && (yRight > yVal + 0.4);
 
         if (yVal !== -100 && (isFloatingMap || yVal < 5.0) && !isSpikePeak && !isValley) {
-            break; // 낮고 평탄한 능선/언덕 상단에만 배치 (골짜기 바닥 및 과도하게 높은 스파이크 제외)
+            break; // ??�� ?�탄???�선/?�덕 ?�단?�만 배치 (골짜�?바닥 �?과도?�게 ?��? ?�파?�크 ?�외)
         }
         attempts++;
     } while (attempts < 60);
 
-    // 강제 배치되었는데 허공(-100)이라면 주변 섬으로 이동
+    // 강제 배치?�었?�데 ?�공(-100)?�라�?주�? ?�으�??�동
     if (getTerrainY(px) === -100) {
         for (let step = 0.5; step < 10; step += 0.5) {
             if (getTerrainY(px + step) !== -100) { px += step; break; }
@@ -704,7 +701,7 @@ function initStage() {
     player.y = getTerrainY(player.x) + 0.75;
     if (window.updateDirectionUI) window.updateDirectionUI();
 
-    // 적 배치 (랜덤) — x 간격 + y 간격 모두 보장
+    // ??배치 (?�덤) ??x 간격 + y 간격 모두 보장
     let stageEnemies = [];
     let fCount = stage.flyingCount || 0;
     let nCount = (stage.count || 3) - fCount;
@@ -715,12 +712,12 @@ function initStage() {
     let nPool = [...ENEMY_POOL].sort(() => Math.random() - 0.5);
     for (let i = 0; i < nCount; i++) stageEnemies.push(nPool[i % nPool.length]);
 
-    // 적들이 플레이어 양쪽에 고르게 분산되도록 사이드 배정
-    // 총 적 수의 절반은 왼쪽, 절반은 오른쪽 (홀수이면 한쪽이 1개 더)
+    // ?�들???�레?�어 ?�쪽??고르�?분산?�도�??�이??배정
+    // �????�의 ?�반?� ?�쪽, ?�반?� ?�른�?(?�?�이�??�쪽??1�???
     const totalCount = stageEnemies.length;
     const leftCount  = Math.floor(totalCount / 2);
     const rightCount = totalCount - leftCount;
-    // 'L' 또는 'R' 사이드를 섞어 각 적에게 배정
+    // 'L' ?�는 'R' ?�이?��? ?�어 �??�에�?배정
     const sideAssignments = [...Array(leftCount).fill('L'), ...Array(rightCount).fill('R')]
         .sort(() => Math.random() - 0.5);
 
@@ -735,7 +732,7 @@ function initStage() {
 
     const barrierTypes = ['reflect', 'absorb', 'absolute', 'warp'].sort(() => Math.random() - 0.5);
     
-    // 배치된 포켓몬들의 좌표(플레이어 포함)
+    // 배치???�켓몬들??좌표(?�레?�어 ?�함)
     const placedPos = [{ x: player.x, y: player.y }];
     
     const checkValidPos = (rx, ry, isFlyingCheck = false, strictIslandCheck = true) => {
@@ -749,15 +746,15 @@ function initStage() {
         for (const p of placedPos) {
             const dx = Math.abs(rx - p.x);
             const dy = Math.abs(ry - p.y);
-            // 1. 유클리드 거리 6 이상
+            // 1. ?�클리드 거리 6 ?�상
             if (Math.hypot(dx, dy) < 6.0) return false;
-            // 2. x좌표 동일 방지 (오차 0.1)
+            // 2. x좌표 ?�일 방�? (?�차 0.1)
             if (dx < 0.1) return false;
-            // 3. y좌표 동일 방지 (오차 0.1)
+            // 3. y좌표 ?�일 방�? (?�차 0.1)
             if (dy < 0.1) return false;
             
-            // 공중정원 맵에서는 한 땅(island)에 한 마리만 (플레이어 포함)
-            // 비행 포켓몬이거나 strict 모드가 꺼져있으면 이 규칙을 무시합니다.
+            // 공중?�원 맵에?�는 ????island)????마리�?(?�레?�어 ?�함)
+            // 비행 ?�켓몬이거나 strict 모드가 꺼져?�으�???규칙??무시?�니??
             if (strictIslandCheck && isFloating && !isFlyingCheck && !p.isFlying) {
                 if (p.x >= leftBound && p.x <= rightBound) return false;
             }
@@ -766,7 +763,7 @@ function initStage() {
     };
 
     enemies = stageEnemies.map((e, idx) => {
-        const side = sideAssignments[idx]; // 'L': 플레이어보다 왼쪽, 'R': 오른쪽
+        const side = sideAssignments[idx]; // 'L': ?�레?�어보다 ?�쪽, 'R': ?�른�?
         let rx, ry, valid = false, attempts = 0;
         
         const tryPlacement = (isFlying) => {
@@ -787,32 +784,32 @@ function initStage() {
                 if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
                     if (terrainYAtRx > -50) {
-                        // 모든 맵(일반, 스파이크 언덕, 공중정원): 지형/스파이크 표면(terrainYAtRx) 위로 최소 +2.5~4.0 공중 배치 (지형 파묻힘 완벽 방지)
+                        // 모든 �??�반, ?�파?�크 ?�덕, 공중?�원): 지???�파?�크 ?�면(terrainYAtRx) ?�로 최소 +2.5~4.0 공중 배치 (지???�묻???�벽 방�?)
                         ry = Math.max(terrainYAtRx + 2.5, flyingYPool[flyingYIdx % flyingYPool.length]) + Math.random() * 1.5;
                     } else {
                         ry = flyingYPool[flyingYIdx % flyingYPool.length] + (Math.random()-0.5)*4;
                     }
-                    if (isSkyMap && ry >= 19.8) ry = 14.0 + Math.random() * 5.0; // 성층권 맵 y < 20 미만 상한 캡
+                    if (isSkyMap && ry >= 19.8) ry = 14.0 + Math.random() * 5.0; // ?�층�?�?y < 20 미만 ?�한 �?
                 } else {
                     ry = getTerrainY(rx) + yOffset;
                     if (ry < -50) { attempts++; continue; }
                 }
                 
-                // 300번 이상 실패하면 한 섬에 한 마리 규칙을 완화하여 무조건 지상에 배치되게 유도
+                // 300�??�상 ?�패?�면 ???�에 ??마리 규칙???�화?�여 무조�?지?�에 배치?�게 ?�도
                 const strictIsland = attempts < 300;
                 valid = checkValidPos(rx, ry, (isFlying || isSkyMap), strictIsland);
                 
                 if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
                     if (terrainYAtRx > -50 && ry < terrainYAtRx + 2.0) {
-                        valid = false; // 지형/스파이크 표면과 겹치거나 아래로 침범 시 즉시 재배치
+                        valid = false; // 지???�파?�크 ?�면�?겹치거나 ?�래�?침범 ??즉시 ?�배�?
                     } else if (isFloatingMapLocal && terrainYAtRx <= -50) {
                         valid = false;
                     }
                 }
                 
                 if (isFlying && !valid) {
-                    ry += 2.0; // 실패 시 위쪽 공중으로 고도 이동
+                    ry += 2.0; // ?�패 ???�쪽 공중?�로 고도 ?�동
                     if (isSkyMap && ry >= 19.8) ry = 14.0 + Math.random() * 5.0;
                     valid = checkValidPos(rx, ry, true, strictIsland);
                 }
@@ -822,7 +819,7 @@ function initStage() {
 
         tryPlacement(e.isFlying);
 
-        // 1차 실패 시: 지상 몬스터였다면 공중 몬스터로 변환하여 재시도!
+        // 1�??�패 ?? 지??몬스?��??�면 공중 몬스?�로 변?�하???�시??
         if (!valid && !e.isFlying && !isSkyMap) {
             e.isFlying = true;
             e.hasCloud = true;
@@ -830,7 +827,7 @@ function initStage() {
             if (valid) flyingYIdx++; 
         }
         
-        // 2차 실패 시 (혹은 처음부터 공중이었는데 실패): 최후의 수단으로 겹치지 않게 강제 분산 배치
+        // 2�??�패 ??(?��? 처음부??공중?�었?�데 ?�패): 최후???�단?�로 겹치지 ?�게 강제 분산 배치
         if (!valid) {
             rx = side === 'L' ? player.x - 10 - idx*6 : player.x + 10 + idx*6;
             const spawnLimitX = 18;
@@ -849,7 +846,7 @@ function initStage() {
         }
 
         if (isSkyMap && ry >= 19.8) {
-            ry = 13.0 + (idx % 4) * 1.8 + Math.random() * 1.0; // 성층권 맵 Y < 20 미만 엄격 제한
+            ry = 13.0 + (idx % 4) * 1.8 + Math.random() * 1.0; // ?�층�?�?Y < 20 미만 ?�격 ?�한
         }
 
         placedPos.push({ x: rx, y: ry, isFlying: (e.isFlying || isSkyMap) });
@@ -860,7 +857,7 @@ function initStage() {
         const currentTerrainData = TERRAINS[stage.terrain];
         const spawnDeathZoneY = currentTerrainData.deathZoneY !== undefined ? currentTerrainData.deathZoneY : -8;
         if (ry <= spawnDeathZoneY + 2.0) {
-            // 해당 X 위치 지형 위, 없으면 공중으로 올려 배치
+            // ?�당 X ?�치 지???? ?�으�?공중?�로 ?�려 배치
             const safeTerrainY = getTerrainY(rx);
             ry = safeTerrainY > -50 ? safeTerrainY + 2.5 : spawnDeathZoneY + 8;
             e.isFlying = true;
@@ -885,7 +882,7 @@ function initStage() {
         };
     });
 
-    // 구름 파라미터 리셋 (공중정원 맵은 섬 지형과 겹치지 않도록 허공 위치로 재조정)
+    // 구름 ?�라미터 리셋 (공중?�원 맵�? ??지?�과 겹치지 ?�도�??�공 ?�치�??�조??
     if (stage.terrain === 'garden') {
         cloudParams = [
             { bx: 6,   by: 11.0, speed: 3000, radius: 2.2, alpha: 0.6 },
@@ -913,13 +910,13 @@ function initStage() {
         ];
     }
 
-    // UI 업데이트
+    // UI ?�데?�트
     document.getElementById('stage-title').innerText = `Stage ${currentStage + 1}`;
     document.getElementById('terrain-info').innerText = TERRAINS[stage.terrain].name;
     document.getElementById('ui-player-name').innerText = starterData.name;
     document.getElementById('ui-player-img').src = player.img.src;
 
-    // '구름 위 하늘(sky)' 및 '얼음 설산(ice)' 맵에서는 줌 버튼 글자를 어두운 톤으로 변경
+    // '구름 ???�늘(sky)' �?'?�음 ?�산(ice)' 맵에?�는 �?버튼 글?��? ?�두???�으�?변�?
     const zoomControls = document.querySelector('.zoom-controls');
     if (zoomControls) {
         if (stage.terrain === 'sky' || stage.terrain === 'ice') {
@@ -931,27 +928,27 @@ function initStage() {
 
     updateHPUI();
     missile.active = false; missile.trail = []; effects = [];
-    baseDamageBoost = 1.0;  // 스테이지마다 파워 부스트 초기화
-    explosionRadius = 0.7;  // 폭발 반경 초기화
-    isFirstTurn = true;     // 스테이지마다 첫 턴 초기화 (초심자의 버프 재활성화)
+    baseDamageBoost = 1.0;  // ?�테?��?마다 ?�워 부?�트 초기??
+    explosionRadius = 0.7;  // ??�� 반경 초기??
+    isFirstTurn = true;     // ?�테?��?마다 �???초기??(초심?�의 버프 ?�활?�화)
 
-    // 포켓볼 생성 (필드당 1개, y≥13 공중, 플레이어와 적 사이의 x좌표 보장)
+    // ?�켓�??�성 (?�드??1�? y??3 공중, ?�레?�어?� ???�이??x좌표 보장)
     balloons = [];
-    const balloonTypes = ['gold', 'gold', 'power']; // 금화 2배 확률, 파워 1배 확률
+    const balloonTypes = ['gold', 'gold', 'power']; // 금화 2�??�률, ?�워 1�??�률
     
-    // 적 중 하나를 무작위로 선택하여 그 적과 플레이어 사이의 x좌표에 생성
-    let targetX = player.x + 8; // 폴백용 기본 거리
+    // ??�??�나�?무작?�로 ?�택?�여 �??�과 ?�레?�어 ?�이??x좌표???�성
+    let targetX = player.x + 8; // ?�백??기본 거리
     if (enemies.length > 0) {
         const randomEnemy = enemies[Math.floor(Math.random() * enemies.length)];
         targetX = randomEnemy.x;
     }
     
-    // 플레이어와 대상 적 사이의 보간값 (35% ~ 65% 무작위 지점)
+    // ?�레?�어?� ?�?????�이??보간�?(35% ~ 65% 무작??지??
     const ratio = 0.35 + Math.random() * 0.3;
     let bx = player.x + (targetX - player.x) * ratio;
     const by = 13 + Math.random() * 5; // y: 13 ~ 18 공중
 
-    // 지형(섬)과 겹치지 않도록 검증 (옵션 3: 겹치면 x좌표 이동)
+    // 지????�?겹치지 ?�도�?검�?(?�션 3: 겹치�?x좌표 ?�동)
     let overlapAttempts = 0;
     let isOverlapping = true;
     while (isOverlapping && overlapAttempts < 50) {
@@ -961,7 +958,7 @@ function initStage() {
             for (let i = 0; i < terrainHeights[key].length; i++) {
                 const tY = terrainHeights[key][i];
                 const bY = terrainBottoms[key] ? terrainBottoms[key][i] : -100;
-                // 포켓볼 반경(0.65)을 고려하여 약간의 여유(1.0)를 두고 충돌 검사
+                // ?�켓�?반경(0.65)??고려?�여 ?�간???�유(1.0)�??�고 충돌 검??
                 if (by <= tY + 1.0 && by >= bY - 1.0) {
                     isOverlapping = true;
                     break;
@@ -970,10 +967,10 @@ function initStage() {
         }
         
         if (isOverlapping) {
-            // 지형과 겹치면 x를 1.5 ~ 3.5만큼 좌우 무작위로 이동
+            // 지?�과 겹치�?x�?1.5 ~ 3.5만큼 좌우 무작?�로 ?�동
             bx += (Math.random() < 0.5 ? 1 : -1) * (1.5 + Math.random() * 2.0);
             
-            // 맵 경계를 벗어나지 않도록 안전장치
+            // �?경계�?벗어?��? ?�도�??�전?�치
             const X_MIN_B = -50, X_MAX_B = 50;
             if (bx < X_MIN_B) bx = X_MIN_B + Math.random() * 5;
             if (bx > X_MAX_B) bx = X_MAX_B - Math.random() * 5;
@@ -986,37 +983,37 @@ function initStage() {
 
     resetView();
 
-    // 모든 스프라이트 이미지가 실제로 로드 완료된 시점에 오버레이를 닫음
-    // (고정 타이머 대신) - 단, 최대 1500ms 캡으로 너무 길어지지 않게 제한
+    // 모든 ?�프?�이???��?지가 ?�제�?로드 ?�료???�점???�버?�이�??�음
+    // (고정 ?�?�머 ?�?? - ?? 최�? 1500ms 캡으�??�무 길어지지 ?�게 ?�한
     const allImages = [player.img, ...enemies.map(e => e.img)].filter(Boolean);
 
     const waitForImages = Promise.all(allImages.map(img =>
         new Promise(resolve => {
             if (img.complete && img.naturalWidth > 0) {
-                resolve(); // 이미 로드 완료 (캐시)
+                resolve(); // ?��? 로드 ?�료 (캐시)
             } else {
                 img.addEventListener('load',  resolve, { once: true });
-                img.addEventListener('error', resolve, { once: true }); // 오류도 기다림 종료
+                img.addEventListener('error', resolve, { once: true }); // ?�류??기다�?종료
             }
         })
     ));
 
-    const maxWait = new Promise(resolve => setTimeout(resolve, 1500)); // 최대 1500ms 캡
+    const maxWait = new Promise(resolve => setTimeout(resolve, 1500)); // 최�? 1500ms �?
 
     Promise.race([waitForImages, maxWait]).then(() => {
         const finalizeStageInit = () => {
             GAME_STATE = 'IDLE';
             if (window.startGuideMessageRotation) window.startGuideMessageRotation();
-            // 스테이지 시작 직후 자동으로 수식입력창에 포커스를 줍니다.
+            // ?�테?��? ?�작 직후 ?�동?�로 ?�식?�력창에 ?�커?��? 줍니??
             const mf = document.getElementById('math-input');
             if (mf) mf.focus();
         };
 
         if (overlay) {
-            overlay.classList.add('hiding');         // 0.4s fade-out 시작
+            overlay.classList.add('hiding');         // 0.4s fade-out ?�작
             setTimeout(() => {
                 overlay.classList.remove('hiding');
-                overlay.classList.add('hidden');     // 완전히 숨김
+                overlay.classList.add('hidden');     // ?�전???��?
                 finalizeStageInit();
             }, 400);
         } else {
@@ -1031,7 +1028,7 @@ window.movePlayer = function (dir) {
     const stage = LEVELS[currentStage % LEVELS.length];
     const isFloating = TERRAINS[stage.terrain].isFloating;
     const maxBound = isFloating ? 32 : 20;
-    if (player.movePoints < 0.5) { showMessage('이동 불가', '행동력을 모두 소모했습니다.', false); return; }
+    if (player.movePoints < 0.5) { showMessage('?�동 불�?', '?�동?�을 모두 ?�모?�습?�다.', false); return; }
     player.x = Math.max(-maxBound, Math.min(maxBound, player.x + dir * 0.5));
     player.y = getTerrainY(player.x, player.y) + 0.75;
     player.movePoints -= 0.5;
@@ -1057,7 +1054,7 @@ window.updateDirectionUI = function() {
         }
     }
 
-    // UI 프로필 이미지도 캐릭터 조준 방향에 맞게 좌우 반전 (facing: -1 왼쪽, facing: 1 오른쪽)
+    // UI ?�로???��?지??캐릭??조�? 방향??맞게 좌우 반전 (facing: -1 ?�쪽, facing: 1 ?�른�?
     const profileImg = document.getElementById('ui-player-img');
     if (profileImg) {
         if (player.facing === 1) {
@@ -1070,13 +1067,13 @@ window.updateDirectionUI = function() {
 
 // ---------- Cheat Keys & UI Shortcuts ----------
 window.addEventListener('keydown', (e) => {
-    // Ctrl+Shift+A: 스테이지 스킵 (스타팅 화면 Q 3회 연타 치트 해금 시만 작동)
+    // Ctrl+Shift+A: ?�테?��? ?�킵 (?��????�면 Q 3???��? 치트 ?�금 ?�만 ?�동)
     if (e.ctrlKey && e.shiftKey && (e.key === 'a' || e.key === 'A')) {
         if (!window.isCheatUnlocked) return;
         e.preventDefault();
         e.stopPropagation();
         
-        // 수식입력창에 숫자가 있으면 해당 스테이지로 이동
+        // ?�식?�력창에 ?�자가 ?�으�??�당 ?�테?��?�??�동
         const mathInput = document.getElementById('math-input');
         const inputVal = mathInput ? mathInput.value.trim() : '';
         const stageNum = parseInt(inputVal, 10);
@@ -1088,13 +1085,13 @@ window.addEventListener('keydown', (e) => {
             return;
         }
         
-        // 숫자가 없으면 다음 스테이지로
+        // ?�자가 ?�으�??�음 ?�테?��?�?
         currentStage++;
         initStage();
         if (mathInput) mathInput.value = '';
         return;
     }
-    // Ctrl+Shift+Q: 정답 함수 자동 계산 & 즉시 발사 (스타팅 화면 Q 3회 연타 치트 해금 시만 작동)
+    // Ctrl+Shift+Q: ?�답 ?�수 ?�동 계산 & 즉시 발사 (?��????�면 Q 3???��? 치트 ?�금 ?�만 ?�동)
     if (e.ctrlKey && e.shiftKey && (e.key === 'q' || e.key === 'Q')) {
         const currentTerrainData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
         const deathZoneY = currentTerrainData.deathZoneY !== undefined ? currentTerrainData.deathZoneY : -8;
@@ -1103,42 +1100,42 @@ window.addEventListener('keydown', (e) => {
 
         const p1 = { x: player.x, y: player.y };
 
-        // a < 0 (위로 볼록) 수학적 100% 보장: 2점 + 정점 높이 공식
-        // a = -((√(H-y1)+√(H-y2))/(x1-x2))^2 → 항상 음수 (위로 볼록 ∩ 모양)
+        // a < 0 (?�로 볼록) ?�학??100% 보장: 2??+ ?�점 ?�이 공식
+        // a = -((??H-y1)+??H-y2))/(x1-x2))^2 ????�� ?�수 (?�로 볼록 ??모양)
         const fit2Apex = (pt1, pt2, extraHeight = 5.0) => {
             if (Math.abs(pt1.x - pt2.x) < 0.001) return null;
-            // 최고점 H는 플레이어와 적 중 더 높은 Y위치보다 항상 최소 extraHeight 이상 높게 정함 (y1, y2보다 높은 위치)
+            // 최고??H???�레?�어?� ??�????��? Y?�치보다 ??�� 최소 extraHeight ?�상 ?�게 ?�함 (y1, y2보다 ?��? ?�치)
             const maxY = Math.max(pt1.y, pt2.y);
             const H = Math.min(38.0, maxY + Math.max(1.5, extraHeight));
             const d1 = Math.sqrt(Math.max(0.001, H - pt1.y));
             const d2 = Math.sqrt(Math.max(0.001, H - pt2.y));
             const xv = (d1 * pt2.x + d2 * pt1.x) / (d1 + d2);
-            const a = -Math.pow((d1 + d2) / (pt1.x - pt2.x), 2); // 항상 < 0 (위로 볼록)
+            const a = -Math.pow((d1 + d2) / (pt1.x - pt2.x), 2); // ??�� < 0 (?�로 볼록)
             const b = -2 * a * xv;
             const c = H + a * xv * xv;
             return { a, b, c };
         };
 
-        // 플레이어가 바라보는 방향(player.facing)의 적 우선 선택
-        // → 포물선 꼭짓점이 발사 방향 앞에 위치해야 미사일이 올라갔다 내려오는 ∩ 형태로 보임
+        // ?�레?�어가 바라보는 방향(player.facing)?????�선 ?�택
+        // ???�물??�?��?�이 발사 방향 ?�에 ?�치?�야 미사?�이 ?�라갔다 ?�려?�는 ???�태�?보임
         const dir = player.facing || 1;
         const sameDir = aliveEnemies.filter(e => Math.sign(e.x - player.x) === dir);
         const chosenEnemy = sameDir.length > 0
-            ? sameDir.reduce((a, b) => Math.abs(a.x - player.x) < Math.abs(b.x - player.x) ? a : b)  // 같은 방향 중 가장 가까운 적
-            : aliveEnemies.reduce((a, b) => Math.abs(a.x - player.x) < Math.abs(b.x - player.x) ? a : b); // 없으면 전방향 중 가장 가까운 적
+            ? sameDir.reduce((a, b) => Math.abs(a.x - player.x) < Math.abs(b.x - player.x) ? a : b)  // 같�? 방향 �?가??가까운 ??
+            : aliveEnemies.reduce((a, b) => Math.abs(a.x - player.x) < Math.abs(b.x - player.x) ? a : b); // ?�으�??�방??�?가??가까운 ??
 
         const tgt = chosenEnemy;
-        // 선택된 적 방향으로 강제 전환 (반대 방향 발사로 인한 궤도 이탈 방지)
+        // ?�택????방향?�로 강제 ?�환 (반�? 방향 발사�??�한 궤도 ?�탈 방�?)
         player.facing = Math.sign(tgt.x - player.x) || 1;
         if (window.updateDirectionUI) window.updateDirectionUI();
 
         let result = null;
         const pt2 = { x: tgt.x, y: tgt.y };
-        // H 탐색 범위를 높여 훨씬 명확하고 예쁜 '위로 볼록(∩)' 포물선이 나오도록 조정
+        // H ?�색 범위�??�여 ?�씬 명확?�고 ?�쁜 '?�로 볼록(??' ?�물?�이 ?�오?�록 조정
         for (let h = 15.0; h >= 1.5; h -= 0.5) {
             const res = fit2Apex(p1, pt2, h);
             if (!res) continue;
-            // 궤적 전체 스캔: 천장(y≥35) 및 데스존 침범 여부 확인
+            // 궤적 ?�체 ?�캔: 천장(y??5) �??�스�?침범 ?��? ?�인
             const minX = Math.min(p1.x, pt2.x) - 1;
             const maxX = Math.max(p1.x, pt2.x) + 1;
             let safe = true;
@@ -1148,7 +1145,7 @@ window.addEventListener('keydown', (e) => {
             }
             if (safe) { result = res; break; }
         }
-        // 최후의 보루: 낮은 호로라도 위로 볼록 보장
+        // 최후??보루: ??? ?�로?�도 ?�로 볼록 보장
         if (!result) {
             result = fit2Apex(p1, pt2, 1.5) || { a: -0.05, b: 0, c: p1.y + 0.05 * p1.x * p1.x };
         }
@@ -1173,12 +1170,12 @@ window.fireMissile = function (isCheat = false) {
     if (GAME_STATE !== 'IDLE') return;
     const latex = document.getElementById('math-input').value;
     const func = compileMathExpression(latex);
-    if (!func) { showMessage('오류', '수식이 올바르지 않습니다.'); return; }
+    if (!func) { showMessage('?�류', '?�식???�바르�? ?�습?�다.'); return; }
 
-    const py = player.y - 0.525; // 원 중심 Y
-    const VISUAL_R = 0.7;        // 원 반경
+    const py = player.y - 0.525; // ??중심 Y
+    const VISUAL_R = 0.7;        // ??반경
 
-    // 1. Launch Point 영역 (좌우 ±0.3) 통과 여부 검증
+    // 1. Launch Point ?�역 (좌우 ±0.3) ?�과 ?��? 검�?
     let passesLaunch = false;
     for (let x = player.x - 0.3; x <= player.x + 0.3; x += 0.002) {
         const y = func(x);
@@ -1186,11 +1183,11 @@ window.fireMissile = function (isCheat = false) {
     }
 
     if (!passesLaunch) {
-        showMessage('발사 불가', '그래프가 Launch Point를 지나야 합니다.');
+        showMessage('발사 불�?', '그래?��? Launch Point�?지?�야 ?�니??');
         return;
     }
 
-    // 2. 미사일 시작점 설정을 위해 0.7 반경 원의 테두리 교점 검색
+    // 2. 미사???�작???�정???�해 0.7 반경 ?�의 ?�두�?교점 검??
     let boundaryXs = [];
     let prevInside = null, lastX = null;
 
@@ -1204,23 +1201,23 @@ window.fireMissile = function (isCheat = false) {
     }
 
     const dir = player.facing;
-    // 바라보는 방향으로 위로 날아가는지 판별
+    // 바라보는 방향?�로 ?�로 ?�아가?��? ?�별
     const isFlyingUp = func(player.x + dir * 0.05) > func(player.x);
 
-    // 발사 방향에 따라 상단 혹은 하단 영역의 교점만 필터링
+    // 발사 방향???�라 ?�단 ?��? ?�단 ?�역??교점�??�터�?
     const correctHalfXs = boundaryXs.filter(bx => {
         const y = func(bx);
         return isFlyingUp ? (y >= py) : (y <= py);
     });
 
-    // 방향에 맞는 교점이 없으면 전체 교점 중 선택 (안정 장치)
+    // 방향??맞는 교점???�으�??�체 교점 �??�택 (?�정 ?�치)
     const finalXs = correctHalfXs.length > 0 ? correctHalfXs : boundaryXs;
     if (finalXs.length === 0) {
-        showMessage('발사 불가', '그래프가 Launch Point를 지나야 합니다.');
+        showMessage('발사 불�?', '그래?��? Launch Point�?지?�야 ?�니??');
         return;
     }
 
-    // 교점 중 위로 쏘면 Y 최대, 아래로 쏘면 Y 최소 선택
+    // 교점 �??�로 ?�면 Y 최�?, ?�래�??�면 Y 최소 ?�택
     let startX = finalXs[0];
     let bestY = func(startX);
     for (let i = 1; i < finalXs.length; i++) {
@@ -1228,7 +1225,7 @@ window.fireMissile = function (isCheat = false) {
         if (isFlyingUp ? y > bestY : y < bestY) { bestY = y; startX = finalXs[i]; }
     }
 
-    // startX, func(startX) 점을 원 테두리 위로 정확히 투영 → 미사일 시작점이 원 테두리와 딱 일치
+    // startX, func(startX) ?�을 ???�두�??�로 ?�확???�영 ??미사???�작?�이 ???�두리�? ???�치
     const rawStartX = startX;
     const rawStartY = func(startX);
     const sdx = rawStartX - player.x, sdy = rawStartY - py;
@@ -1238,7 +1235,7 @@ window.fireMissile = function (isCheat = false) {
 
     if (window.currentMissileType !== 'normal') {
         if (window.missileInventory[window.currentMissileType] <= 0) {
-            showMessage('수량 부족', '해당 미사일을 모두 소진했습니다.');
+            showMessage('?�량 부�?, '?�당 미사?�을 모두 ?�진?�습?�다.');
             document.getElementById('fire-btn').disabled = false;
             return;
         }
@@ -1251,7 +1248,7 @@ window.fireMissile = function (isCheat = false) {
     const launchBoost = Math.max(1.0, Math.min(2.2, 1.0 + (launchSlope - 0.3) * 0.4));
 
     GAME_STATE = 'FIRING';
-    player.animFrame = 30; // 30 프레임(0.5초) 동안 발사 모션
+    player.animFrame = 30; // 30 ?�레??0.5�? ?�안 발사 모션
     Object.assign(missile, { 
         active: true, func, x: projStartX, y: projStartY, 
         trail: [{ x: projStartX, y: projStartY }], 
@@ -1267,7 +1264,7 @@ window.fireMissile = function (isCheat = false) {
         launchBoost: launchBoost
     });
     
-    // 파워업 구름 통과 플래그 초기화 (매 발사마다 리셋)
+    // ?�워??구름 ?�과 ?�래�?초기??(�?발사마다 리셋)
     cloudParams.forEach(cp => { cp._hitByCurrentMissile = false; });
     
     document.getElementById('fire-btn').disabled = true;
@@ -1286,19 +1283,19 @@ function getBarrierColors(type, alphaMult = 1.0) {
             return {
                 fill: `rgba(50, 205, 50, ${0.15 * alphaMult})`,
                 stroke: `rgba(50, 205, 50, ${0.8 * alphaMult})`,
-                name: '피해흡수'
+                name: '?�해?�수'
             };
         case 'absolute':
             return {
                 fill: `rgba(255, 215, 0, ${0.15 * alphaMult})`,
                 stroke: `rgba(255, 215, 0, ${0.8 * alphaMult})`,
-                name: '절대방어'
+                name: '?��?방어'
             };
         case 'warp':
             return {
                 fill: `rgba(186, 85, 211, ${0.15 * alphaMult})`,
                 stroke: `rgba(186, 85, 211, ${0.8 * alphaMult})`,
-                name: '워프'
+                name: '?�프'
             };
         default:
             return {
@@ -1340,7 +1337,7 @@ function pathOctagon(ctx, r, progress) {
     pathPolygon(ctx, 8, r, progress);
 }
 
-// 나선(소용돌이) 경로
+// ?�선(?�용?�이) 경로
 function pathSpiral(ctx, r, progress, rotSpeed = 1.0) {
     ctx.beginPath();
     const turns = 2.0;
@@ -1389,7 +1386,7 @@ function checkBarrierCollision(mx, my, t) {
     const offsetY = t.isFlying ? t.h * 0.15 : -t.h * 0.35;
     const ty = t.y + offsetY;
     const dist = Math.hypot(mx - t.x, my - ty);
-    return dist <= 1.68; // 배리어 반경 (시각 반경과 동기화)
+    return dist <= 1.68; // 배리??반경 (?�각 반경�??�기??
 }
 
 function handleBarrierCollision(e) {
@@ -1499,7 +1496,7 @@ function handleBarrierCollision(e) {
 
 // ---------- Collision & Combat ----------
 function checkCollision(mx, my, t) {
-    // drawEntity에서 화면에 그려지는 Y 오프셋(시각적 보정값)을 논리적 피격 박스(Hitbox)에도 똑같이 반영합니다.
+    // drawEntity?�서 ?�면??그려지??Y ?�프???�각??보정�????�리???�격 박스(Hitbox)?�도 ?�같??반영?�니??
     const offsetY = t.isFlying ? t.h * 0.1 : -t.h * 0.35;
     const ty = t.y + offsetY;
     const hitEntity = mx >= t.x - t.w/2 && mx <= t.x + t.w/2 && my >= ty - t.h/2 && my <= ty + t.h/2;
@@ -1515,7 +1512,7 @@ function createExplosion(x, y, color) {
     for (let i = 0; i < 15; i++)
         effects.push({ type: 'particle', x, y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 30, color });
     
-    // 발전소('electric') 맵 전용: 황금빛 방전 스파크 이펙트
+    // 발전??'electric') �??�용: ?�금�?방전 ?�파???�펙??
     if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
         for (let sp = 0; sp < 14; sp++) {
             const angle = Math.random() * Math.PI * 2;
@@ -1549,7 +1546,7 @@ function createCloudPop(x, y) {
 function applyDamageAndEffects(target, mx, my) {
     if (target.type === 'ground' && !target.isSurfaced) {
         target.isSurfaced = true;
-        effects.push({ type: 'text', x: target.x, y: target.y + 2, text: '파헤치기 성공!', color: '#fbbf24', life: 200 });
+        effects.push({ type: 'text', x: target.x, y: target.y + 2, text: '?�헤치기 ?�공!', color: '#fbbf24', life: 200 });
     }
     
     if (target.hasCloud) {
@@ -1557,7 +1554,7 @@ function applyDamageAndEffects(target, mx, my) {
         createCloudPop(target.x, target.y - 0.75);
     }
     if (target.isFlying) {
-        target.isFlying = false; // 공중에 떠있는 포켓몬이 피격 시 추락하여 지면에 정상적으로 정착하도록 비행 상태 해제
+        target.isFlying = false; // 공중???�있???�켓몬이 ?�격 ??추락?�여 지면에 ?�상?�으�??�착?�도�?비행 ?�태 ?�제
     }
     const dx = target.x - mx, dy = target.y - my;
     const dist = Math.sqrt(dx*dx + dy*dy);
@@ -1578,39 +1575,39 @@ function applyDamageAndEffects(target, mx, my) {
     let mult = 1.0;
     if (stage.terrain === 'lava' && (selectedStarter||{}).type === 'fire') mult = 1.2;
     if (stage.terrain === 'sky'  && (selectedStarter||{}).type === 'flying') mult = 1.2;
-    // 파워업 구름 누적 부스트: 1 + 0.5 * n^0.7 (수확체감)
+    // ?�워??구름 ?�적 부?�트: 1 + 0.5 * n^0.7 (?�확체감)
     const n = missile.powerBoostCount || 0;
     const boostMult = n > 0 ? 1 + 0.5 * Math.pow(n, 0.7) : 1.0;
-    // 초심자의 버프: 스테이지 첫 턴에 적을 맞히면 2배 데미지
+    // 초심?�의 버프: ?�테?��? �??�에 ?�을 맞히�?2�??��?지
     const firstTurnMult = (isFirstTurn && enemies.includes(target)) ? 2.0 : 1.0;
     const totalDamage = Math.floor((30 + fallHeight * 1.7) * mult * baseDamageBoost * boostMult * firstTurnMult);
     if (isFirstTurn && enemies.includes(target)) {
         isFirstTurn = false;
         player.visualScale = 1.4;
         player.hasAura = 'red';
-        effects.push({ type: 'text', x: player.x, y: player.y - 1.8, text: '💥 기선 제압!', color: '#ff4500', life: 240 });
+        effects.push({ type: 'text', x: player.x, y: player.y - 1.8, text: '?�� 기선 ?�압!', color: '#ff4500', life: 240 });
     }
 
     target.hp -= totalDamage;
     target.shake = 20; screenShake = 15;
-    // 넉백 방향: 타겟 위치 ±1 grid 지형 높이 비교 → 내리막(낮은 쪽)으로 밀려남
-    // 차이가 0.3 미만(평탄)이면 기존대로 플레이어 위치 기준
+    // ?�백 방향: ?��??�치 ±1 grid 지???�이 비교 ???�리�???? �??�로 밀?�남
+    // 차이가 0.3 미만(?�탄)?�면 기존?��??�레?�어 ?�치 기�?
     const slopeCheckDist = 1.0;
     const terrainRight = getTerrainY(target.x + slopeCheckDist, target.y);
     const terrainLeft  = getTerrainY(target.x - slopeCheckDist, target.y);
-    const slopeDiff = terrainRight - terrainLeft; // 양수: 오른쪽이 낮음, 음수: 왼쪽이 낮음
+    const slopeDiff = terrainRight - terrainLeft; // ?�수: ?�른쪽이 ??��, ?�수: ?�쪽????��
     let kbDir;
     if (Math.abs(slopeDiff) >= 0.3) {
-        kbDir = slopeDiff > 0 ? 1 : -1; // 더 낮은 쪽(내리막)으로 넉백
+        kbDir = slopeDiff > 0 ? 1 : -1; // ????? �??�리�??�로 ?�백
     } else {
-        kbDir = target.x > player.x ? 1 : -1; // 평탄: 플레이어 기준
+        kbDir = target.x > player.x ? 1 : -1; // ?�탄: ?�레?�어 기�?
     }
     if (target.hp <= 0) {
-        // 사망 시 넉백 속도를 초기화하여 그 자리(체력 0 이 된 위치)에서 영혼 유령 효과로 성불 (데스존 추락 방지)
+        // ?�망 ???�백 ?�도�?초기?�하??�??�리(체력 0 ?????�치)?�서 ?�혼 ?�령 ?�과�??�불 (?�스�?추락 방�?)
         Object.assign(target, { isKnockedBack: false, vx: 0, vy: 0, angularVelocity: 0, rotation: 0 });
     } else {
         const _kb_isFloatingMap = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-        // 부유맵: 넉백 시 위로 튀지 않도록 vy=0 (수평 넉백만 적용)
+        // 부?�맵: ?�백 ???�로 ?�지 ?�도�?vy=0 (?�평 ?�백�??�용)
         const _kb_vyInit = _kb_isFloatingMap ? 0 : 0.08 + Math.random() * 0.06;
         Object.assign(target, { isKnockedBack: true, vx: kbDir * (Math.random()*0.02+0.04), vy: _kb_vyInit, angularVelocity: kbDir*(Math.random()*0.02+0.02) });
     }
@@ -1630,12 +1627,12 @@ function applyDamageAndEffects(target, mx, my) {
     const deadEnemies = enemies.filter(e => e.hp <= 0).length;
     if (player.hp <= 0) {
         GAME_STATE = 'OVER';
-        showMessage('GAME OVER', '자폭했습니다...');
+        showMessage('GAME OVER', '?�폭?�습?�다...');
     } else if (deadEnemies >= 2 && GAME_STATE !== 'OVER') {
         GAME_STATE = 'OVER';
         if (window.stageClearTimeout) clearTimeout(window.stageClearTimeout);
         window.stageClearTimeout = setTimeout(() => {
-            showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false);
+            showMessage('STAGE CLEAR!', '??2마리 처치 ?�료!', false);
         }, 700);
     } else if (missile.type !== 'pierce' && !missile.active) {
         GAME_STATE = 'IDLE';
@@ -1644,40 +1641,40 @@ function applyDamageAndEffects(target, mx, my) {
 }
 
 // ---------- Parabola Missile Step Helper (Constant 2D Speed + 1.3x Descent Acceleration) ----------
-// [원상복구 요청 시 사용 가능한 기존 코드]:
+// [?�상복구 ?�청 ???�용 가?�한 기존 코드]:
 // missile.x += missile.dx / 3;
 // missile.y = missile.func(missile.x);
 function stepParabolaMissile() {
     const dirX = Math.sign(missile.dx) || 1;
     const currY = missile.func(missile.x);
-    // 현재 위치에서의 경사도(기울기) 계산
+    // ?�재 ?�치?�서??경사??기울�? 계산
     const deltaCheck = 0.005 * dirX;
     const nextYCheck = missile.func(missile.x + deltaCheck);
     const slope = (nextYCheck - currY) / deltaCheck;
     const absSlope = Math.abs(slope);
     
-    // 최고점 Y 갱신
+    // 최고??Y 갱신
     if (missile.y > (missile.maxY || -Infinity)) {
         missile.maxY = missile.y;
     }
 
-    // x 진행 방향 기준 y가 감소 중이면 하강 상태로 간주
+    // x 진행 방향 기�? y가 감소 중이�??�강 ?�태�?간주
     const isDescending = (slope * dirX < 0);
     
-    // 1. 최고점 부근 삼각함수(Sin) 기반 유기적 감속 효과 (v1.2.47 방식 적용)
-    // 미분값이 0인 sin(t * PI/2) 커브를 적용하여 최고점 꺾임을 부드럽게 방지
+    // 1. 최고??부�??�각?�수(Sin) 기반 ?�기??감속 ?�과 (v1.2.47 방식 ?�용)
+    // 미분값이 0??sin(t * PI/2) 커브�??�용?�여 최고??꺾임??부?�럽�?방�?
     const apexProgress = Math.min(1.0, absSlope / 1.2);
     const apexFactor = 0.45 + 0.55 * Math.sin(apexProgress * Math.PI * 0.5);
     
-    // 2. 이동 속도 계산
+    // 2. ?�동 ?�도 계산
     const baseDS = 0.18;
     let speedMult = 1.0;
 
     if (!isDescending) {
-        // 상승 구간: 초기 발사 각도 가속 적용
+        // ?�승 구간: 초기 발사 각도 가???�용
         speedMult = missile.launchBoost || 1.0;
     } else {
-        // 하강 구간: 1.1배 -> 2.5배 -> 최대 4.0배 폭속 낙하 가속
+        // ?�강 구간: 1.1�?-> 2.5�?-> 최�? 4.0�???�� ?�하 가??
         const fallDistance = Math.max(0, (missile.maxY || missile.y) - missile.y);
         const descentAccel = 1.1 + Math.min(2.9, fallDistance * 0.55 + absSlope * 0.5);
         speedMult = descentAccel;
@@ -1685,7 +1682,7 @@ function stepParabolaMissile() {
 
     const targetDS = baseDS * speedMult * apexFactor;
     
-    // 2D 곡선 거리를 유지하도록 dx 계산: dx = targetDS / sqrt(1 + slope^2) * dirX
+    // 2D 곡선 거리�??��??�도�?dx 계산: dx = targetDS / sqrt(1 + slope^2) * dirX
     const stepDx = (targetDS / Math.sqrt(1 + slope * slope)) * dirX;
     
     missile.x += stepDx;
@@ -1698,15 +1695,15 @@ function updateGame() {
     enemies.forEach(e => { if (e.shake > 0) e.shake--; });
     if (player.shake > 0) player.shake--;
 
-    // 발전소('electric') 맵: 20초마다 번개가 내리쳐 내 포켓몬 가격 (넉백 없음)
+    // 발전??'electric') �? 20초마??번개가 ?�리�????�켓�?가�?(?�백 ?�음)
     const currentTerrainKey = LEVELS[currentStage % LEVELS.length].terrain;
     if (currentTerrainKey === 'electric' && player.hp > 0 && GAME_STATE !== 'OVER') {
         const now = Date.now();
         if (!window.lastElectricLightningTime) window.lastElectricLightningTime = now;
-        if (now - window.lastElectricLightningTime >= 20000) { // 20초마다 (20000ms)
+        if (now - window.lastElectricLightningTime >= 20000) { // 20초마??(20000ms)
             window.lastElectricLightningTime = now;
             
-            // 번개 지그재그 ⚡ 경로 사전 계산 (하늘 y=45에서 내 포켓몬 위치까지)
+            // 번개 지그재�???경로 ?�전 계산 (?�늘 y=45?�서 ???�켓�??�치까�?)
             const segments = [];
             const topY = 45;
             const bottomY = player.y;
@@ -1728,14 +1725,14 @@ function updateGame() {
                 maxLife: 25
             });
 
-            // 눈이 부시지 않도록 대단히 부드럽고 차분한 12% 투명도 스크린 플래시
+            // ?�이 부?��? ?�도�??�?�히 부?�럽�?차분??12% ?�명???�크�??�래??
             effects.push({
                 type: 'softFlash',
                 life: 12,
                 maxLife: 12
             });
 
-            // 포켓몬 발밑 튀어오르는 황금빛 전기 스파크 파티클
+            // ?�켓�?발밑 ?�?�오르는 ?�금�??�기 ?�파???�티??
             for (let pi = 0; pi < 12; pi++) {
                 effects.push({
                     type: 'particle',
@@ -1747,34 +1744,34 @@ function updateGame() {
                     color: (pi % 2 === 0) ? '#fbbf24' : '#fef08a'
                 });
             }
-            // 텍스트 & 화면 흔들림 & 데미지 (넉백은 없음)
+            // ?�스??& ?�면 ?�들�?& ?��?지 (?�백?� ?�음)
             effects.push({
                 type: 'text',
                 x: player.x,
                 y: player.y + 2.8,
-                text: '⚡ 번개 강타! -5HP',
+                text: '??번개 강�?! -5HP',
                 color: '#fbbf24',
                 life: 180
             });
-            player.hp = Math.max(1, player.hp - 5); // 5 데미지 (사망 최소 1 유지)
+            player.hp = Math.max(1, player.hp - 5); // 5 ?��?지 (?�망 최소 1 ?��?)
             player.shake = 15;
             screenShake = 12;
             updateHPUI();
         }
     }
 
-    // 화산 용암('lava') 맵 기믹: 15초마다 무작위 지형에서 포물선으로 날아오는 용암탄
+    // ?�산 ?�암('lava') �?기�?: 15초마??무작??지?�에???�물?�으�??�아?�는 ?�암??
     if (currentTerrainKey === 'lava' && player.hp > 0 && GAME_STATE !== 'OVER') {
         const now = Date.now();
         if (!window.lastLavaEruptionTime) window.lastLavaEruptionTime = now;
-        if (now - window.lastLavaEruptionTime >= 15000) { // 15초마다 분출
+        if (now - window.lastLavaEruptionTime >= 15000) { // 15초마??분출
             window.lastLavaEruptionTime = now;
             
-            // 플레이어와 10~15 그리드 떨어진 랜덤한 지형에서 시작
+            // ?�레?�어?� 10~15 그리???�어�??�덤??지?�에???�작
             const sign = Math.random() < 0.5 ? 1 : -1;
             const dist = 10 + Math.random() * 5;
             const startX = player.x + sign * dist;
-            const startY = getTerrainY(startX) - 1.0; // 땅보다 살짝 아래에서 튀어나오는 느낌
+            const startY = getTerrainY(startX) - 1.0; // ?�보???�짝 ?�래?�서 ?�?�나?�는 ?�낌
             
             effects.push({
                 type: 'lava_rock',
@@ -1782,30 +1779,30 @@ function updateGame() {
                 startY: startY,
                 targetX: player.x,
                 targetY: player.y,
-                height: 8 + Math.random() * 4, // 최고점 추가 높이
+                height: 8 + Math.random() * 4, // 최고??추�? ?�이
                 maxLife: 75,
-                life: 75, // 1.25초 비행
+                life: 75, // 1.25�?비행
                 x: startX,
                 y: startY
             });
             
-            // 발사 위치 파티클 효과
+            // 발사 ?�치 ?�티???�과
             for (let pi = 0; pi < 15; pi++) {
                 effects.push({
                     type: 'particle',
                     x: startX + (Math.random() - 0.5) * 2.0,
                     y: startY + 0.5,
                     vx: (Math.random() - 0.5) * 0.4,
-                    vy: Math.random() * 0.7 + 0.3, // 위로 솟구침
+                    vy: Math.random() * 0.7 + 0.3, // ?�로 ?�구�?
                     life: 45,
-                    color: (pi % 2 === 0) ? '#ea580c' : '#dc2626' // 짙은 주황, 빨강
+                    color: (pi % 2 === 0) ? '#ea580c' : '#dc2626' // 짙�? 주황, 빨강
                 });
             }
-            screenShake = 5; // 발사 시 약한 흔들림
+            screenShake = 5; // 발사 ???�한 ?�들�?
         }
     }
 
-    // 어두운 동굴('cave') 맵 기믹: 15초마다 플레이어 머리 위로 종유석 낙하 (넉백 없음)
+    // ?�두???�굴('cave') �?기�?: 15초마???�레?�어 머리 ?�로 종유???�하 (?�백 ?�음)
     if (currentTerrainKey === 'cave' && player.hp > 0 && GAME_STATE !== 'OVER') {
         const now = Date.now();
         if (!window.lastCaveWarningTime) {
@@ -1815,28 +1812,28 @@ function updateGame() {
 
         const elapsed = now - window.lastCaveWarningTime;
 
-        // 13초 ~ 15초 사이: 천장에서 흙먼지 경고 이펙트
+        // 13�?~ 15�??�이: 천장?�서 ?�먼지 경고 ?�펙??
         if (elapsed >= 13000 && elapsed < 15000) {
             window.caveStalactiteWarned = true;
-            // 플레이어 바로 위 천장 부근
+            // ?�레?�어 바로 ??천장 부�?
             const ceilY = TERRAINS['cave'].ceilFunc ? TERRAINS['cave'].ceilFunc(player.x) - 2.0 : 35;
             
-            // 매 프레임마다 일정 확률로 흙먼지 파티클 생성
+            // �??�레?�마???�정 ?�률�??�먼지 ?�티???�성
             if (Math.random() < 0.3) {
                 effects.push({
                     type: 'particle',
                     x: player.x + (Math.random() - 0.5) * 1.5,
                     y: ceilY,
                     vx: (Math.random() - 0.5) * 0.2,
-                    vy: -Math.random() * 0.8 - 0.2, // 아래로 떨어짐
+                    vy: -Math.random() * 0.8 - 0.2, // ?�래�??�어�?
                     life: 60,
-                    color: Math.random() < 0.5 ? '#737373' : '#a3a3a3' // 회색 흙먼지
+                    color: Math.random() < 0.5 ? '#737373' : '#a3a3a3' // ?�색 ?�먼지
                 });
             }
         }
 
         if (elapsed >= 15000) {
-            // 종유석 낙하 시작 (15초 경과)
+            // 종유???�하 ?�작 (15�?경과)
             window.lastCaveWarningTime = now;
             window.caveStalactiteWarned = false;
             
@@ -1848,7 +1845,7 @@ function updateGame() {
                 startY: ceilY,
                 targetX: player.x,
                 targetY: player.y,
-                life: 30, // 30프레임 동안 낙하
+                life: 30, // 30?�레???�안 ?�하
                 maxLife: 30,
                 x: player.x,
                 y: ceilY
@@ -1856,23 +1853,23 @@ function updateGame() {
         }
     }
 
-    // 플레이어 발사 모션 (점프 + 한바퀴 회전)
+    // ?�레?�어 발사 모션 (?�프 + ?�바???�전)
     if (player.animFrame > 0) {
         player.animFrame--;
         const p = (30 - player.animFrame) / 30; // 0.0 ~ 1.0
-        player.yOffAnim = Math.sin(p * Math.PI) * scaleLength(1.0); // 위로 튕기기
-        player.rotation = p * Math.PI * 2 * player.facing; // 회전
+        player.yOffAnim = Math.sin(p * Math.PI) * scaleLength(1.0); // ?�로 ?�기�?
+        player.rotation = p * Math.PI * 2 * player.facing; // ?�전
         if (player.animFrame === 0) {
             player.rotation = 0;
             player.yOffAnim = 0;
         }
     }
 
-    // 구멍 서서히 복구 (반경 축소)
+    // 구멍 ?�서??복구 (반경 축소)
     for (let i = cloudHoles.length - 1; i >= 0; i--) {
         const h = cloudHoles[i];
         h.life--;
-        // 남은 수명 비율에 따라 반경을 0으로 줄임 (복구 효과)
+        // ?��? ?�명 비율???�라 반경??0?�로 줄임 (복구 ?�과)
         h.radius = h.maxRadius * (h.life / h.maxLife);
         if (h.life <= 0) cloudHoles.splice(i, 1);
     }
@@ -1889,7 +1886,7 @@ function updateGame() {
             e.x = e.startX + (e.targetX - e.startX) * p;
             e.y = e.startY + (e.targetY - e.startY) * p + e.height * 4 * p * (1 - p);
             
-            // 화려한 불꽃 꼬리 파티클 생성
+            // ?�려??불꽃 꼬리 ?�티???�성
             for(let pt = 0; pt < 2; pt++) {
                 effects.push({
                     type: 'particle',
@@ -1898,15 +1895,15 @@ function updateGame() {
                     vx: (e.startX - e.targetX) * 0.002 + (Math.random()-0.5)*0.1,
                     vy: Math.random() * 0.15,
                     life: 12 + Math.random() * 10,
-                    color: Math.random() > 0.5 ? '#ea580c' : '#fef08a' // 주황, 노랑 혼합
+                    color: Math.random() > 0.5 ? '#ea580c' : '#fef08a' // 주황, ?�랑 ?�합
                 });
             }
 
             if (e.life <= 0) {
-                // 용암탄 폭발
+                // ?�암????��
                 if (typeof createExplosion === 'function') createExplosion(e.x, e.y, '#ea580c');
                 
-                // 폭발 반경(explosionRadius) 내 모든 포켓몬에게 데미지 (넉백 없음)
+                // ??�� 반경(explosionRadius) ??모든 ?�켓몬에�??��?지 (?�백 ?�음)
                 [player, ...enemies].forEach(ent => {
                     if (ent.hp <= 0) return;
                     const dx = ent.x - e.x, dy = ent.y - e.y;
@@ -1914,14 +1911,14 @@ function updateGame() {
                     if (dist <= explosionRadius + 0.5) {
                         ent.hp -= 5;
                         ent.shake = 18;
-                        effects.push({ type: 'text', x: ent.x, y: ent.y + 2.8, text: '🔥용암 폭발! -5HP', color: '#ea580c', life: 180 });
+                        effects.push({ type: 'text', x: ent.x, y: ent.y + 2.8, text: '?��?�암 ??��! -5HP', color: '#ea580c', life: 180 });
                     }
                 });
                 screenShake = 15;
                 if (typeof updateHPUI === 'function') updateHPUI();
                 if (player.hp <= 0) {
                     GAME_STATE = 'OVER';
-                    if (typeof showMessage === 'function') showMessage('GAME OVER', '뜨거운 용암탄에 쓰러졌습니다...');
+                    if (typeof showMessage === 'function') showMessage('GAME OVER', '?�거???�암?�에 ?�러졌습?�다...');
                 }
             }
         }
@@ -1929,18 +1926,18 @@ function updateGame() {
         if (e.type === 'stalactite') {
             const p = 1.0 - (e.life / e.maxLife); // 0.0 ~ 1.0
             e.x = e.startX;
-            // 낙하 가속 느낌을 위해 p 제곱 사용 (엔진 y축은 위가 양수)
+            // ?�하 가???�낌???�해 p ?�곱 ?�용 (?�진 y축�? ?��? ?�수)
             e.y = e.startY - (e.startY - e.targetY) * Math.pow(p, 1.5);
             
             if (e.life <= 0) {
-                // 데미지 5~10
+                // ?��?지 5~10
                 const dmg = 5 + Math.floor(Math.random() * 6);
                 player.hp = Math.max(1, player.hp - dmg);
                 player.shake = 15;
                 screenShake = 15;
                 if (typeof updateHPUI === 'function') updateHPUI();
 
-                // 파편 이펙트 (위로 튀는 돌조각들)
+                // ?�편 ?�펙??(?�로 ?�???�조각들)
                 for (let pi = 0; pi < 15; pi++) {
                     effects.push({
                         type: 'particle',
@@ -1953,7 +1950,7 @@ function updateGame() {
                     });
                 }
 
-                // 먼지 구름 파티클 (충격 효과 보강)
+                // 먼�? 구름 ?�티??(충격 ?�과 보강)
                 for (let pi = 0; pi < 8; pi++) {
                     effects.push({
                         type: 'particle',
@@ -1970,14 +1967,14 @@ function updateGame() {
                     type: 'text',
                     x: player.x,
                     y: player.y + 3.0,
-                    text: `🪨 종유석 낙하! -${dmg}HP`,
+                    text: `?�� 종유???�하! -${dmg}HP`,
                     color: '#d4d4d8',
                     life: 180
                 });
 
                 if (player.hp <= 0) {
                     GAME_STATE = 'OVER';
-                    if (typeof showMessage === 'function') showMessage('GAME OVER', '종유석에 깔려 쓰러졌습니다...');
+                    if (typeof showMessage === 'function') showMessage('GAME OVER', '종유?�에 깔려 ?�러졌습?�다...');
                 }
             }
         }
@@ -1991,14 +1988,14 @@ function updateGame() {
             return;
         }
         if (ent.isKnockedBack) {
-            // ★ isFloatingMapLocal 반드시 첫 사용 이전에 선언 — TDZ ReferenceError 방지
+            // ??isFloatingMapLocal 반드??�??�용 ?�전???�언 ??TDZ ReferenceError 방�?
             const isFloatingMapLocal = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-            // 다음 x 위치의 지형 높이를 미리 확인 — 급경사(언덕/스파이크 벽)에 올라타는 순간 점프 방지
+            // ?�음 x ?�치??지???�이�?미리 ?�인 ??급경???�덕/?�파?�크 �????�라?�???�간 ?�프 방�?
             const nextX   = ent.x + ent.vx;
             const nextGY  = getTerrainY(nextX, ent.y) + 0.75;
             const currGY  = getTerrainY(ent.x, ent.y)  + 0.75;
-            // 다음 위치의 지형이 현재 y보다 0.3 이상 높으면 "벽"으로 간주 → vx 반사, x는 유지
-            // 단, 부유 맵(isFloating)에서 차이가 3.0 초과인 경우만 "다른 섬 층"으로 간주하여 통과 허용
+            // ?�음 ?�치??지?�이 ?�재 y보다 0.3 ?�상 ?�으�?"�??�로 간주 ??vx 반사, x???��?
+            // ?? 부??�?isFloating)?�서 차이가 3.0 초과??경우�?"?�른 ??�??�로 간주?�여 ?�과 ?�용
             if (nextGY > ent.y + 0.3 && (nextGY <= ent.y + 3.0 || !isFloatingMapLocal)) {
                 ent.vx *= -0.55;
             } else {
@@ -2006,44 +2003,44 @@ function updateGame() {
             }
             ent.y += ent.vy;
             ent.rotation += ent.angularVelocity;
-            ent.vy -= 0.03; // 중력 가속도 1.5배 상향 (-0.02 -> -0.03)
+            ent.vy -= 0.03; // 중력 가?�도 1.5�??�향 (-0.02 -> -0.03)
             const limitX = 60;
             if (ent.x - ent.w/2 < -limitX) { ent.x = -limitX + ent.w/2; ent.vx *= -0.8; }
             if (ent.x + ent.w/2 >  limitX) { ent.x =  limitX - ent.w/2; ent.vx *= -0.8; }
-            const enemyGroundOffset = (ent !== player) ? 0.95 : 0.75; // 적 포켓몬만 0.2 위로 올려서 발이 지면에 잠기지 않게
+            const enemyGroundOffset = (ent !== player) ? 0.95 : 0.75; // ???�켓몬만 0.2 ?�로 ?�려??발이 지면에 ?�기지 ?�게
             const groundY = getTerrainY(ent.x, ent.y) + enemyGroundOffset;
-            const slopeRightY = getTerrainY(ent.x + 0.2, ent.y) + enemyGroundOffset; // groundY와 동일한 offset 사용해야 isValleyBottom 판정이 정확함
+            const slopeRightY = getTerrainY(ent.x + 0.2, ent.y) + enemyGroundOffset; // groundY?� ?�일??offset ?�용?�야 isValleyBottom ?�정???�확??
             const slopeLeftY = getTerrainY(ent.x - 0.2, ent.y) + enemyGroundOffset;
             const isValleyBottom = (slopeRightY > groundY + 0.01) && (slopeLeftY > groundY + 0.01);
 
             if (ent.y < groundY) {
                 if (groundY - ent.y > 1.5) {
-                    // 가파른 절벽/크레이터 벽에 수평으로 부딪힌 경우: 골짜기 저점 반사 감쇄
-                    ent.vx *= isValleyBottom ? -0.2 : -0.5; // 골짜기 저점 벽 부딪힘 시 반발 대폭 감소
-                    ent.x += ent.vx; // 벽에서 밀어내어 끼임 방지
-                    ent.vy *= 0.8; // 벽에 마찰되어 떨어지는 속도 감쇄
+                    // 가?�른 ?�벽/?�레?�터 벽에 ?�평?�로 부?�힌 경우: 골짜�??�??반사 감쇄
+                    ent.vx *= isValleyBottom ? -0.2 : -0.5; // 골짜�??�??�?부?�힘 ??반발 ?�??감소
+                    ent.x += ent.vx; // 벽에??밀?�내???�임 방�?
+                    ent.vy *= 0.8; // 벽에 마찰?�어 ?�어지???�도 감쇄
                     if (isValleyBottom && Math.abs(ent.vx) < 0.25) {
-                        ent.vx = 0; // 골짜기 바닥 감쇄
+                        ent.vx = 0; // 골짜�?바닥 감쇄
                     }
-                    // 가파른 골짜기에서 속도가 충분히 작으면 강제 정지 (무한진동 방지)
+                    // 가?�른 골짜기에???�도가 충분???�으�?강제 ?��? (무한진동 방�?)
                     if (Math.abs(ent.vx) < 0.08 && Math.abs(ent.vy) < 0.15) {
-                        // 부유맵: 섬 바닥 아래이거나, 하단→상단 레이어 점프(상향 텔레포트) 차단
-                        // groundLayerIdx=-1(flying 적) 및 같은 레이어 원거리 스냅까지 커버하는 거리 차단 추가
+                        // 부?�맵: ??바닥 ?�래?�거?? ?�단?�상???�이???�프(?�향 ?�레?�트) 차단
+                        // groundLayerIdx=-1(flying ?? �?같�? ?�이???�거�??�냅까�? 커버?�는 거리 차단 추�?
                         const _kb_islandB = getTerrainBottom(ent.x, ent.y);
                         const _kb_below = _kb_islandB !== -1000 && ent.y < _kb_islandB + 0.1;
                         const _kb_layerIdx = getTerrainLayerIndex(ent.x, ent.y);
                         const _kb_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-                        // 레이어 점프 차단 (groundLayerIdx가 있을 때)
+                        // ?�이???�프 차단 (groundLayerIdx가 ?�을 ??
                         const _kb_layerJump = _kb_isFloating && ent.groundLayerIdx >= 0 && _kb_layerIdx >= 0 && _kb_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
-                        // 거리 차단: flying 적(groundLayerIdx=-1)이나 같은 레이어 원거리 스냅까지 보완
+                        // 거리 차단: flying ??groundLayerIdx=-1)?�나 같�? ?�이???�거�??�냅까�? 보완
                         const _kb_distBlock = _kb_isFloating && (groundY - ent.y) > 1.5;
                         if (!_kb_below && !_kb_layerJump && !_kb_distBlock) { ent.y = groundY; if (_kb_layerIdx >= 0) ent.groundLayerIdx = _kb_layerIdx; }
                         ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = ent.angularVelocity = 0;
-                        // KB 정리 스냅 (부유맵 전용): KB 종료 후에도 같은 레이어 구름 아래(0.05~5유닛)에
-                        // 머물러 있는 경우 즉시 착지. normal physics에서 4~5유닛 위로 순간이동(솟구침)하거나
-                        // 그대로 추락하는 양쪽 버그를 동시에 차단하는 단일 보정 스냅.
+                        // KB ?�리 ?�냅 (부?�맵 ?�용): KB 종료 ?�에??같�? ?�이??구름 ?�래(0.05~5?�닛)??
+                        // 머물???�는 경우 즉시 착�?. normal physics?�서 4~5?�닛 ?�로 ?�간?�동(?�구�??�거??
+                        // 그�?�?추락?�는 ?�쪽 버그�??�시??차단?�는 ?�일 보정 ?�냅.
                         if (_kb_isFloating && !_kb_below && _kb_layerIdx >= 0 && _kb_layerIdx === ent.groundLayerIdx) {
-                            // ent.x가 steep wall 반사로 갱신됐으므로 groundY 재계산
+                            // ent.x가 steep wall 반사�?갱신?�으므�?groundY ?�계??
                             const _kb_cleanupGY = getTerrainY(ent.x, ent.y) + enemyGroundOffset;
                             const _kb_cleanupDist = _kb_cleanupGY - ent.y;
                             if (_kb_cleanupDist > 0.05 && _kb_cleanupDist <= 5.5) {
@@ -2053,24 +2050,24 @@ function updateGame() {
                         }
                     }
                 } else {
-                    // 일반적인 바닥 충돌
+                    // ?�반?�인 바닥 충돌
                     const snapDist = groundY - ent.y;
-                    // ★ 수평 이동으로 경사면 타고 솟구치는 버그 방지
-                    // 스냅 거리가 이번 프레임 낙하속도(|vy|)+여유(0.3)보다 크면
-                    // → 위에서 떨어진 게 아니라 옆으로 비탈을 타고 있는 것 → 벽 처리
+                    // ???�평 ?�동?�로 경사�??��??�구치는 버그 방�?
+                    // ?�냅 거리가 ?�번 ?�레???�하?�도(|vy|)+?�유(0.3)보다 ?�면
+                    // ???�에???�어�?�??�니???�으�?비탈???��??�는 �???�?처리
                     if (snapDist > Math.abs(ent.vy) + 0.3) {
                         ent.vx *= -0.55;
-                        // y는 스냅하지 않음 (다음 프레임에서 자연스럽게 처리)
+                        // y???�냅?��? ?�음 (?�음 ?�레?�에???�연?�럽�?처리)
                     } else {
-                    // 부유맵: else branch에서 dist는 항상 ≤1.5이므로 원래 dist>1.5 조건은 dead code
-                    // → 제거하여 layerJump 실제 작동: groundLayerIdx보다 낮은(높은 고도) 레이어 스냅 차단
+                    // 부?�맵: else branch?�서 dist????�� ??.5?��?�??�래 dist>1.5 조건?� dead code
+                    // ???�거?�여 layerJump ?�제 ?�동: groundLayerIdx보다 ???(?��? 고도) ?�이???�냅 차단
                     const _eb_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
                     const _eb_layerIdx = _eb_isFloating ? getTerrainLayerIndex(ent.x, ent.y) : -1;
                     const _eb_layerJump = _eb_isFloating && ent.groundLayerIdx >= 0 && _eb_layerIdx >= 0 && _eb_layerIdx < ent.groundLayerIdx;
-                    // dist>3.0 절대 차단 제거 (KB 종료 후 구름보다 3+유닛 아래 entity의 정상 스냅도 막는 회귀 유발)
+                    // dist>3.0 ?��? 차단 ?�거 (KB 종료 ??구름보다 3+?�닛 ?�래 entity???�상 ?�냅??막는 ?��? ?�발)
                     const _eb_distBlock = _eb_isFloating && (groundY - ent.y) > 3.0;
                     if (_eb_layerJump || _eb_distBlock) {
-                        ent.vx *= -0.55; // 상단 구름으로의 순간이동 차단 → 벽 처리
+                        ent.vx *= -0.55; // ?�단 구름?�로???�간?�동 차단 ??�?처리
                     } else {
                     ent.y = groundY; 
                     if (_eb_layerIdx >= 0) ent.groundLayerIdx = _eb_layerIdx;
@@ -2082,8 +2079,8 @@ function updateGame() {
                     if (safeSlopeDiff > 2.0) safeSlopeDiff = 2.0;
                     if (safeSlopeDiff < -2.0) safeSlopeDiff = -2.0;
                     
-                    // 아이스 맵: 경사 가속 0.05 (원본 0.15의 1/3) — 완전제거 시 vx 부족으로 벽반사 진동 발생
-                    // 그 외 맵: 경사도에 비례한 가속 0.15 적용
+                    // ?�이??�? 경사 가??0.05 (?�본 0.15??1/3) ???�전?�거 ??vx 부족으�?벽반??진동 발생
+                    // �???�? 경사?�에 비�???가??0.15 ?�용
                     const isIceMap = LEVELS[currentStage % LEVELS.length].terrain === 'ice';
                     const slopeAccel = isIceMap ? 0.05 : 0.15;
                     if (Math.abs(safeSlopeDiff) > 0.05 && !isValleyBottom) {
@@ -2092,40 +2089,40 @@ function updateGame() {
                     
                     const iceFriction = (LEVELS[currentStage % LEVELS.length].terrain === 'ice') ? 0.80 : 0.55;
                     let friction = isValleyBottom ? 0.3 : iceFriction;
-                    // 골짜기 진동 방지: 오르막을 오를 때(속도 방향과 경사 방향이 같을 때) 운동에너지를 크게 깎음
+                    // 골짜�?진동 방�?: ?�르막을 ?��? ???�도 방향�?경사 방향??같을 ?? ?�동?�너지�??�게 깎음
                     if (ent.vx * safeSlopeDiff > 0) friction = 0.2;
                     ent.vx *= friction;
                     ent.angularVelocity *= 0.5;
                     
-                    // 골짜기 저점이거나 속도가 적을 경우 즉시 착지 정지
+                    // 골짜�??�?�이거나 ?�도가 ?�을 경우 즉시 착�? ?��?
                     const thresh = isValleyBottom ? 0.25 : 0.1;
                     if (Math.abs(ent.vy) < thresh && Math.abs(ent.vx) < thresh) {
                         if (isValleyBottom || Math.abs(slopeDiff) <= 0.15) {
                             ent.isKnockedBack = false; ent.vy = ent.vx = ent.rotation = 0;
                         }
                     }
-                    } // _eb_layerJump 아닐 때(정상 착지) else 종료
-                    } // lateral-climb 아닐 때(정상 착지) else 종료
+                    } // _eb_layerJump ?�닐 ???�상 착�?) else 종료
+                    } // lateral-climb ?�닐 ???�상 착�?) else 종료
                 }
             }
         } else {
             const isGroundType = ent.type === 'ground' && !ent.isSurfaced;
-            const groundOffset = (ent !== player) ? 0.95 : 0.75; // 적 포켓몬만 0.2 위로
+            const groundOffset = (ent !== player) ? 0.95 : 0.75; // ???�켓몬만 0.2 ?�로
             const groundY = getTerrainY(ent.x, ent.y) + (isGroundType ? -1.3 : groundOffset);
-            // 비행 엔티티라도 발아래 지형이 완전히 파괴된 경우(groundY < deathZone) → 중력 적용하여 낙하
+            // 비행 ?�티?�라??발아??지?�이 ?�전???�괴??경우(groundY < deathZone) ??중력 ?�용?�여 ?�하
             const _curDeathZone = (TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].deathZoneY !== undefined)
                 ? TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].deathZoneY : -8;
             const _isOverVoid = groundY < _curDeathZone;
             if (!ent.isFlying || _isOverVoid) {
-                // 부유맵: 엔티티가 섬 바닥 아래에 있으면 스냅 금지 (섬 위로 순간이동 방지)
+                // 부?�맵: ?�티?��? ??바닥 ?�래???�으�??�냅 금�? (???�로 ?�간?�동 방�?)
                 const _np_islandB = getTerrainBottom(ent.x, ent.y);
                 const _np_below = _np_islandB !== -1000 && ent.y < _np_islandB + 0.1;
                 const _np_layerIdx = getTerrainLayerIndex(ent.x, ent.y);
                 const _np_isFloating = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating;
-                // 부유맵: 이전 착지 레이어보다 높은 레이어가 감지되고 거리 1.5초과 → 레이어 점프 → 중력 적용 (고체 지형은 항상 스냅)
+                // 부?�맵: ?�전 착�? ?�이?�보???��? ?�이?��? 감�??�고 거리 1.5초과 ???�이???�프 ??중력 ?�용 (고체 지?��? ??�� ?�냅)
                 const _np_layerJump = _np_isFloating && ent.groundLayerIdx >= 0 && _np_layerIdx >= 0 && _np_layerIdx < ent.groundLayerIdx && (groundY - ent.y) > 1.5;
-                // 부유맵: 스냅 차단 — 다른 레이어(더 높은 구름)이면 원거리 스냅 차단
-                // dist>3.0 절대거리 차단은 제거: KB 종료 후 entity가 구름 아래 3+유닛에 있을 때 정상 스냅도 막는 회귀 유발
+                // 부?�맵: ?�냅 차단 ???�른 ?�이?????��? 구름)?�면 ?�거�??�냅 차단
+                // dist>3.0 ?��?거리 차단?� ?�거: KB 종료 ??entity가 구름 ?�래 3+?�닛???�을 ???�상 ?�냅??막는 ?��? ?�발
                 const _np_distBlock = _np_isFloating && (groundY - ent.y) > 1.5 &&
                     (ent.groundLayerIdx < 0 || _np_layerIdx < 0 || _np_layerIdx !== ent.groundLayerIdx);
                 if (ent.y > groundY + 0.1 || _np_below || _np_layerJump || _np_distBlock) { ent.vy -= 0.03; ent.y += ent.vy; }
@@ -2139,8 +2136,8 @@ function updateGame() {
             createExplosion(ent.x, deathZoneY, '#ffffff');
             effects.push({ type: 'text', x: ent.x, y: deathZoneY + 2, text: 'FALL!', color: '#ef4444', life: 60 });
             updateHPUI();
-            if (ent === player) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('GAME OVER', '플레이어가 추락했습니다!'), 1500); }
-            else if (GAME_STATE !== 'OVER' && enemies.filter(e => e.hp <= 0).length >= 2) { GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 700); }
+            if (ent === player) { GAME_STATE = 'OVER'; setTimeout(() => showMessage('GAME OVER', '?�레?�어가 추락?�습?�다!'), 1500); }
+            else if (GAME_STATE !== 'OVER' && enemies.filter(e => e.hp <= 0).length >= 2) { GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '??2마리 처치 ?�료!', false), 700); }
         }
     });
 
@@ -2161,11 +2158,11 @@ function updateGame() {
                         const targetX = missile.homingTarget.x;
                         const targetY = missile.homingTarget.y;
                         const angle = Math.atan2(targetY - missile.y, targetX - missile.x);
-                        const speed = Math.max(0.32, Math.abs(missile.dx) * 0.95); // 락온 후 일직선 돌진 속도 미세 조율 (부드럽고 적절한 속도감)
+                        const speed = Math.max(0.32, Math.abs(missile.dx) * 0.95); // ?�온 ???�직???�진 ?�도 미세 조율 (부?�럽�??�절???�도�?
                         missile.x += Math.cos(angle) * speed;
                         missile.y += Math.sin(angle) * speed;
                     } else {
-                        // 타겟이 이미 죽었으면 관성으로 낙하
+                        // ?�겟이 ?��? 죽었?�면 관?�으�??�하
                         missile.y -= 0.15;
                         missile.x += missile.dx / 3;
                     }
@@ -2177,8 +2174,8 @@ function updateGame() {
                         missile.hasClimbed = true;
                     }
                     
-                    // 최고점(꼭짓점) 도달 검증:
-                    // 상승 후 하강을 시작했거나, 최소 3.0 거리 이상 날아간 후 하강 시작 시점
+                    // 최고??�?��?? ?�달 검�?
+                    // ?�승 ???�강???�작?�거?? 최소 3.0 거리 ?�상 ?�아�????�강 ?�작 ?�점
                     const isApexReached = (missile.hasClimbed && missile.y < prevY) ||
                                           (Math.abs(missile.x - missile.startX) >= 3.0 && missile.y < prevY);
 
@@ -2194,7 +2191,7 @@ function updateGame() {
                         if (nearest) {
                             missile.isHoming = true;
                             missile.homingTarget = nearest;
-                            // 꼭짓점에서 가장 가까운 적을 향해 직진 전환 시 파티클 연출
+                            // �?��?�에??가??가까운 ?�을 ?�해 직진 ?�환 ???�티???�출
                             effects.push({ type: 'text', x: missile.x, y: missile.y + 1.2, text: 'TARGET LOCK!', color: '#c084fc', life: 60 });
                             for (let pi = 0; pi < 15; pi++) {
                                 effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6, life: 35, color: '#c084fc' });
@@ -2209,7 +2206,7 @@ function updateGame() {
             missile.distanceTraveled = Math.abs(missile.x - missile.startX);
             if (missile.y > missile.maxY) missile.maxY = missile.y;
 
-            // 파워 구름 통과 여부 체크 + 구멍 생성
+            // ?�워 구름 ?�과 ?��? 체크 + 구멍 ?�성
             cloudParams.forEach(cp => {
                 const cx = cp.bx + Math.sin(Date.now() / cp.speed) * 1.5;
                 const cy = cp.by + Math.cos(Date.now() / (cp.speed * 1.3)) * 0.5;
@@ -2219,33 +2216,33 @@ function updateGame() {
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 const cloudLogicRadius = cp.radius * 1.5;
 
-                // 파워업 구름 통과 시 파워부스트
+                // ?�워??구름 ?�과 ???�워부?�트
                 if (cp.isPowerCloud && !cp._hitByCurrentMissile && dist < cloudLogicRadius) {
                     cp._hitByCurrentMissile = true;
                     missile.powerBoostCount = (missile.powerBoostCount || 0) + 1;
-                    // 포켓몬 속성에 따른 이펙트 색상
+                    // ?�켓�??�성???�른 ?�펙???�상
                     const eColors = { fire: '#ef4444', electric: '#fbbf24', water: '#3b82f6', flying: '#38bdf8', grass: '#22c55e', normal: '#a8a29e', psychic: '#ec4899' };
                     const eColor = eColors[cp.colorType] || '#fbbf24';
                     if (currentTerrainKey === 'ocean') {
-                        // 버블이 터지는 이펙트 (파티클 수 증가, 퍼짐 증가)
+                        // 버블???��????�펙??(?�티????증�?, ?�짐 증�?)
                         for (let pi=0; pi<15; pi++) {
                             effects.push({ type: 'particle', x: cx, y: cy, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5, life: 30 + Math.random()*20, color: eColor });
                         }
-                        // 버블을 랜덤한 다른 곳으로 즉시 재생성
+                        // 버블???�덤???�른 곳으�?즉시 ?�생??
                         cp.bx = (Math.random() - 0.5) * 20; // -10 ~ 10
                         cp.by = 8 + Math.random() * 15;     // 8 ~ 23
                     } else {
-                        // 일반 파워업 구름의 통과 이펙트
+                        // ?�반 ?�워??구름???�과 ?�펙??
                         for (let pi=0; pi<5; pi++) {
                             effects.push({ type: 'particle', x: missile.x, y: missile.y, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, life: 40, color: eColor });
                         }
                     }
                 }
 
-                // 구멍 생성: 거리 기반 제한으로 구멍 폭증 방지 (병목④ 최적화)
+                // 구멍 ?�성: 거리 기반 ?�한?�로 구멍 ??�� 방�? (병목??최적??
                 if (dist < cloudLogicRadius) {
                     const holeR = cp.radius * 0.4;
-                    // 마지막 구멍과 일정 거리 이상 떨어져야만 새 구멍 생성
+                    // 마�?�?구멍�??�정 거리 ?�상 ?�어?�야�???구멍 ?�성
                     let shouldPunch = true;
                     if (cloudHoles.length > 0) {
                         const last = cloudHoles[cloudHoles.length - 1];
@@ -2269,28 +2266,28 @@ function updateGame() {
             });
             missile.trail.push({ x: missile.x, y: missile.y });
 
-            // ---- 풍선 충돌 체크 (미사일은 관통하여 계속 진행) ----
+            // ---- ?�선 충돌 체크 (미사?��? 관?�하??계속 진행) ----
             for (const b of balloons) {
                 if (!b.active) continue;
                 const bdx = missile.x - b.x, bdy = missile.y - b.y;
                 if (Math.sqrt(bdx * bdx + bdy * bdy) <= b.radius) {
                     b.active = false;
-                    // 팡! 파티클 + 링 이펙트
+                    // ?? ?�티??+ �??�펙??
                     const bColor = b.type === 'gold' ? '#fbbf24' : '#ef4444';
                     for (let pi = 0; pi < 20; pi++)
                         effects.push({ type: 'particle', x: b.x, y: b.y,
                             vx: (Math.random()-0.5)*0.7, vy: (Math.random()-0.5)*0.7 + 0.1,
                             life: 40, color: bColor });
                     effects.push({ type: 'ring', x: b.x, y: b.y, life: 28, maxLife: 28, color: bColor });
-                    // 보상 지급
+                    // 보상 지�?
                     if (b.type === 'gold') {
                         const gold = 40 + Math.floor(Math.random() * 41); // 40~80G
                         playerGold += gold;
                         document.getElementById('ui-player-gold').innerText = playerGold;
-                        effects.push({ type: 'text', x: b.x, y: b.y + 1, text: `🪙 +${gold}G`, color: '#fbbf24', life: 150 });
+                        effects.push({ type: 'text', x: b.x, y: b.y + 1, text: `?�� +${gold}G`, color: '#fbbf24', life: 150 });
                     } else {
                         baseDamageBoost = Math.min(2.5, baseDamageBoost * 1.35);
-                        effects.push({ type: 'text', x: b.x, y: b.y + 1, text: '⚡ POWER UP!', color: '#f87171', life: 150 });
+                        effects.push({ type: 'text', x: b.x, y: b.y + 1, text: '??POWER UP!', color: '#f87171', life: 150 });
                     }
                 }
             }
@@ -2298,17 +2295,17 @@ function updateGame() {
             if (missile.y > 40) {
                 missile.active = false; GAME_STATE = 'OVER';
                 createExplosion(missile.x, 40, '#ffffff');
-                setTimeout(() => showMessage('OUT!', '그래프가 천장 (<math-field read-only style="font-size:1.1rem; min-height:0; padding:2px 2px; border:none; background:rgba(0,0,0,0.5); display:inline-block; vertical-align:-1px;">y=40</math-field>)을 벗어났습니다.'), 500);
+                setTimeout(() => showMessage('OUT!', '그래?��? 천장 (<math-field read-only style="font-size:1.1rem; min-height:0; padding:2px 2px; border:none; background:rgba(0,0,0,0.5); display:inline-block; vertical-align:-1px;">y=40</math-field>)??벗어?�습?�다.'), 500);
                 return;
             }
-            // 반사된 미사일이 플레이어와 충돌하는지 체크
+            // 반사??미사?�이 ?�레?�어?� 충돌?�는지 체크
             if (missile.isReflected && checkCollision(missile.x, missile.y, player)) {
                 missile.active = false;
                 applyDamageAndEffects(player, missile.x, missile.y);
                 return;
             }
 
-            // 배리어 충돌 체크
+            // 배리??충돌 체크
             let barrierHitEnemy = null;
             for (const e of enemies) {
                 if (e.hp > 0 && e.barrierType) {
@@ -2343,7 +2340,7 @@ function updateGame() {
                 const tx = prevStepX + (stepVx * step) / steps;
                 const ty = prevStepY + (stepVy * step) / steps;
                 
-                // 1. 지형 충돌 검사 (치트 미사일은 지형에 묻힌 적도 타격 가능하도록 지형 충돌 우회)
+                // 1. 지??충돌 검??(치트 미사?��? 지?�에 묻힌 ?�도 ?��?가?�하?�록 지??충돌 ?�회)
                 let insideTerrain = false;
                 if (!missile.isCheat) {
                     if (tData.islands) {
@@ -2403,7 +2400,7 @@ function updateGame() {
                     }
                 }
 
-                // 2. 적 포켓몬 충돌 검사
+                // 2. ???�켓�?충돌 검??
                 let directHit = null;
                 let targetsToCheck = [...enemies];
                 if (missile.isReflected) targetsToCheck.push(player);
@@ -2412,7 +2409,7 @@ function updateGame() {
                         if (missile.type === 'pierce') {
                             if (!missile.hitTargets.has(e)) {
                                 missile.hitTargets.add(e);
-                                // 지하 적(디그다 등) 표면 스냅
+                                // 지?????�그???? ?�면 ?�냅
                                 const pierceSurfY = getTerrainY(e.x, e.y) + 0.75;
                                 if (e.y < pierceSurfY - 0.1) { e.y = pierceSurfY; e.vy = 0; }
                                 applyDamageAndEffects(e, tx, ty);
@@ -2444,7 +2441,7 @@ function updateGame() {
                 hitY = hitPoint.y;
             }
             
-            // 치트 미사일: 적 직격 시 데미지 + 미사일 정지 (위성탄/그물탄 특수효과 지원)
+            // 치트 미사?? ??직격 ???��?지 + 미사???��? (?�성??그물???�수?�과 지??
             if (missile.isCheat && directHitTarget && directHitTarget.hp > 0) {
                 missile.active = false; GAME_STATE = 'IDLE';
                 const chtX = missile.x, chtY = missile.y;
@@ -2465,7 +2462,7 @@ function updateGame() {
                                 const inRadius = Math.hypot(ent.x - chtX, ent.y - chtY) <= explosionRadius + 1.5;
                                 const inColumn = Math.abs(ent.x - chtX) <= explosionRadius + 0.5 && ent.y >= chtY;
                                 if (ent.hp > 0 && (inRadius || inColumn)) {
-                                    // 지하에 있는 적(디그다 등)은 지면 위로 먼저 올려줌
+                                    // 지?�에 ?�는 ???�그?????� 지�??�로 먼�? ?�려�?
                                     const surfaceY = getTerrainY(ent.x, ent.y) + 0.75;
                                     if (ent.y < surfaceY - 0.1) { ent.y = surfaceY; ent.vy = 0; }
                                     applyDamageAndEffects(ent, chtX, chtY);
@@ -2508,7 +2505,7 @@ function updateGame() {
                 } else {
                     createExplosion(chtX, chtY, getMissileColor());
                     createCrater(chtX, chtY, explosionRadius);
-                    // 지하 적(디그다 등) 표면 스냅
+                    // 지?????�그???? ?�면 ?�냅
                     const dtSurfY = getTerrainY(directHitTarget.x, directHitTarget.y) + 0.75;
                     if (directHitTarget.y < dtSurfY - 0.1) { directHitTarget.y = dtSurfY; directHitTarget.vy = 0; }
                     applyDamageAndEffects(directHitTarget, chtX, chtY);
@@ -2531,7 +2528,7 @@ function updateGame() {
 
             if (hitY !== -100 && !missile.isCheat) {
                 if (missile.type === 'pierce') {
-                    // 관통 미사일은 지형을 무시하고 지나감
+                    // 관??미사?��? 지?�을 무시?�고 지?�감
                 } else if (missile.type === 'satellite') {
                     missile.active = false; GAME_STATE = 'IDLE';
                     document.getElementById('fire-btn').disabled = true;
@@ -2551,7 +2548,7 @@ function updateGame() {
                                 const inRadius = Math.hypot(ent.x - targetX, ent.y - targetY) <= explosionRadius + 1.5;
                                 const inColumn = Math.abs(ent.x - targetX) <= explosionRadius + 0.5 && ent.y >= targetY;
                                 if (ent.hp > 0 && (inRadius || inColumn)) {
-                                    // 지하에 있는 적(디그다 등)은 지면 위로 먼저 올려줌
+                                    // 지?�에 ?�는 ???�그?????� 지�??�로 먼�? ?�려�?
                                     const surfaceY = getTerrainY(ent.x, ent.y) + 0.75;
                                     if (ent.y < surfaceY - 0.1) { ent.y = surfaceY; ent.vy = 0; }
                                     applyDamageAndEffects(ent, targetX, targetY);
@@ -2559,7 +2556,7 @@ function updateGame() {
                             });
                             if (i === 3) {
                                 if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                                    GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 700);
+                                    GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '??2마리 처치 ?�료!', false), 700);
                                 } else {
                                     setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                                 }
@@ -2568,7 +2565,7 @@ function updateGame() {
                     }
                     return;
                 } else if (missile.type === 'net') {
-                    // ---- 그물 미사일: 지형 충돌 시에도 동일한 끌어당기기 ----
+                    // ---- 그물 미사?? 지??충돌 ?�에???�일???�어?�기�?----
                     missile.active = false; GAME_STATE = 'IDLE';
                     document.getElementById('fire-btn').disabled = true;
                     const netRadius = 3;
@@ -2594,7 +2591,7 @@ function updateGame() {
                         createExplosion(targetX, targetY, '#2dd4bf');
                         createCrater(targetX, targetY - 0.5, explosionRadius);
                         if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                            GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 700);
+                            GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '??2마리 처치 ?�료!', false), 700);
                         } else {
                             setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 500);
                         }
@@ -2607,9 +2604,9 @@ function updateGame() {
                     createExplosion(targetX, targetY, getMissileColor());
                     createCrater(targetX, targetY, explosionRadius);
                     let hitSomeone = false;
-                    // 직격(공중 포켓몬 포함) 처리: directHitTarget이 있으면 우선 적용
+                    // 직격(공중 ?�켓�??�함) 처리: directHitTarget???�으�??�선 ?�용
                     if (directHitTarget && directHitTarget.hp > 0) {
-                        // 지하 적 표면 스냅
+                        // 지?????�면 ?�냅
                         const dtSurfY = getTerrainY(directHitTarget.x, directHitTarget.y) + 0.75;
                         if (directHitTarget.y < dtSurfY - 0.1) { directHitTarget.y = dtSurfY; directHitTarget.vy = 0; }
                         applyDamageAndEffects(directHitTarget, targetX, targetY);
@@ -2641,7 +2638,7 @@ function updateGame() {
                         screenShake = 10;
                     }
                     if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                        GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 700);
+                        GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '??2마리 처치 ?�료!', false), 700);
                     } else {
                         setTimeout(() => { document.getElementById('fire-btn').disabled = false; }, 1000);
                     }
@@ -2649,23 +2646,23 @@ function updateGame() {
                 }
             }
 
-            // 화면을 벗어나면 (관통 미사일 포함) 비활성화 — 모든 맵에서 x = ±60 영역까지 궤적이 표현되도록 확장
+            // ?�면??벗어?�면 (관??미사???�함) 비활?�화 ??모든 맵에??x = ±60 ?�역까�? 궤적???�현?�도�??�장
             const limitX = 60;
             const limitMinY = -30;
             if (Math.abs(missile.x) > limitX || missile.y < limitMinY) {
                 missile.active = false; GAME_STATE = 'IDLE';
                 if (enemies.filter(e => e.hp <= 0).length >= 2) {
-                    GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '적 2마리 처치 완료!', false), 700);
+                    GAME_STATE = 'OVER'; window.stageClearTimeout = setTimeout(() => showMessage('STAGE CLEAR!', '??2마리 처치 ?�료!', false), 700);
                 } else {
                     document.getElementById('fire-btn').disabled = false;
                 }
                 
-                // 만약 마지막 특수 미사일이었다면 자동으로 'normal'로 전환
+                // 만약 마�?�??�수 미사?�이?�다�??�동?�로 'normal'�??�환
                 if (window.currentMissileType !== 'normal' && window.missileInventory[window.currentMissileType] <= 0) {
                     window.currentMissileType = 'normal';
                     const btns = document.querySelectorAll('.missile-btn');
                     btns.forEach(btn => btn.classList.remove('active'));
-                    if(btns[0]) btns[0].classList.add('active'); // 보통 미사일 활성화
+                    if(btns[0]) btns[0].classList.add('active'); // 보통 미사???�성??
                 }
                 return;
             }
@@ -2684,52 +2681,52 @@ function drawEntity(ent) {
     const isSkyTerrain = (LEVELS[currentStage % LEVELS.length].terrain === 'sky');
     let bobY = 0;
     if (ent.hasCloud && ent.hp > 0) {
-        const ph = ent.x * 1.7; // 고유 위상
+        const ph = ent.x * 1.7; // 고유 ?�상
         bobY = Math.sin(Date.now() / 400 + ph) * scaleLength(0.12);
     }
-    // 비행하지 않는 포켓몬은 바닥에 딱 붙게 오프셋 조정 (원래대로 0.35로 복구)
+    // 비행?��? ?�는 ?�켓몬�? 바닥????붙게 ?�프??조정 (?�래?��?0.35�?복구)
     const yOff = ent.isFlying ? -sh * 0.1 : sh * 0.35;
     const animY = ent.yOffAnim ? -ent.yOffAnim : 0;
     let visualYOffset = 0;
-    if (ent.name === '파이리') visualYOffset = scaleLength(0.2); // 파이리 전체(오라 포함) 오프셋
+    if (ent.name === '?�이�?) visualYOffset = scaleLength(0.2); // ?�이�??�체(?�라 ?�함) ?�프??
     ctx.translate(sc.x, sc.y + yOff + animY + bobY - visualYOffset);
-    // 적들은 플레이어를 바라보게 (자동), 플레이어는 수동 방향
+    // ?�들?� ?�레?�어�?바라보게 (?�동), ?�레?�어???�동 방향
     if (ent !== player) {
         if (ent.x < player.x) ctx.scale(-1, 1);
     }
     if (ent.rotation) ctx.rotate(ent.rotation);
     
-    // 체력이 0 이하인 사망 개체: 개성 있는 유령 효과
+    // 체력??0 ?�하???�망 개체: 개성 ?�는 ?�령 ?�과
     if (ent.hp <= 0) {
-        // 최초 사망 시 엔티티별 랜덤 위상(phase)과 사망 시각 기록 → 유령끼리 동기화 방지
+        // 최초 ?�망 ???�티?�별 ?�덤 ?�상(phase)�??�망 ?�각 기록 ???�령?�리 ?�기??방�?
         if (ent._ghostPhase === undefined) {
             ent._ghostPhase  = Math.random() * Math.PI * 2;
             ent._deathTime   = Date.now();
         }
         const t     = Date.now() / 1000;
         const ph    = ent._ghostPhase;
-        const lived = (Date.now() - ent._deathTime) / 1000; // 사망 후 경과 시간(초)
+        const lived = (Date.now() - ent._deathTime) / 1000; // ?�망 ??경과 ?�간(�?
 
-        // 이중 주파수 알파 맥박 (0.10 ~ 0.58 범위, 불규칙한 호흡 느낌)
+        // ?�중 주파???�파 맥박 (0.10 ~ 0.58 범위, 불규칙한 ?�흡 ?�낌)
         const pulse = 0.34
             + Math.sin(t * 2.1 + ph)          * 0.16
             + Math.sin(t * 0.7 + ph * 1.3)    * 0.08;
         ctx.globalAlpha = Math.max(0.10, Math.min(0.58, pulse));
 
-        // 서서히 변하는 채도/색조 (유령빛 청록→보라 사이를 천천히 순환)
+        // ?�서??변?�는 채도/?�조 (?�령�?�?��?�보???�이�?천천???�환)
         const hue = 140 + Math.sin(t * 0.4 + ph) * 35;
         ctx.filter = `brightness(85%) saturate(220%) hue-rotate(${hue.toFixed(0)}deg) blur(0.7px)`;
 
-        // 위아래 둥실 (이중 주파수) + 좌우 미세 흔들림
+        // ?�아???�실 (?�중 주파?? + 좌우 미세 ?�들�?
         const floatY = Math.sin(t * 2.0 + ph) * scaleLength(0.22)
                      + Math.sin(t * 0.85 + ph) * scaleLength(0.10);
         const floatX = Math.sin(t * 1.4 + ph * 0.8) * scaleLength(0.06);
         ctx.translate(floatX, floatY);
 
-        // 회전 흔들림 (이중 주파수)
+        // ?�전 ?�들�?(?�중 주파??
         ctx.rotate(Math.sin(t * 1.8 + ph) * 0.10 + Math.sin(t * 0.6 + ph) * 0.04);
 
-        // 숨쉬는 듯한 크기 맥박
+        // ?�쉬????�� ?�기 맥박
         const breathe = 1.0 + Math.sin(t * 1.2 + ph) * 0.07;
         ctx.scale(breathe, breathe);
     } else if (ent.shake > 0) {
@@ -2748,7 +2745,7 @@ function drawEntity(ent) {
         ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(barX, barY, barW, barH);
         ctx.fillStyle = hpColor;           ctx.fillRect(barX, barY, barW * hpPct, barH);
         
-        // 마우스 호버 여부 확인 (스크린 좌표 기준)
+        // 마우???�버 ?��? ?�인 (?�크�?좌표 기�?)
         let isHovered = false;
         if (window.gameMouseX !== -1000) {
             const actualBarY = sc.y + yOff + animY + (typeof bobY !== 'undefined' ? bobY : 0) + barY;
@@ -2760,16 +2757,16 @@ function drawEntity(ent) {
         
         if (isHovered || window.showAllEnemyHP) {
             ctx.save();
-            // 적 포켓몬이 왼쪽을 보고 있어서 좌우반전된 상태라면, 텍스트를 그릴 때는 다시 반전해서 똑바로 보이게 함
+            // ???�켓몬이 ?�쪽??보고 ?�어??좌우반전???�태?�면, ?�스?��? 그릴 ?�는 ?�시 반전?�서 ?�바�?보이�???
             if (ent !== player && ent.x < player.x) ctx.scale(-1, 1);
             
             const hpText = `${Math.floor(ent.hp)}/${ent.maxHp}`;
-            const textY = barY - 9; // 체력바와의 유격을 살짝 늘려 겹침 완벽 방지 (-6 -> -9)
+            const textY = barY - 9; // 체력바�????�격???�짝 ?�려 겹침 ?�벽 방�? (-6 -> -9)
             
             ctx.font = 'bold 12px sans-serif';
             ctx.textAlign = 'center';
             
-            // 시독성 확보: 검은색 두꺼운 테두리(Outline)를 먼저 그린 후 흰색 글씨 출력
+            // ?�독???�보: 검?�???�꺼???�두�?Outline)�?먼�? 그린 ???�색 글??출력
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 3;
             ctx.lineJoin = 'round';
@@ -2781,15 +2778,15 @@ function drawEntity(ent) {
         }
     }
     // Facing flip for player
-    // 스프라이트 기본 방향이 좌측이므로 우측(1)일 때 좌우 반전
+    // ?�프?�이??기본 방향??좌측?��?�??�측(1)????좌우 반전
     if (ent === player && player.facing === 1) ctx.scale(-1, 1);
-    // Draw image (이미지가 아직 로드되지 않은 상태라면 임시 빨간 박스 대신 그리기를 대기하고, 로드 완료 후에만 그립니다)
+    // Draw image (?��?지가 ?�직 로드?��? ?��? ?�태?�면 ?�시 빨간 박스 ?�??그리기�? ?�기하�? 로드 ?�료 ?�에�?그립?�다)
     const domImg = ent === player ? document.getElementById('ui-player-img') : null;
-    // '구름 위 하늘' 맵에서 몬스터 아래에 둥실둥실 구름 받침 그리기
+    // '구름 ???�늘' 맵에??몬스???�래???�실?�실 구름 받침 그리�?
     if (ent.hasCloud && ent.hp > 0) {
         ctx.save();
         ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
-        // 구름 받침 shadowBlur: 발사 중에는 완전히 비활성화하여 렉 방지
+        // 구름 받침 shadowBlur: 발사 중에???�전??비활?�화?�여 ??방�?
         // if (isFiring) { ctx.shadowColor = 'rgba(255, 255, 255, 0.6)'; ctx.shadowBlur = 10; }
         
         const cloudW = drawW * 0.85;
@@ -2817,15 +2814,15 @@ function drawEntity(ent) {
         // Aura circle removed as requested
         ctx.drawImage(srcImg, -drawW/2, -drawH/2, drawW, drawH);
     } else {
-        // 이미지가 로드 실패(에러) 상태이거나 아예 이미지가 없는 경우에만 대체 도형을 그립니다.
-        // 로딩 중일 때는 깜빡이는 박스를 그리지 않아 잔상을 방지합니다.
+        // ?��?지가 로드 ?�패(?�러) ?�태?�거???�예 ?��?지가 ?�는 경우?�만 ?��??�형??그립?�다.
+        // 로딩 중일 ?�는 깜빡?�는 박스�?그리지 ?�아 ?�상??방�??�니??
         if (!srcImg || srcImg.naturalWidth === 0) {
             ctx.fillStyle = ent === player ? '#3b82f6' : '#ef4444';
             ctx.fillRect(-sw/2, -sh/2, sw, sh);
         }
     }
 
-    // 배리어 그리기 및 텍스트 표시 (시간 기반)
+    // 배리??그리�?�??�스???�시 (?�간 기반)
     if (ent.hp > 0 && ent.barrierType) {
         if (!ent.barrierStartTime) ent.barrierStartTime = Date.now();
         const elapsed = (Date.now() - ent.barrierStartTime) / 1000;
@@ -2857,21 +2854,21 @@ function drawEntity(ent) {
 
         const info = getBarrierColors(ent.barrierType);
         
-        // 쉴드 원 및 외곽 가장자리 그리기
+        // ?�드 ??�??�곽 가?�자�?그리�?
         if (drawType !== 'none' && (drawType !== 'flashing' || isFlashVisible)) {
             ctx.save();
             ctx.strokeStyle = info.stroke;
             ctx.fillStyle = info.fill;
-            const r = scaleLength(1.68); // 1.4 * 1.2배
+            const r = scaleLength(1.68); // 1.4 * 1.2�?
 
             if (ent.barrierType === 'reflect') {
-                // 반사 배리어: 날카로운 육각형 + 꼭짓점 가시 돌출형
+                // 반사 배리?? ?�카로운 ?�각??+ �?��??가???�출??
                 ctx.lineWidth = 2.5;
                 pathHexagon(ctx, r, progress);
                 ctx.fill();
                 ctx.stroke();
                 
-                // 생성 중이 아닐 때만 가시 렌더링
+                // ?�성 중이 ?�닐 ?�만 가???�더�?
                 if (drawType !== 'generating') {
                     ctx.beginPath();
                     const sides = 6;
@@ -2891,16 +2888,16 @@ function drawEntity(ent) {
                 }
             } 
             else if (ent.barrierType === 'absorb') {
-                // 흡수 배리어: 맥동하는 이중 오각형
+                // ?�수 배리?? 맥동?�는 ?�중 ?�각??
                 const pulse = drawType === 'generating' ? 1.0 : 1.0 + Math.sin(Date.now() / 200) * 0.08;
                 ctx.lineWidth = 2.5;
                 
-                // 외곽 오각형
+                // ?�곽 ?�각??
                 pathPolygon(ctx, 5, r * pulse, progress);
                 ctx.fill();
                 ctx.stroke();
                 
-                // 내부 오각형 (엇박자 맥동)
+                // ?��? ?�각??(?�박??맥동)
                 if (drawType !== 'generating') {
                     ctx.save();
                     ctx.strokeStyle = 'rgba(50, 205, 50, 0.45)';
@@ -2912,24 +2909,24 @@ function drawEntity(ent) {
                 }
             } 
             else if (ent.barrierType === 'absolute') {
-                // 절대방어 배리어: 튼튼한 팔각형 성벽 + 격자형 차단층
+                // ?��?방어 배리?? ?�튼???�각???�벽 + 격자??차단�?
                 ctx.lineWidth = 3.5;
                 pathOctagon(ctx, r, progress);
                 ctx.fill();
                 ctx.stroke();
                 
-                // 내부 격자 쉴드 무늬
+                // ?��? 격자 ?�드 무늬
                 if (drawType !== 'generating') {
                     ctx.save();
                     ctx.strokeStyle = 'rgba(255, 215, 0, 0.2)';
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
                     
-                    // 팔각형 내부 클리핑
+                    // ?�각???��? ?�리??
                     pathOctagon(ctx, r, 1.0);
                     ctx.clip();
                     
-                    // 격선 그리기
+                    // 격선 그리�?
                     ctx.beginPath();
                     const spacing = scaleLength(0.35);
                     for (let d = -r; d <= r; d += spacing) {
@@ -2943,17 +2940,17 @@ function drawEntity(ent) {
                 }
             } 
             else if (ent.barrierType === 'warp') {
-                // 워프 배리어: 맥동하는 이중 원 (피해흡수 배리어의 밝은 보라색 버전)
+                // ?�프 배리?? 맥동?�는 ?�중 ??(?�해?�수 배리?�의 밝�? 보라??버전)
                 const pulse = drawType === 'generating' ? 1.0 : 1.0 + Math.sin(Date.now() / 200) * 0.08;
                 ctx.lineWidth = 2.5;
                 
-                // 외곽 원
+                // ?�곽 ??
                 ctx.beginPath();
                 ctx.arc(0, 0, r * pulse, 0, Math.PI * 2 * progress);
                 ctx.fill();
                 ctx.stroke();
                 
-                // 내부 원 (엇박자 맥동)
+                // ?��? ??(?�박??맥동)
                 if (drawType !== 'generating') {
                     ctx.save();
                     ctx.strokeStyle = 'rgba(186, 85, 211, 0.45)';
@@ -2968,23 +2965,23 @@ function drawEntity(ent) {
             ctx.restore();
         }
         
-        // 배리어 이름 텍스트 (활성/생성/깜빡임 시에만 표시, 깜빡임 시 함께 깜빡임, 생성 시 fade-in, 반전 보정)
+        // 배리???�름 ?�스??(?�성/?�성/깜빡???�에�??�시, 깜빡?????�께 깜빡?? ?�성 ??fade-in, 반전 보정)
         if (drawType !== 'none' && (drawType !== 'flashing' || isFlashVisible)) {
             ctx.save();
             if (ent !== player && ent.x < player.x) {
                 ctx.scale(-1, 1);
             }
             
-            // 생성 중일 때는 progress에 따라 서서히 나타남 (fade in)
+            // ?�성 중일 ?�는 progress???�라 ?�서???��???(fade in)
             const textAlpha = drawType === 'generating' ? progress : 1.0;
             ctx.globalAlpha = textAlpha;
             
-            ctx.font = 'bold 12px Arial'; // 크기 1단계 확대
+            ctx.font = 'bold 12px Arial'; // ?�기 1?�계 ?��?
             const tw = ctx.measureText(info.name).width;
             const textYOffset = (ent.barrierType === 'absorb') ? 1.48 : 1.68;
             const textY = scaleLength(textYOffset) + 14;
             
-            // 검은색 텍스트 상자 배경 (상/하 여백 균형 잡힌 둥근 사각형)
+            // 검?�???�스???�자 배경 (?????�백 균형 ?�힌 ?�근 ?�각??
             const boxPaddingX = 6;
             const boxHeight = 20;
             const boxY = textY - 11;
@@ -2998,7 +2995,7 @@ function drawEntity(ent) {
                 ctx.fillRect(-tw/2 - boxPaddingX, boxY, tw + boxPaddingX * 2, boxHeight);
             }
             
-            // 텍스트 출력 (한글 시각적 중앙 위치 보정)
+            // ?�스??출력 (?��? ?�각??중앙 ?�치 보정)
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = info.stroke;
@@ -3011,7 +3008,7 @@ function drawEntity(ent) {
 }
 
 // ---------------------------------------------------------
-// 지형 렌더링용 고정 재사용 오프스크린 캔버스 (매 프레임 createElement 랙 완벽 방지)
+// 지???�더링용 고정 ?�사???�프?�크�?캔버??(�??�레??createElement ???�벽 방�?)
 // ---------------------------------------------------------
 let sharedTerrainCanvas = null;
 function getSharedTerrainCtx() {
@@ -3042,47 +3039,47 @@ function render() {
         ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 푸른 들판('grass') 지형 분위기: 민들레 홀씨가 바람에 살랑살랑 날리는 효과 (월드 좌표 연동)
+    // ?�른 ?�판('grass') 지??분위�? 민들???�?��? 바람???�랑?�랑 ?�리???�과 (?�드 좌표 ?�동)
     if (stage.terrain === 'grass') {
         ctx.save();
         const now = Date.now();
         for (let i = 0; i < 12; i++) {
             const seed = i * 4219;
-            // 수평 이동: 왼쪽→오른쪽 기본 바람 + 불규칙 속도 편차
+            // ?�평 ?�동: ?�쪽?�오른쪽 기본 바람 + 불규�??�도 ?�차
             const driftSpeed = 0.00025 + (seed % 7) * 0.00006;
-            // 수직 흔들림: 살랑살랑 위아래 너울
+            // ?�직 ?�들�? ?�랑?�랑 ?�아???�울
             const bobAmp = 0.4 + (seed % 5) * 0.15;
             const bobFreq = 0.0006 + (seed % 3) * 0.0002;
 
-            // gx: 왼→오른 바람 방향 + 좌우 살랑 흔들림
-            const cycleLen = 55.0; // 그리드 단위 순환 길이
+            // gx: ?�→?�른 바람 방향 + 좌우 ?�랑 ?�들�?
+            const cycleLen = 55.0; // 그리???�위 ?�환 길이
             const baseGx = -25.0 + ((now * driftSpeed + (seed % 1000) * 0.06) % cycleLen);
             const gx = baseGx + Math.sin(now * bobFreq * 0.7 + i * 3.1) * 0.5;
 
-            // gy: 위아래 살랑살랑 너울 (지형 위 공중)
+            // gy: ?�아???�랑?�랑 ?�울 (지????공중)
             const baseGy = 2.0 + (seed % 800) * 0.025; // 2~22 범위 분산
             const gy = baseGy + Math.sin(now * bobFreq + i * 2.5) * bobAmp;
 
             const sc = gridToScreen(gx, gy);
 
-            // 화면 밖 파티클 스킵
+            // ?�면 �??�티???�킵
             if (sc.x < -30 || sc.x > canvas.width + 30 || sc.y < -30 || sc.y > canvas.height + 30) continue;
 
-            // 홀씨 크기 (작은 원 + 실 줄기)
+            // ?�???�기 (?��? ??+ ??줄기)
             const sizeGroup = i % 3;
             const r = scaleLength(0.04 + sizeGroup * 0.015);
 
-            // 은은한 깜빡임 (투명도 변화)
+            // ?�?�??깜빡??(?�명??변??
             const flicker = Math.sin(now * 0.0015 + i * 1.7) * 0.15;
             const alpha = Math.max(0.35, 0.65 + sizeGroup * 0.08 + flicker);
 
-            // 하얀 우유빛 홀씨 본체
+            // ?��? ?�유�??�??본체
             ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, Math.max(0.8, r), 0, Math.PI * 2);
             ctx.fill();
 
-            // 홀씨에서 뻗어나가는 미세한 방사형 솜털(3~4갈래)
+            // ?�?�에??뻗어?��???미세??방사???�털(3~4갈래)
             const tuftCount = 3 + (i % 2);
             ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
             ctx.lineWidth = 0.6;
@@ -3093,7 +3090,7 @@ function render() {
                 ctx.moveTo(sc.x, sc.y);
                 ctx.lineTo(sc.x + Math.cos(angle) * tuftLen, sc.y + Math.sin(angle) * tuftLen);
                 ctx.stroke();
-                // 솜털 끝 미세 점
+                // ?�털 ??미세 ??
                 ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.45})`;
                 ctx.beginPath();
                 ctx.arc(sc.x + Math.cos(angle) * tuftLen, sc.y + Math.sin(angle) * tuftLen, 0.5, 0, Math.PI * 2);
@@ -3103,53 +3100,53 @@ function render() {
         ctx.restore();
     }
 
-    // 외나무다리('log_bridge') 지형 분위기: 초록 나뭇잎이 바람에 휘날리며 떨어지는 효과 (월드 좌표 연동)
+    // ?�나무다�?'log_bridge') 지??분위�? 초록 ?�뭇?�이 바람???�날리며 ?�어지???�과 (?�드 좌표 ?�동)
     if (stage.terrain === 'log_bridge') {
         ctx.save();
         const now = Date.now();
         const leafColors = [
-            '34, 139, 34',   // 포레스트 그린
-            '50, 205, 50',   // 라임 그린
-            '60, 179, 71',   // 에메랄드 그린
-            '107, 142, 35',  // 올리브 드랩 (연두)
-            '144, 238, 144', // 라이트 그린
+            '34, 139, 34',   // ?�레?�트 그린
+            '50, 205, 50',   // ?�임 그린
+            '60, 179, 71',   // ?�메?�드 그린
+            '107, 142, 35',  // ?�리�??�랩 (?�두)
+            '144, 238, 144', // ?�이??그린
         ];
         for (let i = 0; i < 10; i++) {
             const seed = i * 5381;
-            // 수평: 오른쪽 바람 + 불규칙 흔들림
+            // ?�평: ?�른�?바람 + 불규�??�들�?
             const driftSpeed = 0.0003 + (seed % 7) * 0.00005;
-            // 수직: 느린 낙하 + 위아래 너울
+            // ?�직: ?�린 ?�하 + ?�아???�울
             const fallSpeed = 0.00012 + (seed % 5) * 0.00003;
             const swayAmp = 0.6 + (seed % 4) * 0.2;
             const swayFreq = 0.0005 + (seed % 3) * 0.00015;
 
-            // gx: 오른쪽 바람 + 좌우 살랑 흔들림
+            // gx: ?�른�?바람 + 좌우 ?�랑 ?�들�?
             const cycleX = 55.0;
             const baseGx = -25.0 + ((now * driftSpeed + (seed % 1000) * 0.055) % cycleX);
             const gx = baseGx + Math.sin(now * swayFreq + i * 2.7) * swayAmp;
 
-            // gy: 위에서 아래로 천천히 낙하 + 너울
+            // gy: ?�에???�래�?천천???�하 + ?�울
             const cycleY = 30.0;
             const baseGy = 22.0 - ((now * fallSpeed + (seed % 800) * 0.04) % cycleY);
             const gy = baseGy + Math.sin(now * swayFreq * 1.3 + i * 1.9) * 0.3;
 
             const sc = gridToScreen(gx, gy);
 
-            // 화면 밖 스킵
+            // ?�면 �??�킵
             if (sc.x < -40 || sc.x > canvas.width + 40 || sc.y < -40 || sc.y > canvas.height + 40) continue;
 
             const color = leafColors[i % leafColors.length];
             const flicker = Math.sin(now * 0.0012 + i * 2.1) * 0.12;
             const alpha = Math.max(0.4, 0.7 + flicker);
 
-            // 나뭇잎 회전 각도 (바람에 뒤집히는 효과)
+            // ?�뭇???�전 각도 (바람???�집?�는 ?�과)
             const rotation = (now * 0.0015 + seed) % (Math.PI * 2);
 
             ctx.save();
             ctx.translate(sc.x, sc.y);
             ctx.rotate(rotation);
 
-            // 나뭇잎 형태: 타원 + 중심 잎맥선
+            // ?�뭇???�태: ?�??+ 중심 ?�맥??
             const leafW = scaleLength(0.18 + (i % 3) * 0.04);
             const leafH = leafW * 0.5;
 
@@ -3158,7 +3155,7 @@ function render() {
             ctx.ellipse(0, 0, leafW, leafH, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 잎맥 중심선
+            // ?�맥 중심??
             ctx.strokeStyle = `rgba(20, 80, 20, ${alpha * 0.5})`;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
@@ -3171,15 +3168,15 @@ function render() {
         ctx.restore();
     }
 
-    // 왜곡된 차원('psychic') 지형 분위기: 반중력으로 천천히 위로 떠오르는 몽환적인 보라색/핑크색 빛구슬들
+    // ?�곡??차원('psychic') 지??분위�? 반중?�으�?천천???�로 ?�오르는 몽환?�인 보라???�크??빛구?�들
     if (stage.terrain === 'psychic') {
         ctx.save();
         const now = Date.now();
         const orbColors = [
-            '217, 70, 239',   // 밝은 자주/분홍
-            '192, 38, 211',   // 마젠타
-            '168, 85, 247',   // 연한 보라
-            '232, 121, 249',  // 핑크
+            '217, 70, 239',   // 밝�? ?�주/분홍
+            '192, 38, 211',   // 마젠?�
+            '168, 85, 247',   // ?�한 보라
+            '232, 121, 249',  // ?�크
             '139, 92, 246'    // 보라
         ];
         
@@ -3187,22 +3184,22 @@ function render() {
         
         for (let i = 0; i < 22; i++) {
             const seed = i * 7231;
-            const riseSpeed = 0.0005 + (seed % 5) * 0.0002; // 위로 떠오르는 속도
-            const swayAmp = 1.0 + (seed % 4) * 0.5; // 좌우 흔들림 진폭
+            const riseSpeed = 0.0005 + (seed % 5) * 0.0002; // ?�로 ?�오르는 ?�도
+            const swayAmp = 1.0 + (seed % 4) * 0.5; // 좌우 ?�들�?진폭
             const swayFreq = 0.0005 + (seed % 3) * 0.0002;
             
             const cycleY = 60.0;
             const cycleX = 60.0;
             
-            // X는 고정된 위치 베이스, Y는 시간 흐름에 따라 증가(위로 떠오름)
+            // X??고정???�치 베이?? Y???�간 ?�름???�라 증�?(?�로 ?�오�?
             const baseY = -15.0 + ((now * riseSpeed + (seed % 1000) * 0.06) % cycleY);
             const baseX = -30.0 + ((seed % 600) * 0.1);
             
             const gx = baseX + Math.sin(now * swayFreq + i * 1.3) * swayAmp;
-            const gy = baseY; // gy가 커지면 화면에서 위로 올라감 (반중력)
+            const gy = baseY; // gy가 커�?�??�면?�서 ?�로 ?�라�?(반중??
             
             const sc = gridToScreen(gx, gy);
-            const radius = scaleLength(0.1 + (seed % 4) * 0.1); // 크기 다양화 (0.1 ~ 0.4)
+            const radius = scaleLength(0.1 + (seed % 4) * 0.1); // ?�기 ?�양??(0.1 ~ 0.4)
             
             if (sc.x < -radius*2 || sc.x > canvas.width + radius*2 || 
                 sc.y < -radius*2 || sc.y > canvas.height + radius*2) continue;
@@ -3211,13 +3208,13 @@ function render() {
             const pulse = Math.sin(now * 0.001 + i * 2.1);
             const alpha = 0.4 + pulse * 0.3; // 0.1 ~ 0.7
             
-            // 구슬 본체 (블러/글로우 느낌) - 대폭 축소
+            // 구슬 본체 (블러/글로우 ?�낌) - ?�??축소
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, radius * 0.6, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(${color}, ${alpha})`;
             ctx.fill();
             
-            // 구슬 밝은 코어 (중심) - 살짝 축소
+            // 구슬 밝�? 코어 (중심) - ?�짝 축소
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, radius * 0.32, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, alpha + 0.3)})`;
@@ -3226,23 +3223,23 @@ function render() {
         ctx.restore();
     }
 
-    // 어두운 동굴('cave') 지형 분위기: 신비로운 푸른빛/보랏빛 형광 벌레가 떠다니는 효과
+    // ?�두???�굴('cave') 지??분위�? ?�비로운 ?�른�?보랏�??�광 벌레가 ?�다?�는 ?�과
     if (stage.terrain === 'cave') {
         ctx.save();
         const now = Date.now();
         const caveBugColors = [
-            '100, 150, 255',  // 옅은 푸른빛
-            '150, 100, 255',  // 보랏빛
-            '50,  200, 255',  // 청록빛
-            '200, 150, 255',  // 연보랏빛
-            '100, 200, 200'   // 신비로운 옥색
+            '100, 150, 255',  // ?��? ?�른�?
+            '150, 100, 255',  // 보랏�?
+            '50,  200, 255',  // �?���?
+            '200, 150, 255',  // ?�보?�빛
+            '100, 200, 200'   // ?�비로운 ?�색
         ];
 
         ctx.globalCompositeOperation = 'screen';
 
         for (let i = 0; i < 12; i++) {
             const seed = i * 7321;
-            // 형광 벌레는 느리게 맴돎 (정원보다 조금 더 느리고 넓게)
+            // ?�광 벌레???�리�?맴돎 (?�원보다 조금 ???�리�??�게)
             const orbitSpeed = 0.0002 + (seed % 4) * 0.00008;
             const orbitRadX = 2.5 + (seed % 5) * 1.0;
             const orbitRadY = 1.5 + (seed % 3) * 0.8;
@@ -3254,19 +3251,19 @@ function render() {
             const gy = baseY + Math.cos(now * orbitSpeed * 0.7 + i * 2.3) * orbitRadY;
 
             const sc = gridToScreen(gx, gy);
-            const coreR = scaleLength(0.06 + (seed % 3) * 0.05); // 코어 반경 0.06 ~ 0.16 (조금 작게)
+            const coreR = scaleLength(0.06 + (seed % 3) * 0.05); // 코어 반경 0.06 ~ 0.16 (조금 ?�게)
 
             if (sc.x < -coreR*6 || sc.x > canvas.width + coreR*6 ||
                 sc.y < -coreR*6 || sc.y > canvas.height + coreR*6) continue;
 
             const color = caveBugColors[i % caveBugColors.length];
-            // 깜빡임: 어둠 속에서 더 극적으로 보임
+            // 깜빡?? ?�둠 ?�에????극적?�로 보임
             const blink = Math.sin(now * 0.0018 + i * 4.1);
             const alpha = Math.max(0.05, 0.4 + blink * 0.4); // 0.05 ~ 0.80
 
-            // 글로우: 코어 크기에서 출발 → 커졌다 줄어드는 맥박
+            // 글로우: 코어 ?�기?�서 출발 ??커졌??줄어?�는 맥박
             const glowPulse = (Math.sin(now * 0.0012 + i * 3.7) + 1.0) / 2.0; // 0 ~ 1
-            const glowR = coreR * (1.2 + glowPulse * 1.5); // 글로우 넓게 퍼짐
+            const glowR = coreR * (1.2 + glowPulse * 1.5); // 글로우 ?�게 ?�짐
 
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, glowR, 0, Math.PI * 2);
@@ -3282,23 +3279,23 @@ function render() {
         ctx.restore();
     }
 
-    // 부유하는 섬('garden') 지형 분위기: 신비로운 반딧불이가 느릿느릿 맴돌며 반짝이는 효과
+    // 부?�하????'garden') 지??분위�? ?�비로운 반딧불이가 ?�릿?�릿 맴돌�?반짝?�는 ?�과
     if (stage.terrain === 'garden') {
         ctx.save();
         const now = Date.now();
         const fireflyColors = [
-            '180, 230, 60',   // 황록
-            '210, 240, 80',   // 연노랑
-            '160, 255, 90',   // 밝은 연두
-            '230, 250, 120',  // 레몬빛
-            '140, 220, 70'    // 초록빛
+            '180, 230, 60',   // ?�록
+            '210, 240, 80',   // ?�노??
+            '160, 255, 90',   // 밝�? ?�두
+            '230, 250, 120',  // ?�몬�?
+            '140, 220, 70'    // 초록�?
         ];
 
         ctx.globalCompositeOperation = 'screen';
 
         for (let i = 0; i < 10; i++) {
             const seed = i * 5413;
-            // 반딧불이는 느리게 원형~8자 궤적으로 맴돎
+            // 반딧불이???�리�??�형~8??궤적?�로 맴돎
             const orbitSpeed = 0.0003 + (seed % 4) * 0.0001;
             const orbitRadX = 2.0 + (seed % 5) * 0.8;
             const orbitRadY = 1.5 + (seed % 3) * 0.6;
@@ -3316,11 +3313,11 @@ function render() {
                 sc.y < -coreR*6 || sc.y > canvas.height + coreR*6) continue;
 
             const color = fireflyColors[i % fireflyColors.length];
-            // 깜빡임: 밝아졌다 어두워졌다 반복 (반딧불이 느낌)
+            // 깜빡?? 밝아졌다 ?�두?�졌??반복 (반딧불이 ?�낌)
             const blink = Math.sin(now * 0.002 + i * 4.1);
             const alpha = Math.max(0.05, 0.35 + blink * 0.35); // 0.05 ~ 0.70
 
-            // 글로우: 코어 크기에서 출발 → 커졌다 줄어드는 맥박 (1.0x ~ 2.0x)
+            // 글로우: 코어 ?�기?�서 출발 ??커졌??줄어?�는 맥박 (1.0x ~ 2.0x)
             const glowPulse = (Math.sin(now * 0.0015 + i * 3.7) + 1.0) / 2.0; // 0 ~ 1
             const glowR = coreR * (1.0 + glowPulse * 1.0);
 
@@ -3329,7 +3326,7 @@ function render() {
             ctx.fillStyle = `rgba(${color}, ${alpha * 0.2})`;
             ctx.fill();
 
-            // 코어 (밝은 중심점 - 고정 크기)
+            // 코어 (밝�? 중심??- 고정 ?�기)
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, coreR * 0.5, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255, 255, 230, ${Math.min(1, alpha + 0.2)})`;
@@ -3338,28 +3335,28 @@ function render() {
         ctx.restore();
     }
 
-    // 솜사탕('cloud_garden') 지형 분위기: 반짝이는 별 먼지가 천천히 내려오는 효과
+    // ?�사??'cloud_garden') 지??분위�? 반짝?�는 �?먼�?가 천천???�려?�는 ?�과
     if (stage.terrain === 'cloud_garden') {
         ctx.save();
         const now = Date.now();
         const dustColors = [
-            '255, 255, 255',  // 순백
-            '255, 220, 240',  // 연분홍
-            '255, 200, 230',  // 핑크
-            '240, 230, 255',  // 연보라
-            '255, 240, 250'   // 크림핑크
+            '255, 255, 255',  // ?�백
+            '255, 220, 240',  // ?�분??
+            '255, 200, 230',  // ?�크
+            '240, 230, 255',  // ?�보??
+            '255, 240, 250'   // ?�림?�크
         ];
 
         ctx.globalCompositeOperation = 'screen';
 
         for (let i = 0; i < 10; i++) {
             const seed = i * 6317;
-            const fallSpeed = 0.0003 + (seed % 4) * 0.00008; // 느리게 내려옴
+            const fallSpeed = 0.0003 + (seed % 4) * 0.00008; // ?�리�??�려??
             const swayAmp = 1.2 + (seed % 3) * 0.5;
             const swayFreq = 0.0004 + (seed % 5) * 0.00015;
 
             const cycleY = 50.0;
-            // 위에서 아래로 내려옴 (반중력의 반대)
+            // ?�에???�래�??�려??(반중?�의 반�?)
             const baseY = 25.0 - ((now * fallSpeed + (seed % 1000) * 0.05) % cycleY);
             const baseX = -25.0 + (seed % 500) * 0.1;
 
@@ -3373,11 +3370,11 @@ function render() {
                 sc.y < -coreR*5 || sc.y > canvas.height + coreR*5) continue;
 
             const color = dustColors[i % dustColors.length];
-            // 반짝임: 별처럼 깜빡
+            // 반짝?? 별처??깜빡
             const twinkle = Math.sin(now * 0.003 + i * 5.3);
             const alpha = Math.max(0.1, 0.4 + twinkle * 0.4); // 0.1 ~ 0.8
 
-            // 글로우 (은은한 빛 번짐)
+            // 글로우 (?�?�??�?번짐)
             const glowPulse = (Math.sin(now * 0.002 + i * 3.1) + 1.0) / 2.0;
             const glowR = coreR * (1.0 + glowPulse * 1.0);
 
@@ -3386,7 +3383,7 @@ function render() {
             ctx.fillStyle = `rgba(${color}, ${alpha * 0.15})`;
             ctx.fill();
 
-            // 코어 (밝은 별 점)
+            // 코어 (밝�? �???
             ctx.beginPath();
             ctx.arc(sc.x, sc.y, coreR * 0.4, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, alpha + 0.2)})`;
@@ -3395,13 +3392,13 @@ function render() {
         ctx.restore();
     }
 
-    // 화산 용암('lava') 지형 분위기: 가벼운 불티 파티클
+    // ?�산 ?�암('lava') 지??분위�? 가벼운 불티 ?�티??
     if (stage.terrain === 'lava') {
         ctx.save();
 
 
-        // 3. 가벼운 불티(Ember) 파티클 시스템 (월드 좌표 연동형)
-        // 35개 정도로 제한하여 랙 방지. 아래에서 위로 서서히 떠오르며 좌우로 살랑거림
+        // 3. 가벼운 불티(Ember) ?�티???�스??(?�드 좌표 ?�동??
+        // 35�??�도�??�한?�여 ??방�?. ?�래?�서 ?�로 ?�서???�오르며 좌우�??�랑거림
         const now = Date.now();
         for (let i = 0; i < 35; i++) {
             const seed = i * 31337;
@@ -3409,37 +3406,37 @@ function render() {
             const swayAmp = 0.6 + (seed % 5) * 0.2;
             const swayFreq = 0.001 + (seed % 3) * 0.0003;
 
-            // X 위치 분산 (월드 그리드 상 넓게 퍼지도록)
+            // X ?�치 분산 (?�드 그리?????�게 ?��??�록)
             const baseGx = -25.0 + (seed % 600) * 0.1;
             const gx = baseGx + Math.sin(now * swayFreq + i * 1.5) * swayAmp;
             
-            // Y 위치 분산 (위로 상승, 사이클 반복)
+            // Y ?�치 분산 (?�로 ?�승, ?�이??반복)
             const cycleLen = 40.0;
-            // 위로 떠오르므로 Y값이 계속 감소하도록(또는 렌더링상 gy가 증가하도록 계산)
-            // gridToScreen에서는 gy값이 클수록 화면 상단에 렌더링됨
+            // ?�로 ?�오르�?�?Y값이 계속 감소?�도�??�는 ?�더링상 gy가 증�??�도�?계산)
+            // gridToScreen?�서??gy값이 ?�수�??�면 ?�단???�더링됨
             const gy = -10.0 + ((now * riseSpeed + (seed % 1000) * 0.05) % cycleLen);
 
             const sc = gridToScreen(gx, gy);
             
-            // 화면 밖으로 크게 벗어난 파티클은 그리지 않아 최적화
+            // ?�면 밖으�??�게 벗어???�티?��? 그리지 ?�아 최적??
             if (sc.x < -20 || sc.x > canvas.width + 20 || sc.y < -20 || sc.y > canvas.height + 20) {
                 continue;
             }
             
-            // 파티클 크기 및 투명도
+            // ?�티???�기 �??�명??
             const sizeGroup = i % 3;
-            const r = scaleLength(0.04 + sizeGroup * 0.02); // 작은 불티
+            const r = scaleLength(0.04 + sizeGroup * 0.02); // ?��? 불티
             
-            // 깜빡임 효과 (Flicker)
+            // 깜빡???�과 (Flicker)
             const flicker = Math.sin(now * 0.004 + i) * 0.25;
             const alpha = Math.max(0.1, 0.5 + sizeGroup * 0.15 + flicker);
             
-            // 색상 변화 (주황 ~ 붉은 주황 ~ 짙은 주황)
+            // ?�상 변??(주황 ~ 붉�? 주황 ~ 짙�? 주황)
             const colors = ['255, 165, 0', '255, 85, 0', '253, 186, 116'];
             const color = colors[i % 3];
 
             ctx.fillStyle = `rgba(${color}, ${alpha})`;
-            // 불티의 자체 발광 효과 (약간의 블러)
+            // 불티???�체 발광 ?�과 (?�간??블러)
             ctx.shadowBlur = 4;
             ctx.shadowColor = `rgba(${color}, ${alpha})`;
             
@@ -3447,34 +3444,34 @@ function render() {
             ctx.arc(sc.x, sc.y, Math.max(0.5, r), 0, Math.PI * 2);
             ctx.fill();
         }
-        ctx.shadowBlur = 0; // 그림자 이펙트 초기화
+        ctx.shadowBlur = 0; // 그림???�펙??초기??
 
         ctx.restore();
     }
 
-    // 얼음 설산('ice') 지형 분위기: 위에서 아래로 내리는 눈발 (월드 그리드 좌표 동기화)
+    // ?�음 ?�산('ice') 지??분위�? ?�에???�래�??�리???�발 (?�드 그리??좌표 ?�기??
     if (stage.terrain === 'ice') {
         ctx.save();
         const now = Date.now();
         for (let i = 0; i < 35; i++) {
-            // 각 눈송이마다 고유 시드로 속도/위치 분산
+            // �??�송?�마??고유 ?�드�??�도/?�치 분산
             const seed = i * 7919;
-            const fallSpeed = 0.0004 + (seed % 7) * 0.00008; // 개별 낙하 속도 (절반 감속)
-            const swayAmp = 1.0 + (seed % 5) * 0.3;          // 좌우 흔들림 폭 (약간 축소)
-            const swayFreq = 0.0008 + (seed % 3) * 0.00025;  // 좌우 흔들림 주기 (절반 감속)
+            const fallSpeed = 0.0004 + (seed % 7) * 0.00008; // 개별 ?�하 ?�도 (?�반 감속)
+            const swayAmp = 1.0 + (seed % 5) * 0.3;          // 좌우 ?�들�???(?�간 축소)
+            const swayFreq = 0.0008 + (seed % 3) * 0.00025;  // 좌우 ?�들�?주기 (?�반 감속)
 
-            // gx: 좌우로 살랑살랑 흔들리며 수평 이동
+            // gx: 좌우�??�랑?�랑 ?�들리며 ?�평 ?�동
             const baseGx = -25.0 + (seed % 500) * 0.11;
             const gx = baseGx + Math.sin(now * swayFreq + i * 2.3) * swayAmp;
 
-            // gy: 위에서 아래로 천천히 내려옴 (높은 값 → 낮은 값)
-            const cycleLen = 32.0; // 그리드 단위 순환 길이
+            // gy: ?�에???�래�?천천???�려??(?��? �?????? �?
+            const cycleLen = 32.0; // 그리???�위 ?�환 길이
             const gy = 30.0 - ((now * fallSpeed + (seed % 1000) * 0.032) % cycleLen);
 
             const sc = gridToScreen(gx, gy);
             const sizeGroup = i % 3;
             const r = scaleLength(0.06 + sizeGroup * 0.04);
-            const alpha = 0.6 + sizeGroup * 0.15; // 크기별 투명도 차이 (원근감)
+            const alpha = 0.6 + sizeGroup * 0.15; // ?�기�??�명??차이 (?�근�?
 
             ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
             ctx.beginPath();
@@ -3484,42 +3481,42 @@ function render() {
         ctx.restore();
     }
 
-    // 발전소('electric') 지형 분위기: 플라즈마 에너지 구체 & 자력선 입자 렌더링
+    // 발전??'electric') 지??분위�? ?�라즈마 ?�너지 구체 & ?�력???�자 ?�더�?
     if (LEVELS[currentStage % LEVELS.length].terrain === 'electric') {
         ctx.save();
         const now = Date.now();
 
-        // 0. 은은하게 공중을 떠다니며 이글거리는 플라즈마 에너지 구체 (8개, 월드 그리드 좌표 동기화)
+        // 0. ?�?�?�게 공중???�다?�며 ?��?거리???�라즈마 ?�너지 구체 (8�? ?�드 그리??좌표 ?�기??
         const plasmaPositions = [];
         for (let i = 0; i < 8; i++) {
-            // 월드 그리드 좌표 (gx, gy) 상에서 표류하도록 지정하여 맵 드래그 시 축/포켓몬과 함께 연동 이동
+            // ?�드 그리??좌표 (gx, gy) ?�에???�류?�도�?지?�하??�??�래�???�??�켓몬과 ?�께 ?�동 ?�동
             const gx = -22.0 + (i * 6.5 + Math.sin(now * 0.0004 + i) * 3.0);
             const gy = 3.0 + ((i * 3.2 + Math.cos(now * 0.0005 + i * 2) * 2.0) % 22.0);
             const sc = gridToScreen(gx, gy);
             const orbX = sc.x;
             const orbY = sc.y;
 
-            const baseR = scaleLength(0.28 + (i % 3) * 0.12); // 화면 해상도에 비례하는 반지름
+            const baseR = scaleLength(0.28 + (i % 3) * 0.12); // ?�면 ?�상?�에 비�??�는 반�?�?
             const pulseR = baseR + Math.sin(now * 0.0015 + i) * scaleLength(0.06);
             
             plasmaPositions.push({ x: orbX, y: orbY });
 
-            // 외곽 글로우
+            // ?�곽 글로우
             ctx.shadowBlur = 14;
             ctx.shadowColor = (i % 2 === 0) ? 'rgba(251, 146, 60, 0.8)' : 'rgba(245, 158, 11, 0.8)';
 
-            // 코어 그라데이션 구체
+            // 코어 그라?�이??구체
             const orbGrad = ctx.createRadialGradient(orbX, orbY, 0, orbX, orbY, Math.max(1, pulseR));
-            orbGrad.addColorStop(0, 'rgba(254, 240, 138, 0.9)');   // 황금빛 중심 코어
+            orbGrad.addColorStop(0, 'rgba(254, 240, 138, 0.9)');   // ?�금�?중심 코어
             orbGrad.addColorStop(0.5, (i % 2 === 0) ? 'rgba(251, 146, 60, 0.45)' : 'rgba(245, 158, 11, 0.45)');
-            orbGrad.addColorStop(1, 'rgba(127, 29, 29, 0)');      // 버건디 바깥 가장자리 투명 처리
+            orbGrad.addColorStop(1, 'rgba(127, 29, 29, 0)');      // 버건??바깥 가?�자�??�명 처리
 
             ctx.fillStyle = orbGrad;
             ctx.beginPath();
             ctx.arc(orbX, orbY, Math.max(1, pulseR), 0, Math.PI * 2);
             ctx.fill();
 
-            // 구체 주변을 회전하는 자력선 마이크로 위성 입자
+            // 구체 주�????�전?�는 ?�력??마이?�로 ?�성 ?�자
             const satAngle = now * 0.002 + i;
             const satDist = pulseR + 6;
             const satX = orbX + Math.cos(satAngle) * satDist;
@@ -3530,7 +3527,7 @@ function render() {
             ctx.fill();
         }
 
-        // 1. 가까운 플라즈마 구체 간 은은하게 연결되는 자력선 방전선 (Magnetic Flux Arcs)
+        // 1. 가까운 ?�라즈마 구체 �??�?�?�게 ?�결?�는 ?�력??방전??(Magnetic Flux Arcs)
         ctx.shadowBlur = 0;
         ctx.lineWidth = 1.0;
         ctx.strokeStyle = 'rgba(251, 191, 36, 0.18)';
@@ -3552,9 +3549,9 @@ function render() {
                 }
             }
         }
-        ctx.setLineDash([]); // 점선 초기화
+        ctx.setLineDash([]); // ?�선 초기??
 
-        // 2. 약 5~6초 간격(확률 0.003)으로 은은하게 튀어오르는 단일 번개 아크
+        // 2. ??5~6�?간격(?�률 0.003)?�로 ?�?�?�게 ?�?�오르는 ?�일 번개 ?�크
         if (Math.random() < 0.003) {
             const sparkGridX = -25 + Math.random() * 50;
             const sparkGridY = getTerrainY(sparkGridX);
@@ -3574,31 +3571,31 @@ function render() {
         ctx.restore();
     }
 
-    // 깊은 바닷속('ocean') 지형 분위기: 해저 '뽀르륵' 공기방울 분출 & '폭!' 소멸 연출 (월드 그리드 좌표 동기화)
+    // 깊�? 바닷??'ocean') 지??분위�? ?��? '뽀르륵' 공기방울 분출 & '??' ?�멸 ?�출 (?�드 그리??좌표 ?�기??
     if (LEVELS[currentStage % LEVELS.length].terrain === 'ocean') {
         ctx.save();
         const now = Date.now();
 
-        // 동시에 단 2곳에서만 약 9.5초 간격으로 어쩌다 한 번씩 뽀르륵... 폭! 하고 은은하게 연출
+        // ?�시????2곳에?�만 ??9.5�?간격?�로 ?�쩌????번씩 뽀르륵... ?? ?�고 ?�?�?�게 ?�출
         for (let k = 0; k < 2; k++) {
-            const burstPeriod = 9500; // 9.5초 주기 (여유롭고 은은함)
-            const rawTime = now + k * 4750; // 2곳이 약 4.7초 시차를 두고 번갈아 분출
+            const burstPeriod = 9500; // 9.5�?주기 (?�유�?�� ?�?�??
+            const rawTime = now + k * 4750; // 2곳이 ??4.7�??�차�??�고 번갈??분출
             const cycle = Math.floor(rawTime / burstPeriod);
             const cycleProgress = (rawTime % burstPeriod) / burstPeriod; // 0.0 ~ 1.0
 
-            // 해당 사이클의 해저 분출 위치 gx 및 무작위 방울 개수 (2~4개)
+            // ?�당 ?�이?�의 ?��? 분출 ?�치 gx �?무작??방울 개수 (2~4�?
             const seed = (k * 7919 + cycle * 3571) % 1000;
             const spawnGx = -20.0 + (seed / 1000.0) * 40.0;
-            const bubbleCount = 2 + (seed % 3); // 2, 3, 또는 4개의 방울이 무작위로 분출!
-            const startGy = 0.5; // 해저 지형 부근
+            const bubbleCount = 2 + (seed % 3); // 2, 3, ?�는 4개의 방울??무작?�로 분출!
+            const startGy = 0.5; // ?��? 지??부�?
 
-            // 1개의 둥지에서 무작위 2~4개의 방울이 '뽀-르-륵' 시차를 두고 피어오름
+            // 1개의 ?��??�서 무작??2~4개의 방울??'뽀-�?�? ?�차�??�고 ?�어?�름
             for (let b = 0; b < bubbleCount; b++) {
-                const bDelay = b * 0.10; // 뽀글, 뽀글, 뽀글 시차
-                const bLifeProgress = (cycleProgress - bDelay) / 0.45; // 방울 수명 (0.0 ~ 1.0)
+                const bDelay = b * 0.10; // 뽀글, 뽀글, 뽀글 ?�차
+                const bLifeProgress = (cycleProgress - bDelay) / 0.45; // 방울 ?�명 (0.0 ~ 1.0)
 
                 if (bLifeProgress >= 0 && bLifeProgress <= 1.0) {
-                    // 수명 진행률에 따라 0 ~ 2.8 격자만 짧게 상승
+                    // ?�명 진행률에 ?�라 0 ~ 2.8 격자�?짧게 ?�승
                     const riseHeight = bLifeProgress * (2.4 + b * 0.3);
                     const gy = startGy + riseHeight;
                     const wobble = Math.sin(now * 0.002 + b * 2.0) * 0.2;
@@ -3606,7 +3603,7 @@ function render() {
 
                     const sc = gridToScreen(gx, gy);
 
-                    // 0.0 ~ 0.75: 상승 구간 (뽀르륵 피어오름)
+                    // 0.0 ~ 0.75: ?�승 구간 (뽀르륵 ?�어?�름)
                     if (bLifeProgress < 0.75) {
                         const r = scaleLength(0.08 + b * 0.025);
                         ctx.strokeStyle = 'rgba(186, 230, 253, 0.75)';
@@ -3617,19 +3614,19 @@ function render() {
                         ctx.fill();
                         ctx.stroke();
 
-                        // 햇빛 반사 하이라이트 점
+                        // ?�빛 반사 ?�이?�이????
                         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
                         ctx.beginPath();
                         ctx.arc(sc.x - r * 0.3, sc.y - r * 0.3, Math.max(0.5, r * 0.25), 0, Math.PI * 2);
                         ctx.fill();
                     } 
-                    // 0.75 ~ 1.0: 소멸 구간 ('폭!' 하고 깔끔하게 소멸)
+                    // 0.75 ~ 1.0: ?�멸 구간 ('??' ?�고 깔끔?�게 ?�멸)
                     else {
                         const popFactor = (bLifeProgress - 0.75) / 0.25; // 0.0 ~ 1.0
                         const popR = scaleLength((0.08 + b * 0.025) * (1.0 + popFactor * 1.1));
                         const popAlpha = Math.max(0, 0.65 * (1.0 - popFactor));
 
-                        // 팡 터지는 소형 확장 링
+                        // ???��????�형 ?�장 �?
                         ctx.strokeStyle = `rgba(186, 230, 253, ${popAlpha})`;
                         ctx.lineWidth = 1.0;
                         ctx.beginPath();
@@ -3651,7 +3648,7 @@ function render() {
     const drawCloudOff = (octx, cx, cy, baseRadius, alpha, isPower, colorType, pulse, stretchX = 1.0) => {
         octx.save();
         
-        // 구름 형태 패스 구성
+        // 구름 ?�태 ?�스 구성
         octx.beginPath();
         octx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
         
@@ -3672,13 +3669,13 @@ function render() {
             const colors = { fire: '239, 68, 68', water: '59, 130, 246', grass: '45, 106, 79', electric: '250, 204, 21', poison: '168, 85, 247', ground: '217, 119, 6', normal: '200, 200, 200', psychic: '168, 85, 247' };
             const rgb = colors[colorType] || '200, 200, 200';
             
-            // 1. 베이스 색상 단단하게 채우기
+            // 1. 베이???�상 ?�단?�게 채우�?
             octx.fillStyle = `rgba(${rgb}, ${alpha})`;
-            // 발사 중 shadowBlur 비활성화
+            // 발사 �?shadowBlur 비활?�화
             // if (isFiring) { octx.shadowColor = `rgba(${rgb}, 0.8)`; octx.shadowBlur = 15 + (pulse || 0) * 5; }
             octx.fill();
             
-            // 2. 은은한 파스텔(진주운) 효과만 덧입히기
+            // 2. ?�?�???�스??진주?? ?�과�??�입?�기
             octx.shadowBlur = 0;
             const shift = Math.sin(Date.now() / 1500) * baseRadius * 0.6;
             const grad = octx.createLinearGradient(
@@ -3711,7 +3708,7 @@ function render() {
             currentRadius = cp.radius * (1 + pulse * 0.055);
         }
 
-        // ocean 맵에서는 파워업 구름을 거품(버블) 모양으로 렌더링
+        // ocean 맵에?�는 ?�워??구름??거품(버블) 모양?�로 ?�더�?
         if (stage.terrain === 'ocean' && cp.isPowerCloud) {
             const r = scaleLength(currentRadius);
             const typeColors = {
@@ -3721,24 +3718,24 @@ function render() {
                 flying:  { main: 'rgba(160, 180, 255, 0.35)', rim: 'rgba(190, 210, 255, 0.6)', highlight: 'rgba(230, 240, 255, 0.8)' },
                 psychic: { main: 'rgba(200, 100, 240, 0.35)', rim: 'rgba(220, 160, 255, 0.6)', highlight: 'rgba(240, 210, 255, 0.8)' }
             };
-            // 심해 맵의 버블은 항상 바닷속 느낌(물 속성 색상)으로 고정
+            // ?�해 맵의 버블?� ??�� 바닷???�낌(�??�성 ?�상)?�로 고정
             const colors = typeColors.water;
 
             offCtx.save();
-            // 거품 본체 (반투명 원)
+            // 거품 본체 (반투�???
             offCtx.beginPath();
             offCtx.arc(c.x, c.y, r, 0, Math.PI * 2);
             offCtx.fillStyle = colors.main;
             offCtx.fill();
 
-            // 거품 테두리 (얇은 링)
+            // 거품 ?�두�?(?��? �?
             offCtx.beginPath();
             offCtx.arc(c.x, c.y, r, 0, Math.PI * 2);
             offCtx.strokeStyle = colors.rim;
             offCtx.lineWidth = Math.max(1.5, r * 0.08);
             offCtx.stroke();
 
-            // 하이라이트 반짝임 (왼쪽 상단 작은 원)
+            // ?�이?�이??반짝??(?�쪽 ?�단 ?��? ??
             offCtx.beginPath();
             offCtx.arc(c.x - r * 0.3, c.y - r * 0.3, r * 0.22, 0, Math.PI * 2);
             offCtx.fillStyle = colors.highlight;
@@ -3750,7 +3747,7 @@ function render() {
         }
     });
 
-    // destination-out으로 구멍 뚫기
+    // destination-out?�로 구멍 ?�기
     if (cloudHoles.length > 0) {
         offCtx.save();
         offCtx.globalCompositeOperation = 'destination-out';
@@ -3758,7 +3755,7 @@ function render() {
             const sc = gridToScreen(h.x, h.y);
             const sr = scaleLength(h.radius);
             if (sr <= 0) return;
-            // 부드러운 페더링을 위한 방사형 그라데이션
+            // 부?�러???�더링을 ?�한 방사??그라?�이??
             const hGrad = offCtx.createRadialGradient(sc.x, sc.y, 0, sc.x, sc.y, sr);
             hGrad.addColorStop(0, 'rgba(0,0,0,1)');
             hGrad.addColorStop(1, 'rgba(0,0,0,0)');
@@ -3770,11 +3767,11 @@ function render() {
         offCtx.restore();
     }
 
-    // 완성된 오프스크린 이미지를 메인 캔버스에 합성
+    // ?�성???�프?�크�??��?지�?메인 캔버?�에 ?�성
     ctx.drawImage(offCanvas, 0, 0);
 
 
-    // Cave ceiling/wall overlay (동굴 외벽 렌더링)
+    // Cave ceiling/wall overlay (?�굴 ?�벽 ?�더�?
     const getCeilY = (x) => {
         const key = (Math.round(x * 10) / 10).toFixed(1);
         return (typeof ceilHeights !== 'undefined' && ceilHeights[key] !== undefined) ? ceilHeights[key] : (tData.ceilFunc ? tData.ceilFunc(x) : 1000);
@@ -3789,18 +3786,18 @@ function render() {
             const cCtx = caveCeilingCanvas.getContext('2d');
             const caveMinX = -60, caveMaxX = 60;
 
-            // 1. 외곽 어두운 영역 (evenodd 방식 사용) - 단색 #0d0d0d 배경 처리
+            // 1. ?�곽 ?�두???�역 (evenodd 방식 ?�용) - ?�색 #0d0d0d 배경 처리
             cCtx.save();
             cCtx.beginPath();
-            cCtx.rect(-10, -10, caveCeilingCanvas.width + 20, caveCeilingCanvas.height + 20); // 전체 화면
+            cCtx.rect(-10, -10, caveCeilingCanvas.width + 20, caveCeilingCanvas.height + 20); // ?�체 ?�면
             
-            // 구멍 파기 (CCW)
+            // 구멍 ?�기 (CCW)
             const sp2 = gridToScreen(caveMinX, getCeilY(caveMinX));
             cCtx.moveTo(-10, caveCeilingCanvas.height + 10);
             cCtx.lineTo(caveCeilingCanvas.width + 10, caveCeilingCanvas.height + 10);
             const ep2 = gridToScreen(caveMaxX, getCeilY(caveMaxX));
             cCtx.lineTo(ep2.x, ep2.y);
-            for (let x = caveMaxX; x >= caveMinX; x -= 0.5) { // 0.2 -> 0.5로 캐시 렌더링 최적화
+            for (let x = caveMaxX; x >= caveMinX; x -= 0.5) { // 0.2 -> 0.5�?캐시 ?�더�?최적??
                 const p = gridToScreen(Math.max(x, caveMinX), getCeilY(Math.max(x, caveMinX)));
                 cCtx.lineTo(p.x, p.y);
             }
@@ -3811,7 +3808,7 @@ function render() {
             cCtx.fill('evenodd');
             cCtx.restore();
             
-            // 2. 천장 바위(암석) 내부 채우기 (화면 상단으로)
+            // 2. 천장 바위(?�석) ?��? 채우�?(?�면 ?�단?�로)
             cCtx.save();
             cCtx.beginPath();
             const cEdge2 = gridToScreen(caveMinX, getCeilY(caveMinX));
@@ -3827,7 +3824,7 @@ function render() {
             cCtx.fill();
             cCtx.restore();
 
-            // 3. 천장 테두리선 (암석 윤곽)
+            // 3. 천장 ?�두리선 (?�석 ?�곽)
             cCtx.save();
             cCtx.beginPath();
             const cEdge = gridToScreen(caveMinX, getCeilY(caveMinX));
@@ -3855,7 +3852,7 @@ function render() {
     if (tData.isFloating) {
         let inIsland = false;
         let islandPoints = [];
-        let islandThickness = 4.0; // 기본값
+        let islandThickness = 4.0; // 기본�?
         
         const drawIslandPoly = (pts, thickness) => {
             if (pts.length === 0) return;
@@ -3867,19 +3864,19 @@ function render() {
                 ctx.lineTo(p.x, p.y);
             }
             const n = pts.length;
-            const R = 2.5; // 가장자리 둥글기 반경 (절대 길이)
+            const R = 2.5; // 가?�자�??��?�?반경 (?��? 길이)
             for (let i = n - 1; i >= 0; i--) {
                 const distToEdge = Math.min(pts[i].x - pts[0].x, pts[n-1].x - pts[i].x);
                 let taper = 1;
                 if (distToEdge < R) {
-                    // 가장자리 R 범위 내에서만 원의 방정식을 이용해 둥글게 마감
+                    // 가?�자�?R 범위 ?�에?�만 ?�의 방정?�을 ?�용???��?�?마감
                     taper = Math.sqrt(Math.max(0, 1 - Math.pow(1 - distToEdge / R, 2)));
                 }
                 const wave = Math.sin(pts[i].x * 1.8) * 0.4 + Math.cos(pts[i].x * 3.2) * 0.2;
-                // taper가 1인 중간 부분은 절대 좌표(x) 기반의 wave만 적용되어 파괴 시에도 모양이 변하지 않음
+                // taper가 1??중간 부분�? ?��? 좌표(x) 기반??wave�??�용?�어 ?�괴 ?�에??모양??변?��? ?�음
                 const actualThickness = thickness * taper + wave * taper;
                 let bottomY = pts[i].origY - Math.max(0, actualThickness);
-                // 파편화 방지: 크레이터로 깎여나간 윗면(y)이 원래 바닥면보다 낮아지면, 바닥면도 그 윗면 이하로 내려가야 다각형이 안 꼬임
+                // ?�편??방�?: ?�레?�터�?깎여?�간 ?�면(y)???�래 바닥면보????��지�? 바닥면도 �??�면 ?�하�??�려가???�각?�이 ??꼬임
                 bottomY = Math.min(bottomY, pts[i].y);
                 p = gridToScreen(pts[i].x, bottomY);
                 ctx.lineTo(p.x, p.y);
@@ -3895,7 +3892,7 @@ function render() {
         const numLayers = tData.layers ? tData.layers.length : 1;
         
     if (tData.islands) {
-            // 원형/타원(도형) 기반 렌더링 + 크레이터 지우기 (구름 방식)
+            // ?�형/?�???�형) 기반 ?�더�?+ ?�레?�터 지?�기 (구름 방식)
             const islandCanvas = document.createElement('canvas');
             islandCanvas.width = canvas.width;
             islandCanvas.height = canvas.height;
@@ -3904,7 +3901,7 @@ function render() {
             const scaleX = canvas.width / (X_MAX - X_MIN);
             const scaleY = canvas.height / (Y_MAX - Y_MIN);
 
-            // 1. 테두리/아웃라인 (outColor)
+            // 1. ?�두�??�웃?�인 (outColor)
             if (tData.outColor) {
                 ictx.fillStyle = tData.outColor;
                 for (let l = 0; l < tData.islands.length; l++) {
@@ -3923,7 +3920,7 @@ function render() {
                 }
             }
 
-            // 2. 본체 도형 색상 (color)
+            // 2. 본체 ?�형 ?�상 (color)
             ictx.fillStyle = tData.color || '#22c55e';
             for (let l = 0; l < tData.islands.length; l++) {
                 for (const s of tData.islands[l]) {
@@ -3940,7 +3937,7 @@ function render() {
                 }
             }
 
-            // 3. 크레이터 지우기
+            // 3. ?�레?�터 지?�기
             if (typeof craters !== 'undefined' && craters.length > 0) {
                 ictx.globalCompositeOperation = 'destination-out';
                 for (const crater of craters) {
@@ -3962,7 +3959,7 @@ function render() {
                     let cx = Math.min(x, 35);
                     let y = getTerrainYAll(cx)[l];
                     let origY = tData.layers ? tData.layers[l](cx) : (tData.func ? tData.func(cx) : y);
-                    // 부동소수점 오차로 origY가 -100이 되거나 y보다 심하게 낮아지는 현상 방어
+                    // 부?�소?�점 ?�차�?origY가 -100???�거??y보다 ?�하�???��지???�상 방어
                     if (origY !== undefined && y !== undefined) origY = Math.max(origY, y);
                     
                     if (y !== undefined && y > -50) {
@@ -3999,7 +3996,7 @@ function render() {
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
         };
 
-        // 1. 상단 표면 곡선 (skyStartX -> skyEndX)
+        // 1. ?�단 ?�면 곡선 (skyStartX -> skyEndX)
         targetCtx.beginPath();
         const startP = gridToScreen(skyStartX, getOrigY(skyStartX));
         targetCtx.moveTo(startP.x, startP.y);
@@ -4009,20 +4006,20 @@ function render() {
             if (x >= skyEndX) break;
         }
 
-        // 2. 우측 끝 뭉툭한 볼록 둥근 곡선 캡 마감
+        // 2. ?�측 ??뭉툭??볼록 ?�근 곡선 �?마감
         const rightTopY = getOrigY(skyEndX);
         const rightMidP = gridToScreen(skyEndX + 2.0, rightTopY - thickness / 2);
         const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
         targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
 
-        // 3. 하단 표면 곡선 (skyEndX -> skyStartX)
+        // 3. ?�단 ?�면 곡선 (skyEndX -> skyStartX)
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.2)) {
             const p = gridToScreen(x, getOrigY(x) - thickness);
             targetCtx.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
 
-        // 4. 좌측 끝 뭉툭한 볼록 둥근 곡선 캡 마감
+        // 4. 좌측 ??뭉툭??볼록 ?�근 곡선 �?마감
         const leftTopY = getOrigY(skyStartX);
         const leftMidP = gridToScreen(skyStartX - 2.0, leftTopY - thickness / 2);
         const leftTopP = gridToScreen(skyStartX, leftTopY);
@@ -4032,9 +4029,9 @@ function render() {
 
         targetCtx.fillStyle = tData.color;
         targetCtx.fill();
-        // 구름 위 하늘 맵은 흰 테두리 선(stroke)을 제거하여 x=38 부근 흰 선 완벽 삭제
+        // 구름 ???�늘 맵�? ???�두�???stroke)???�거?�여 x=38 부�??????�벽 ??��
 
-        // 5. 폭발 구멍(craters) 타공
+        // 5. ??�� 구멍(craters) ?��?
         if (craterCanvas) {
             targetCtx.globalCompositeOperation = 'destination-out';
             for (const crater of craters) {
@@ -4050,7 +4047,7 @@ function render() {
     } else if (stage.terrain === 'log_bridge') {
         const skyStartX = -30;
         const skyEndX = 30;
-        const thickness = 5.0; // 고정 두께로 하단 라인을 x축과 평행하고 깔끔하게 렌더링 (연산 부하 제거)
+        const thickness = 5.0; // 고정 ?�께�??�단 ?�인??x축과 ?�행?�고 깔끔?�게 ?�더�?(?�산 부???�거)
 
         let targetCtx = ctx;
         let craterCanvas = null;
@@ -4064,7 +4061,7 @@ function render() {
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
         };
 
-        // 통나무 전체 외형 패스 (상단 표면 -> 우측 캡 -> 평행 하단 라인 -> 좌측 캡)
+        // ?�나�??�체 ?�형 ?�스 (?�단 ?�면 -> ?�측 �?-> ?�행 ?�단 ?�인 -> 좌측 �?
         targetCtx.beginPath();
         const startP = gridToScreen(skyStartX, getOrigY(skyStartX));
         targetCtx.moveTo(startP.x, startP.y);
@@ -4074,43 +4071,43 @@ function render() {
             if (x >= skyEndX) break;
         }
 
-        // 우측 둥근 나이테 단면 캡 마감 (수직으로 잘린 느낌을 없애기 위해 둥글게 연장)
+        // ?�측 ?�근 ?�이???�면 �?마감 (?�직?�로 ?�린 ?�낌???�애�??�해 ?��?�??�장)
         const rightTopY = getOrigY(skyEndX);
         const rightMidP = gridToScreen(skyEndX + 2.5, rightTopY - thickness / 2);
         const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
         targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
 
-        // 하단 껍질 라인 (x축과 평행한 일직선 바닥, 고정 두께 5.0)
+        // ?�단 껍질 ?�인 (x축과 ?�행???�직??바닥, 고정 ?�께 5.0)
         for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.4)) {
             const p = gridToScreen(x, getOrigY(x) - thickness);
             targetCtx.lineTo(p.x, p.y);
             if (x <= skyStartX) break;
         }
 
-        // 좌측 둥근 나이테 단면 캡 마감 (수직으로 잘린 느낌을 없애기 위해 둥글게 연장)
+        // 좌측 ?�근 ?�이???�면 �?마감 (?�직?�로 ?�린 ?�낌???�애�??�해 ?��?�??�장)
         const leftTopY = getOrigY(skyStartX);
         const leftMidP = gridToScreen(skyStartX - 2.5, leftTopY - thickness / 2);
         const leftTopP = gridToScreen(skyStartX, leftTopY);
         targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
         targetCtx.closePath();
 
-        // 1. 통나무 기본 바탕 (어두운 계열 수직 그라데이션: 상단 중간 갈색 → 하단 짙은 다크브라운)
+        // 1. ?�나�?기본 바탕 (?�두??계열 ?�직 그라?�이?? ?�단 중간 갈색 ???�단 짙�? ?�크브라??
         {
             const logTop = gridToScreen(0, 0);
             const logBot = gridToScreen(0, -6);
             const logGrad = targetCtx.createLinearGradient(0, logTop.y, 0, logBot.y);
-            logGrad.addColorStop(0.0, '#6b2d10'); // 상단 중간 갈색
-            logGrad.addColorStop(0.55, '#3d1207'); // 중간 딥 브라운
-            logGrad.addColorStop(1.0, '#1e0803'); // 하단 매우 짙은 다크브라운
+            logGrad.addColorStop(0.0, '#6b2d10'); // ?�단 중간 갈색
+            logGrad.addColorStop(0.55, '#3d1207'); // 중간 ??브라??
+            logGrad.addColorStop(1.0, '#1e0803'); // ?�단 매우 짙�? ?�크브라??
             targetCtx.fillStyle = logGrad;
             targetCtx.fill();
         }
 
-        // 2. 나무 껍질 및 결 패턴 렌더링 (검은 세로 눈금선 제거 → 유기적인 나뭇결 및 옹이 렌더링)
+        // 2. ?�무 껍질 �?�??�턴 ?�더�?(검?� ?�로 ?�금???�거 ???�기?�인 ?�뭇�?�??�이 ?�더�?
         targetCtx.save();
         targetCtx.clip();
 
-        // 수평 나뭇결 흐름선 (유기적인 무늬, 반복 횟수 축소하여 최적화)
+        // ?�평 ?�뭇�??�름??(?�기?�인 무늬, 반복 ?�수 축소?�여 최적??
         for (let relRatio = 0.2; relRatio < 0.9; relRatio += 0.25) {
             targetCtx.beginPath();
             for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.4) {
@@ -4125,7 +4122,7 @@ function render() {
             targetCtx.stroke();
         }
 
-        // 2-B. 나무 옹이 (Wood Knots) — 개수를 대폭 축소하여 3개만 드문드문 자연스럽게 배치
+        // 2-B. ?�무 ?�이 (Wood Knots) ??개수�??�??축소?�여 3개만 ?�문?�문 ?�연?�럽�?배치
         const knotPositions = [-22, 2, 26];
         knotPositions.forEach((kx, kIdx) => {
             const ky = getOrigY(kx) - thickness * (0.3 + (kIdx % 3) * 0.2);
@@ -4136,7 +4133,7 @@ function render() {
 
             targetCtx.save();
 
-            // 1) 옹이 주변 나뭇결 휘어짐 파동 (Grain Warp Lines)
+            // 1) ?�이 주�? ?�뭇�??�어�??�동 (Grain Warp Lines)
             targetCtx.beginPath();
             const warpR = krx * 2.2;
             for (let t = -Math.PI; t <= Math.PI; t += 0.2) {
@@ -4149,11 +4146,11 @@ function render() {
             targetCtx.lineWidth = 1.8;
             targetCtx.stroke();
 
-            // 2) 옹이 본체 방사형 3D 그라데이션 (중심 짙은 갈색 -> 외곽 유기적 적갈색)
+            // 2) ?�이 본체 방사??3D 그라?�이??(중심 짙�? 갈색 -> ?�곽 ?�기???�갈??
             const knotGrad = targetCtx.createRadialGradient(kp.x - krx * 0.2, kp.y - kry * 0.2, 2, kp.x, kp.y, krx);
-            knotGrad.addColorStop(0.0, '#1c0701'); // 중심 깊은 음영
-            knotGrad.addColorStop(0.55, '#3a1304'); // 중간 적갈색
-            knotGrad.addColorStop(1.0, '#240a02'); // 외곽 테두리
+            knotGrad.addColorStop(0.0, '#1c0701'); // 중심 깊�? ?�영
+            knotGrad.addColorStop(0.55, '#3a1304'); // 중간 ?�갈??
+            knotGrad.addColorStop(1.0, '#240a02'); // ?�곽 ?�두�?
 
             targetCtx.beginPath();
             targetCtx.ellipse(kp.x, kp.y, krx, kry, angle, 0, Math.PI * 2);
@@ -4163,7 +4160,7 @@ function render() {
             targetCtx.lineWidth = 2.2;
             targetCtx.stroke();
 
-            // 3) 회오리 나이테 (Spiral Ring)
+            // 3) ?�오�??�이??(Spiral Ring)
             targetCtx.beginPath();
             const rings = 3;
             for (let r = 1; r <= rings; r++) {
@@ -4177,7 +4174,7 @@ function render() {
             targetCtx.lineWidth = 1.2;
             targetCtx.stroke();
 
-            // 4) 세밀한 나무 균열 (Wood Crack)
+            // 4) ?��????�무 균열 (Wood Crack)
             targetCtx.beginPath();
             const crackDir = (kIdx % 2 === 0) ? 1 : -1;
             targetCtx.moveTo(kp.x, kp.y);
@@ -4190,7 +4187,7 @@ function render() {
             targetCtx.restore();
         });
 
-        // 3. 통나무 상단 잔디 풀밭 레이어 (두께 절반 0.1625 슬림화, #22c55e -> #15803d 2색 그라데이션)
+        // 3. ?�나�??�단 ?�디 ?��??�이??(?�께 ?�반 0.1625 ?�림?? #22c55e -> #15803d 2??그라?�이??
         targetCtx.save();
         targetCtx.beginPath();
         const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
@@ -4207,17 +4204,17 @@ function render() {
         }
         targetCtx.closePath();
 
-        // 부드러운 3단 수직 그라데이션 (상단 #22c55e -> 중앙 #16a34a -> 하단 #15803d)
+        // 부?�러??3???�직 그라?�이??(?�단 #22c55e -> 중앙 #16a34a -> ?�단 #15803d)
         const topScreenP = gridToScreen(0, 0);
         const botScreenP = gridToScreen(0, -0.1625);
         const grassGrad = targetCtx.createLinearGradient(0, topScreenP.y - 2, 0, botScreenP.y + 2);
-        grassGrad.addColorStop(0.0, '#22c55e');  // 상단 싱그러운 그린
+        grassGrad.addColorStop(0.0, '#22c55e');  // ?�단 ?�그?�운 그린
         grassGrad.addColorStop(0.5, '#16a34a');  // 중앙 중간 그린
-        grassGrad.addColorStop(1.0, '#15803d');  // 하단 차분한 딥 그린
+        grassGrad.addColorStop(1.0, '#15803d');  // ?�단 차분????그린
         targetCtx.fillStyle = grassGrad;
         targetCtx.fill();
 
-        // Dot Rim: 2가지 색상 배치 path로 묶어 fill() 2회만 호출 (300→2회 GPU flush 절감)
+        // Dot Rim: 2가지 ?�상 배치 path�?묶어 fill() 2?�만 ?�출 (300????GPU flush ?�감)
         {
             const microDotStep = 0.4;
             targetCtx.beginPath();
@@ -4243,7 +4240,7 @@ function render() {
             targetCtx.fill();
         }
 
-        // 통나무 경계 얇은 흙/이끼 띠 (Soil Border)
+        // ?�나�?경계 ?��? ???�끼 ??(Soil Border)
         targetCtx.beginPath();
         for (let x = skyStartX; x <= skyEndX; x += 0.4) {
             const bp = gridToScreen(x, getOrigY(x) - 0.1625);
@@ -4254,10 +4251,10 @@ function render() {
         targetCtx.lineWidth = 1.2;
         targetCtx.stroke();
 
-        targetCtx.restore(); // 잔디 레이어 save 해제
-        targetCtx.restore(); // 클리핑 해제
+        targetCtx.restore(); // ?�디 ?�이??save ?�제
+        targetCtx.restore(); // ?�리???�제
 
-        // 5. 폭발 구멍(craters) 타공 — 모든 지형 요소(통나무, 잔디, Dot Rim, 흙 띠)를 그리고 난 후 일괄 타공하여 뚫린 구멍 위 잔상 완벽 제거
+        // 5. ??�� 구멍(craters) ?��???모든 지???�소(?�나�? ?�디, Dot Rim, ????�?그리�??????�괄 ?�공하???�린 구멍 ???�상 ?�벽 ?�거
         if (craterCanvas) {
             targetCtx.globalCompositeOperation = 'destination-out';
             for (const crater of craters) {
@@ -4271,9 +4268,9 @@ function render() {
             ctx.drawImage(craterCanvas, 0, 0);
         }
     } else {
-        // 지형 데이터는 -60~60 범위에서만 초기화됨.
-        // ★ terrainHeights(크레이터로 영구 수정된 값) 사용 → craters 배열 캡 오버플로우와 무관하게
-        //    파괴된 지형이 절대 복구되지 않음. destination-out 타공 단계 불필요.
+        // 지???�이?�는 -60~60 범위?�서�?초기?�됨.
+        // ??terrainHeights(?�레?�터�??�구 ?�정??�? ?�용 ??craters 배열 �??�버?�로?��? 무�??�게
+        //    ?�괴??지?�이 ?��? 복구?��? ?�음. destination-out ?��??�계 불필??
         const getTerrainYForRender = (x) => {
             const key = (Math.round(x * 10) / 10).toFixed(1);
             const curr = terrainHeights[key];
@@ -4316,9 +4313,9 @@ function render() {
     const axisLine  = isBright ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.9)';
     ctx.font = "16px 'Cambria Math','Times New Roman',serif";
     ctx.fillStyle = gridColor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    // isFiring 플래그 갱신 (모듈 레벨 변수 - drawEntity에서도 참조)
+    // isFiring ?�래�?갱신 (모듈 ?�벨 변??- drawEntity?�서??참조)
     isFiring = GAME_STATE === 'FIRING' || effects.length > 0;
-    ctx.shadowBlur = 0; // 그리드 레이블 shadowBlur 제거 (상시 부하 원인)
+    ctx.shadowBlur = 0; // 그리???�이�?shadowBlur ?�거 (?�시 부???�인)
 
     for (let x = Math.ceil(X_MIN); x <= Math.floor(X_MAX); x++) {
         const p0 = gridToScreen(x, Y_MIN), p1 = gridToScreen(x, Y_MAX);
@@ -4326,7 +4323,7 @@ function render() {
         ctx.lineWidth = (x % 5 === 0 && x !== 0) ? 2.5 : 1.5;
         ctx.strokeStyle = (x % 5 === 0 && x !== 0) ? thickLine : thinLine;
         ctx.stroke();
-        if (x % 5 === 0 && x !== 0) ctx.fillText(x < 0 ? '−' + Math.abs(x) : x, p0.x, gridToScreen(x, 0).y + 20);
+        if (x % 5 === 0 && x !== 0) ctx.fillText(x < 0 ? '?? + Math.abs(x) : x, p0.x, gridToScreen(x, 0).y + 20);
     }
     for (let y = Math.ceil(Y_MIN); y <= Math.floor(Y_MAX); y++) {
         const p0 = gridToScreen(X_MIN, y), p1 = gridToScreen(X_MAX, y);
@@ -4334,9 +4331,9 @@ function render() {
         ctx.lineWidth = (y % 5 === 0 && y !== 0) ? 2.5 : 1.5;
         ctx.strokeStyle = (y % 5 === 0 && y !== 0) ? thickLine : thinLine;
         ctx.stroke();
-        if (y % 5 === 0 && y !== 0) ctx.fillText(y < 0 ? '−' + Math.abs(y) : y, gridToScreen(0, y).x - 20, p0.y);
+        if (y % 5 === 0 && y !== 0) ctx.fillText(y < 0 ? '?? + Math.abs(y) : y, gridToScreen(0, y).x - 20, p0.y);
     }
-    ctx.shadowBlur = 0; // 축 렌더 후 초기화
+    ctx.shadowBlur = 0; // �??�더 ??초기??
 
     // Axes
     ctx.strokeStyle = axisLine; ctx.lineWidth = isBright ? 3 : 4;
@@ -4360,7 +4357,7 @@ function render() {
         
         ctx.textAlign = "left";
         const dTxt1 = "DEATH ZONE ( ";
-        const dTxt2 = `y = −${Math.abs(dzValue)}`; // U+2212 Minus Sign
+        const dTxt2 = `y = ??{Math.abs(dzValue)}`; // U+2212 Minus Sign
         const dTxt3 = " )";
         
         ctx.font = "bold 16px 'Outfit', sans-serif";
@@ -4406,59 +4403,59 @@ function render() {
     ctx.fillText(oTxt3, oStartX + ow1 + ow2, outSc.y - 15);
     ctx.textAlign = "center";
 
-    // ---- 포켓볼 렌더링 ----
+    // ---- ?�켓�??�더�?----
     const tNow = Date.now() / 1000;
     balloons.forEach(b => {
         if (!b.active) return;
         const floatOff = Math.sin(tNow * 1.1 + b.phase) * scaleLength(0.22)
                        + Math.sin(tNow * 0.6 + b.phase) * scaleLength(0.08);
         const sc     = gridToScreen(b.x, b.y);
-        const sz     = scaleLength(1.3); // 포켓볼 크기 (화면 픽셀)
+        const sz     = scaleLength(1.3); // ?�켓�??�기 (?�면 ?��?)
         const cx     = sc.x;
         const cy     = sc.y + floatOff;
 
         ctx.save();
-        // 글로우 (종류에 따라 색상)
-        // 포켓볼 글로우: 발사 중에는 발광 끄기 (성능 최적화)
+        // 글로우 (종류???�라 ?�상)
+        // ?�켓�?글로우: 발사 중에??발광 ?�기 (?�능 최적??
         ctx.shadowColor = b.type === 'gold' ? '#fbbf24' : '#ef4444';
         ctx.shadowBlur  = isFiring ? 0 : 8;
-        // 포켓볼 이미지 그리기
+        // ?�켓�??��?지 그리�?
         if (pokeballImg && pokeballImg.complete && pokeballImg.naturalWidth > 0) {
             ctx.imageSmoothingEnabled = false;
             if (b.type === 'gold') {
-                // 골드 풍선일 경우 빨간색 몬스터볼을 황금색으로 변환 (filter 문자열 캐싱)
+                // 골드 ?�선??경우 빨간??몬스?�볼???�금?�으�?변??(filter 문자??캐싱)
                 ctx.filter = 'hue-rotate(50deg) saturate(200%) brightness(130%)';
             }
             ctx.drawImage(pokeballImg, cx - sz / 2, cy - sz / 2, sz, sz);
-            if (b.type === 'gold') ctx.filter = 'none'; // 골드일 때만 초기화
+            if (b.type === 'gold') ctx.filter = 'none'; // 골드???�만 초기??
         } else {
-            // 이미지 로드 전 대체 원
+            // ?��?지 로드 ???��???
             ctx.fillStyle = b.type === 'gold' ? '#fbbf24' : '#ef4444';
             ctx.beginPath(); ctx.arc(cx, cy, sz / 2, 0, Math.PI * 2); ctx.fill();
         }
         ctx.shadowBlur = 0;
 
-        // 아이템 타입 라벨 (포켓볼 하단)
+        // ?�이???�???�벨 (?�켓�??�단)
         ctx.fillStyle    = b.type === 'gold' ? '#fde68a' : '#fca5a5';
         ctx.font         = `bold ${Math.round(scaleLength(0.45))}px Outfit`;
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'top';
         ctx.shadowColor  = 'rgba(0,0,0,0.9)';
         ctx.shadowBlur   = 6;
-        ctx.fillText(b.type === 'gold' ? '🪙 GOLD' : '⚡ POWER', cx, cy + sz / 2 + 4);
+        ctx.fillText(b.type === 'gold' ? '?�� GOLD' : '??POWER', cx, cy + sz / 2 + 4);
         ctx.shadowBlur = 0;
         ctx.restore();
     });
 
     // Entities
     if (player.hp > 0) drawEntity(player);
-    enemies.forEach(e => { drawEntity(e); }); // 사망한 유령 적포켓몬도 계속 렌더링되게 변경
+    enemies.forEach(e => { drawEntity(e); }); // ?�망???�령 ?�포켓몬??계속 ?�더링되�?변�?
 
-    // Player radius (발사 가능 반경 표시 - 맥박 뛰듯 은은하게)
+    // Player radius (발사 가??반경 ?�시 - 맥박 ?�듯 ?�?�?�게)
     const pCenter = gridToScreen(player.x, player.y - 0.525), pRad = scaleLength(0.7);
-    if (player.name === '파이리') pCenter.y -= scaleLength(0.2);
+    if (player.name === '?�이�?) pCenter.y -= scaleLength(0.2);
     ctx.save();
-    ctx.globalAlpha = 0.15 + Math.sin(Date.now() / 300) * 0.08; // 은은한 뒷배경 채우기
+    ctx.globalAlpha = 0.15 + Math.sin(Date.now() / 300) * 0.08; // ?�?�???�배�?채우�?
     ctx.fillStyle = getMissileColor();
     ctx.beginPath(); ctx.arc(pCenter.x, pCenter.y, pRad, 0, Math.PI*2);
     ctx.fill();
@@ -4491,13 +4488,13 @@ function render() {
             ctx.globalAlpha = 1;
         } else if (e.type === 'stalactite') {
             const sc = gridToScreen(e.x, e.y);
-            const w = scaleLength(0.7); // 종유석 너비
-            const h = scaleLength(2.0); // 종유석 높이
+            const w = scaleLength(0.7); // 종유???�비
+            const h = scaleLength(2.0); // 종유???�이
             
             ctx.save();
             ctx.translate(sc.x, sc.y);
             
-            // 뾰족한 화살촉 모양 대신 둔탁하고 둥글둥글한 바위 모양으로 변경
+            // 뾰족???�살�?모양 ?�???�탁?�고 ?��??��???바위 모양?�로 변�?
             ctx.beginPath();
             ctx.moveTo(0, h/2.5);
             ctx.lineTo(-w/1.2, h/4);
@@ -4508,19 +4505,19 @@ function render() {
             ctx.lineTo(w/1.2, h/4);
             ctx.closePath();
             
-            // 바위색 그라데이션
+            // 바위??그라?�이??
             const grad = ctx.createLinearGradient(0, -h/2, 0, h/2);
             grad.addColorStop(0, '#3f3f46');
             grad.addColorStop(1, '#a1a1aa');
             ctx.fillStyle = grad;
             
-            // 그림자 효과로 입체감
+            // 그림???�과�??�체�?
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
             ctx.shadowBlur = 8;
             ctx.shadowOffsetY = 4;
             ctx.fill();
             
-            // 왼쪽 밝은 하이라이트로 디테일 추가
+            // ?�쪽 밝�? ?�이?�이?�로 ?�테??추�?
             ctx.beginPath();
             ctx.moveTo(0, h/2 * 0.9);
             ctx.lineTo(-w/2.2, -h/2);
@@ -4533,18 +4530,18 @@ function render() {
         } else if (e.type === 'lava_rock') {
             const sc = gridToScreen(e.x, e.y);
             const rot = (e.maxLife - e.life) * 0.25;
-            const r = scaleLength(0.65); // 둥근 원보다 조금 더 큰 크기
+            const r = scaleLength(0.65); // ?�근 ?�보??조금 ?????�기
 
             ctx.save();
             ctx.translate(sc.x, sc.y);
             ctx.rotate(rot);
 
-            // 외곽 붉은 발광 효과
+            // ?�곽 붉�? 발광 ?�과
             ctx.shadowBlur = 18;
             ctx.shadowColor = '#ea580c';
 
-            // 불규칙한 칠각형 (화산암 형태)
-            ctx.fillStyle = '#270808'; // 검붉은 암석 색
+            // 불규칙한 칠각??(?�산???�태)
+            ctx.fillStyle = '#270808'; // 검붉�? ?�석 ??
             ctx.beginPath();
             const sides = 7;
             for (let s = 0; s < sides; s++) {
@@ -4556,9 +4553,9 @@ function render() {
             ctx.closePath();
             ctx.fill();
             
-            ctx.shadowBlur = 0; // 안쪽은 글로우 없이
+            ctx.shadowBlur = 0; // ?�쪽?� 글로우 ?�이
 
-            // 바위 틈새 용암 텍스처(선)
+            // 바위 ?�새 ?�암 ?�스�???
             ctx.strokeStyle = '#f97316';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -4574,10 +4571,10 @@ function render() {
             ctx.fillStyle = e.color; ctx.beginPath(); ctx.arc(sc.x, sc.y, 4, 0, Math.PI*2); ctx.fill();
             ctx.globalAlpha = 1;
         } else if (e.type === 'ring') {
-            // 풍선 터지는 확산 링 이펙트
+            // ?�선 ?��????�산 �??�펙??
             const sc   = gridToScreen(e.x, e.y);
-            const prog = 1 - e.life / e.maxLife;          // 0→1
-            const rad  = scaleLength(0.3 + 2.5 * prog);   // 커지는 반경
+            const prog = 1 - e.life / e.maxLife;          // 0??
+            const rad  = scaleLength(0.3 + 2.5 * prog);   // 커�???반경
             ctx.globalAlpha = Math.max(0, e.life / e.maxLife) * 0.85;
             ctx.strokeStyle  = e.color;
             ctx.lineWidth    = 5 * (e.life / e.maxLife);
@@ -4585,10 +4582,10 @@ function render() {
             ctx.globalAlpha  = 1;
         } else if (e.type === 'laser') {
             const scBottom = gridToScreen(e.x, e.y);
-            const scTop = gridToScreen(e.x, 40); // y=40 (하늘 높이)
+            const scTop = gridToScreen(e.x, 40); // y=40 (?�늘 ?�이)
             ctx.globalAlpha = Math.max(0, e.life / 15);
             ctx.lineWidth = 15 + Math.random() * 10;
-            ctx.strokeStyle = '#10b981'; // 에메랄드 그린 레이저
+            ctx.strokeStyle = '#10b981'; // ?�메?�드 그린 ?�이?�
             ctx.shadowBlur = 0; ctx.shadowColor = '#34d399';
             ctx.beginPath(); ctx.moveTo(scTop.x, scTop.y); ctx.lineTo(scBottom.x, scBottom.y); ctx.stroke();
             
@@ -4598,11 +4595,11 @@ function render() {
             
             ctx.globalAlpha = 1; ctx.shadowBlur = 0;
         } else if (e.type === 'lightning') {
-            // ⚡ 지그재그 번개 줄기 렌더링
+            // ??지그재�?번개 줄기 ?�더�?
             const alpha = Math.max(0, e.life / e.maxLife);
             ctx.save();
             ctx.globalAlpha = alpha;
-            ctx.strokeStyle = '#fef08a'; // 따뜻한 황금빛 번개
+            ctx.strokeStyle = '#fef08a'; // ?�뜻???�금�?번개
             ctx.lineWidth = 4;
             ctx.shadowBlur = 12;
             ctx.shadowColor = '#fbbf24';
@@ -4616,7 +4613,7 @@ function render() {
             });
             ctx.stroke();
 
-            // 내부 밝은 코어 중심선
+            // ?��? 밝�? 코어 중심??
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
             ctx.shadowBlur = 0;
@@ -4629,25 +4626,25 @@ function render() {
             ctx.stroke();
             ctx.restore();
         } else if (e.type === 'softFlash') {
-            // 눈부심 방지: 12% 이하의 은은하고 차분한 스크린 플래시
+            // ?��???방�?: 12% ?�하???�?�?�고 차분???�크�??�래??
             const alpha = (e.life / e.maxLife) * 0.12;
             ctx.save();
             ctx.fillStyle = `rgba(251, 191, 36, ${alpha})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.restore();
         } else if (e.type === 'netPull') {
-            // ---- 그물 당기기 이펙트: 수축하는 원 + 방사형 선 ----
+            // ---- 그물 ?�기�??�펙?? ?�축?�는 ??+ 방사????----
             const sc = gridToScreen(e.x, e.y);
             const netRadius3 = 3;
-            const prog = 1 - e.life / e.maxLife; // 0→1
-            const rad = scaleLength(netRadius3 * (1 - prog)); // 줄어드는 반경
+            const prog = 1 - e.life / e.maxLife; // 0??
+            const rad = scaleLength(netRadius3 * (1 - prog)); // 줄어?�는 반경
             ctx.globalAlpha = Math.max(0, e.life / e.maxLife) * 0.85;
             ctx.strokeStyle = '#2dd4bf';
             ctx.lineWidth = 3;
             ctx.shadowBlur = 0; ctx.shadowColor = '#2dd4bf';
             ctx.setLineDash([8, 8]);
             ctx.beginPath(); ctx.arc(sc.x, sc.y, rad, 0, Math.PI * 2); ctx.stroke();
-            // 방사형 선 (8개)
+            // 방사????(8�?
             ctx.lineWidth = 1.5;
             for (let ri = 0; ri < 8; ri++) {
                 const ang = (ri / 8) * Math.PI * 2;
@@ -4667,7 +4664,7 @@ function render() {
     if (pointerTooltip.alpha > 0) {
         ctx.save(); ctx.globalAlpha = pointerTooltip.alpha;
         ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        const formatNum = (n) => n.toFixed(1).replace('-', '−');
+        const formatNum = (n) => n.toFixed(1).replace('-', '??);
         const text = `(${formatNum(pointerTooltip.gridX)}, ${formatNum(pointerTooltip.gridY)})`;
         ctx.font = "18px 'Cambria Math','Times New Roman',serif";
         const tw = ctx.measureText(text).width;
@@ -4688,17 +4685,17 @@ function gameLoop(timestamp) {
     if (!lastGameLoopTime) lastGameLoopTime = timestamp;
     const dt = timestamp - lastGameLoopTime;
     
-    // 60FPS Capping (16.6ms) - 고주사율 모니터에서 미사일이 너무 빨라져 끊겨보이는 현상 방지
+    // 60FPS Capping (16.6ms) - 고주?�율 모니?�에??미사?�이 ?�무 빨라???�겨보이???�상 방�?
     if (dt < 16) {
         requestAnimationFrame(gameLoop);
         return;
     }
     
-    // 프레임 누적 보정 (창 최소화 등으로 dt가 너무 커진 경우 방지)
+    // ?�레???�적 보정 (�?최소???�으�?dt가 ?�무 커진 경우 방�?)
     if (dt > 100) {
         lastGameLoopTime = timestamp - 16;
     } else {
-        // 완벽한 60fps 주기를 맞추기 위해 16ms씩 더함 (단일 프레임 드랍 보정)
+        // ?�벽??60fps 주기�?맞추�??�해 16ms???�함 (?�일 ?�레???�랍 보정)
         lastGameLoopTime += 16; 
     }
 

@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>이차함수 포트리스 배틀 RPG</title>
-    <meta name="description" content="이차함수를 입력하여 포켓몬을 처치하는 수학 배틀 RPG">
+    <title>?�차?�수 ?�트리스 배�? RPG</title>
+    <meta name="description" content="?�차?�수�??�력?�여 ?�켓몬을 처치?�는 ?�학 배�? RPG">
     <link rel="stylesheet" href="css/style.css">
-    <!-- 보안 스크립트: 개발자 도구 및 F12 단축키/우클릭 차단 (v1.0.26 일반 스크립트 적용) -->
+    <!-- 보안 ?�크립트: 개발???�구 �?F12 ?�축???�클�?차단 (v1.0.26 ?�반 ?�크립트 ?�용) -->
     <script type="text/javascript">
         (function() {
-            // 1. 우클릭(컨텍스트 메뉴) 방지
+            // 1. ?�클�?컨텍?�트 메뉴) 방�?
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 return false;
             }, true);
 
-            // 2. 개발자 도구 단축키 차단 (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U)
+            // 2. 개발???�구 ?�축??차단 (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U)
             window.addEventListener('keydown', function(e) {
                 if (
                     e.keyCode === 123 || // F12
                     (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || // Ctrl+Shift+I, J, C
-                    (e.ctrlKey && e.keyCode === 85) // Ctrl+U (소스 보기)
+                    (e.ctrlKey && e.keyCode === 85) // Ctrl+U (?�스 보기)
                 ) {
                     if (e.keyCode !== 81) { 
                         e.preventDefault();
@@ -29,15 +29,15 @@
                 }
             }, true);
 
-            // 3. 무한 디버거 및 시간차 감지
+            // 3. 무한 ?�버�?�??�간�?감�?
             setInterval(function() {
                 let startTime = new Date();
                 debugger; 
                 if (new Date() - startTime > 100) {
                     document.body.innerHTML = `
                         <div style="background:#111;color:#ef4444;width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:sans-serif;text-align:center;position:fixed;top:0;left:0;z-index:9999999;">
-                            <h1 style="font-size:3rem;margin-bottom:20px;">🚨 보안 위반 감지 🚨</h1>
-                            <p style="font-size:1.5rem;color:#fff;">소스 분석 시도가 감지되어 실행을 차단합니다.</p>
+                            <h1 style="font-size:3rem;margin-bottom:20px;">?�� 보안 ?�반 감�? ?��</h1>
+                            <p style="font-size:1.5rem;color:#fff;">?�스 분석 ?�도가 감�??�어 ?�행??차단?�니??</p>
                         </div>
                     `;
                     document.body.style.overflow = 'hidden';
@@ -45,45 +45,45 @@
             }, 50);
         })();
     </script>
-    <!-- MathLive 수식 입력 라이브러리 -->
+    <!-- MathLive ?�식 ?�력 ?�이브러�?-->
     <script defer src="https://unpkg.com/mathlive"></script>
 </head>
 <body>
 
 <!-- ========== INTRO SCREEN ========== -->
 <div id="intro-screen">
-    <h1 id="intro-title">이차함수 포트리스<br>배틀 RPG</h1>
-    <p id="intro-subtitle">이차함수 그래프로 포켓몬을 처치하세요!</p>
+    <h1 id="intro-title">?�차?�수 ?�트리스<br>배�? RPG</h1>
+    <p id="intro-subtitle">?�차?�수 그래?�로 ?�켓몬을 처치?�세??</p>
 
     <div class="starter-grid">
-        <!-- 피카츄 -->
+        <!-- ?�카�?-->
         <div class="starter-card card-pikachu" onclick="startGame('pikachu')" data-id="25">
-            <img src="assets/starters/25.png" alt="피카츄" width="120" height="120">
-            <div class="name">피카츄</div>
-            <span class="type-badge">전기</span>
+            <img src="assets/starters/25.png" alt="?�카�? width="120" height="120">
+            <div class="name">?�카�?/div>
+            <span class="type-badge">?�기</span>
         </div>
-        <!-- 이상해씨 -->
+        <!-- ?�상?�씨 -->
         <div class="starter-card card-bulbasaur" onclick="startGame('bulbasaur')" data-id="1">
-            <img src="assets/starters/1.png" alt="이상해씨" width="120" height="120">
-            <div class="name">이상해씨</div>
-            <span class="type-badge">풀</span>
+            <img src="assets/starters/1.png" alt="?�상?�씨" width="120" height="120">
+            <div class="name">?�상?�씨</div>
+            <span class="type-badge">?�</span>
         </div>
-        <!-- 파이리 -->
+        <!-- ?�이�?-->
         <div class="starter-card card-charmander" onclick="startGame('charmander')" data-id="4">
-            <img src="assets/starters/4.png" alt="파이리" width="120" height="120">
-            <div class="name">파이리</div>
+            <img src="assets/starters/4.png" alt="?�이�? width="120" height="120">
+            <div class="name">?�이�?/div>
             <span class="type-badge">불꽃</span>
         </div>
-        <!-- 꼬부기 -->
+        <!-- 꼬�?�?-->
         <div class="starter-card card-squirtle" onclick="startGame('squirtle')" data-id="7">
-            <img src="assets/starters/7.png" alt="꼬부기" width="120" height="120">
-            <div class="name">꼬부기</div>
-            <span class="type-badge">물</span>
+            <img src="assets/starters/7.png" alt="꼬�?�? width="120" height="120">
+            <div class="name">꼬�?�?/div>
+            <span class="type-badge">�?/span>
         </div>
     </div>
 
-    <p class="intro-tip">포켓몬을 클릭하여 모험을 시작하세요 ✨</p>
-    <p class="version-info" style="font-size: 0.85rem; color: rgba(255,255,255,0.4); margin-top: 15px; text-align: center;">v1.4.295_260728_0948_외나무다리_한방더현상수정</p>
+    <p class="intro-tip">?�켓몬을 ?�릭?�여 모험???�작?�세????/p>
+    <p class="version-info" style="font-size: 0.85rem; color: rgba(255,255,255,0.4); margin-top: 15px; text-align: center;">v1.4.295_260728_0948_?�나무다�??�방?�현?�수??/p>
 </div>
 
 <!-- ========== GAME SCREEN ========== -->
@@ -102,21 +102,21 @@
                     <div class="char-name" id="ui-player-name">Player</div>
                     <div class="hp-bar-bg"><div class="hp-bar-fill" id="ui-player-hp-fill" style="background: linear-gradient(90deg,#3b82f6,#60a5fa);"></div></div>
                     <div class="hp-text" id="ui-player-hp-text">HP: 100/100</div>
-                    <div class="hp-text" id="ui-player-ap-text" style="color:#fbbf24;margin-top:2px;">행동력: 2.0/2.0</div>
+                    <div class="hp-text" id="ui-player-ap-text" style="color:#fbbf24;margin-top:2px;">?�동?? 2.0/2.0</div>
                 </div>
             </div>
 
             <!-- Stage Info -->
             <div class="glass-panel" id="stage-info">
                 <div id="stage-title">Stage 1</div>
-                <div id="terrain-info">푸른 들판</div>
+                <div id="terrain-info">?�른 ?�판</div>
                 <div style="margin-top:4px;font-weight:bold;color:#fbbf24;font-size:1.0rem;"><span id="ui-player-gold">0</span> G</div>
             </div>
         </div>
 
         <!-- Zoom Controls ( Chromebook & Touchpad support ) -->
         <div class="zoom-controls">
-            <button class="zoom-btn" onclick="changeZoom(0.9)" title="확대">확대</button>
+            <button class="zoom-btn" onclick="changeZoom(0.9)" title="?��?">?��?</button>
             <button class="zoom-btn" onclick="changeZoom(1.1)" title="축소">축소</button>
             <button class="zoom-btn" onclick="resetView()" title="초기 배율">초기 배율</button>
         </div>
@@ -124,13 +124,13 @@
         <!-- Bottom Panel -->
         <div id="bottom-panel" class="glass-panel">
             <div class="top-row-container">
-                <span id="guide-msg">이차함수 식을 입력하여 미사일을 발사하세요!</span>
+                <span id="guide-msg">?�차?�수 ?�을 ?�력?�여 미사?�을 발사?�세??</span>
                 <div class="missile-inventory" id="missile-inventory">
-                    <button id="btn-msl-normal" class="missile-btn active" onclick="selectMissile('normal')"><kbd>Q</kbd> 💣 보통: ∞</button>
-                    <button id="btn-msl-pierce" class="missile-btn" onclick="selectMissile('pierce')"><kbd>W</kbd> ☄️ 관통: 1</button>
-                    <button id="btn-msl-homing" class="missile-btn" onclick="selectMissile('homing')"><kbd>E</kbd> 🎯 유도: 1</button>
-                    <button id="btn-msl-satellite" class="missile-btn" onclick="selectMissile('satellite')"><kbd>R</kbd> 🛰️ 위성: 1</button>
-                    <button id="btn-msl-net" class="missile-btn" onclick="selectMissile('net')"><kbd>T</kbd> 🕸️ 그물: 1</button>
+                    <button id="btn-msl-normal" class="missile-btn active" onclick="selectMissile('normal')"><kbd>Q</kbd> ?�� 보통: ??/button>
+                    <button id="btn-msl-pierce" class="missile-btn" onclick="selectMissile('pierce')"><kbd>W</kbd> ?�️ 관?? 1</button>
+                    <button id="btn-msl-homing" class="missile-btn" onclick="selectMissile('homing')"><kbd>E</kbd> ?�� ?�도: 1</button>
+                    <button id="btn-msl-satellite" class="missile-btn" onclick="selectMissile('satellite')"><kbd>R</kbd> ?���??�성: 1</button>
+                    <button id="btn-msl-net" class="missile-btn" onclick="selectMissile('net')"><kbd>T</kbd> ?���?그물: 1</button>
                 </div>
             </div>
             <div class="input-row">
@@ -140,25 +140,25 @@
                     style="ime-mode:disabled;" inputmode="email">
                 </math-field>
                 <div class="util-btn-group">
-                    <!-- 조준방향 그룹 -->
+                    <!-- 조�?방향 그룹 -->
                     <div class="util-group-box">
-                        <span class="util-group-label">조준방향<span class="label-kbd-group"><kbd>[</kbd><kbd>]</kbd></span></span>
+                        <span class="util-group-label">조�?방향<span class="label-kbd-group"><kbd>[</kbd><kbd>]</kbd></span></span>
                         <div class="radio-switch-container">
-                            <button id="dir-left-btn" class="radio-btn" onclick="setPlayerFacing(-1)">왼쪽</button>
-                            <button id="dir-right-btn" class="radio-btn" onclick="setPlayerFacing(1)">오른쪽</button>
+                            <button id="dir-left-btn" class="radio-btn" onclick="setPlayerFacing(-1)">?�쪽</button>
+                            <button id="dir-right-btn" class="radio-btn" onclick="setPlayerFacing(1)">?�른�?/button>
                         </div>
                     </div>
-                    <!-- 이동 그룹 -->
+                    <!-- ?�동 그룹 -->
                     <div class="util-group-box">
-                        <span class="util-group-label">이동<span class="label-kbd-group"><kbd>Ctrl</kbd>+<kbd>방향키</kbd></span></span>
+                        <span class="util-group-label">?�동<span class="label-kbd-group"><kbd>Ctrl</kbd>+<kbd>방향??/kbd></span></span>
                         <div class="move-btn-container">
-                            <button class="btn-util icon-btn move-btn" onclick="movePlayer(-1)" title="왼쪽 이동">◀</button>
-                            <button class="btn-util icon-btn move-btn" onclick="movePlayer(1)" title="오른쪽 이동">▶</button>
+                            <button class="btn-util icon-btn move-btn" onclick="movePlayer(-1)" title="?�쪽 ?�동">?�</button>
+                            <button class="btn-util icon-btn move-btn" onclick="movePlayer(1)" title="?�른�??�동">??/button>
                         </div>
                     </div>
                 </div>
                 <button id="fire-btn" onclick="fireMissile()">
-                    🚀 발사!<br><kbd>Enter</kbd>
+                    ?? 발사!<br><kbd>Enter</kbd>
                 </button>
             </div>
         </div>
@@ -167,19 +167,19 @@
     <!-- Message Overlay -->
     <div id="message-overlay">
         <h1 id="msg-title">OUT!</h1>
-        <p id="msg-desc">그래프가 천장을 벗어났습니다.</p>
-        <button id="msg-btn" onclick="closeMessage()">다시 시도</button>
+        <p id="msg-desc">그래?��? 천장??벗어?�습?�다.</p>
+        <button id="msg-btn" onclick="closeMessage()">?�시 ?�도</button>
     </div>
 
-    <!-- 로딩 오버레이 스크린 -->
+    <!-- 로딩 ?�버?�이 ?�크�?-->
     <div id="loading-overlay" class="loading-screen hidden">
         <div class="spinner"></div>
-        <h2 id="loading-title">스테이지 준비 중...</h2>
-        <p id="loading-desc">새로운 모험이 곧 시작됩니다.</p>
+        <h2 id="loading-title">?�테?��? 준�?�?..</h2>
+        <p id="loading-desc">?�로??모험??�??�작?�니??</p>
     </div>
 </div>
 
-<!-- ========== SCRIPTS (순서 중요) ========== -->
+<!-- ========== SCRIPTS (?�서 중요) ========== -->
 <script src="js/data.js"></script>
 <script src="js/maps.js"></script>
 <script src="js/parser.js"></script>
