@@ -333,92 +333,79 @@ const TERRAINS = {
     }
 };
 
-// ── 솜사탕(2): 폭신한 긴 구름 1개, 기존 솜사탕 색상 ──
+// ── 솜사탕(2): 기존 솜사탕 스타일의 섬 1개 (화면 꽉 채움) + 시각/물리 완벽 동기화 ──
 const TERRAINS_cloud_garden2 = {
     cloud_garden2: {
         name: "솜사탕(2)",
         bg: ["#0284c7", "#38bdf8", "#bae6fd"],
-        color: "rgba(255, 228, 235, 0.95)",    // 기존 솜사탕 색상
-        outColor: "rgba(244, 114, 182, 0.95)", // 기존 솜사탕 테두리
-        isFloating: true,   // ★ 렌더링: 섬 렌더러 (공중 구름)
+        color: "rgba(255, 228, 235, 0.95)",
+        outColor: "rgba(244, 114, 182, 0.95)",
+        isFloating: true,
         deathZoneY: -25,
-        // ★ layers 없음 → func 단일 물리 (성층권 동일, 솟구치기 없음)
 
         init: function(seed) {
             this.islands = [[]];
-            const push = (s) => this.islands[0].push(s);
-
-            // ── 폭신한 긴 구름 1개 ──
-            // 파라미터
-            const startX = -22, endX = 18;
-            const width  = endX - startX;   // 40 units
-            const midX   = (startX + endX) / 2;
-            const cy     = -1.5;             // 화면 중앙 약간 아래
-            const mainRy = 2.2;             // 본체 타원 반높이
-            const bumpR  = 2.1;             // 상단 범프 반지름 (크고 풍성하게)
-            const botR   = 1.5;             // 하단 범프 반지름
-            const edgeR  = 3.0;             // 양끝 돌출 반지름 (넉넉히)
-
-            // 1. 본체 타원 (길고 납작한 중심)
-            push({ type:'ellipse', cx:midX, cy:cy, rx:width/2 + 1.0, ry:mainRy, rot:0 });
-
-            // 2. 왼쪽 / 오른쪽 큰 돌출 원
-            push({ type:'circle', cx:startX - 0.5, cy:cy, rx:edgeR,   ry:edgeR,   rot:0 });
-            push({ type:'circle', cx:endX   + 0.5, cy:cy, rx:edgeR,   ry:edgeR,   rot:0 });
-
-            // 3. 상단 범프: 10개, 크기 약간 변화 (중앙이 더 크게)
-            const nTop = 10;
-            for (let i = 0; i < nTop; i++) {
-                const t    = (i + 0.5) / nTop;                           // 0~1
-                const bx   = startX + t * width;
-                const edge = Math.sin(t * Math.PI);                     // 중앙↑ 양끝↓
-                const r    = bumpR * (0.78 + edge * 0.22);              // 1.64 ~ 2.10
-                const yOff = cy + mainRy - r * 0.55;
-                push({ type:'circle', cx:bx, cy:yOff, rx:r, ry:r, rot:0 });
-            }
-
-            // 4. 하단 범프: 7개, 작고 부드럽게
-            const nBot = 7;
-            for (let i = 0; i < nBot; i++) {
-                const t    = (i + 0.5) / nBot;
-                const bx   = startX + t * width;
-                const edge = Math.sin(t * Math.PI);
-                const r    = botR * (0.75 + edge * 0.25);
-                const yOff = cy - mainRy + r * 0.55;
-                push({ type:'circle', cx:bx, cy:yOff, rx:r, ry:r, rot:0 });
-            }
-
-            // 5. 상단 중간 중간 풍성함 추가 (반범프 레이어)
-            const nMid = 6;
-            for (let i = 0; i < nMid; i++) {
-                const t  = (i + 0.9) / nMid;
-                const bx = startX + t * width - 1.5;
-                push({ type:'ellipse', cx:bx, cy:cy + mainRy + 0.4, rx:2.4, ry:1.3, rot:0 });
+            const startX = -28;
+            const endX = 28;
+            const baseY = -2.0;
+            const width = endX - startX;
+            const midX = (startX + endX) / 2;
+            
+            // 중심 타원
+            this.islands[0].push({
+                type: 'ellipse',
+                cx: midX,
+                cy: baseY,
+                rx: width / 2 + 0.5,
+                ry: 1.8 + (Math.abs(Math.sin(midX * 0.7 + seed)) * 0.4),
+                rot: 0
+            });
+            
+            // 폭신폭신 원형 구름 뭉치 배치 (기존 솜사탕 로직 동일)
+            for (let x = startX; x <= endX; x += 1.6) {
+                const progress = (x - startX) / Math.max(1, width);
+                const edgeFactor = Math.sin(progress * Math.PI);
+                
+                const rTop = 1.5 + edgeFactor * 1.3 + (Math.cos(x * 1.5 + seed) * 0.4);
+                const yOff = Math.sin(x * 1.1 + seed) * 0.4;
+                this.islands[0].push({
+                    type: 'circle',
+                    cx: x,
+                    cy: baseY + yOff,
+                    rx: rTop,
+                    ry: rTop,
+                    rot: 0
+                });
+                
+                // 불규칙한 추가 구름 (아래쪽 위주로)
+                if (Math.random() > 0.4) {
+                    this.islands[0].push({
+                        type: 'ellipse',
+                        cx: x + (Math.random() - 0.5) * 2.0,
+                        cy: baseY - 0.5 + (Math.random() - 0.5) * 1.0,
+                        rx: 1.5 + Math.random() * 1.2,
+                        ry: 0.8 + Math.random() * 1.5,
+                        rot: 0
+                    });
+                }
             }
         },
 
-        // 물리 func: 구름 상단 단일 높이 (성층권과 동일 구조)
+        // 물리 func: islands 배열의 시각적 모양에 맞춰 정확한 최대 높이 반환
         func: function(x) {
-            const startX = -22, endX = 18;
-            const edgeExt = 2.5; // 양끝 돌출 원 반지름
-
-            // 양끝 돌출 원 범위
-            if (x >= startX - edgeExt && x < startX) {
-                const dx = x - startX;
-                return -1.5 + edgeExt * Math.sqrt(Math.max(0, 1 - (dx/edgeExt)*(dx/edgeExt)));
+            let maxY = -100;
+            if (!this.islands || !this.islands[0]) return maxY;
+            
+            for (const shape of this.islands[0]) {
+                if (x >= shape.cx - shape.rx && x <= shape.cx + shape.rx) {
+                    const dx = x - shape.cx;
+                    const t = dx / Math.max(0.0001, shape.rx);
+                    // 타원 방정식으로 해당 x에서의 최대 y 계산
+                    const topY = shape.cy + shape.ry * Math.sqrt(Math.max(0, 1 - t * t));
+                    if (topY > maxY) maxY = topY;
+                }
             }
-            if (x > endX && x <= endX + edgeExt) {
-                const dx = x - endX;
-                return -1.5 + edgeExt * Math.sqrt(Math.max(0, 1 - (dx/edgeExt)*(dx/edgeExt)));
-            }
-            // 본체 범위: 완만한 타원 상단 + 범프 높이
-            if (x >= startX && x <= endX) {
-                const halfW = (endX - startX) / 2;
-                const t     = (x - (startX + endX) / 2) / halfW;
-                const body  = -1.5 + 2.2 * Math.sqrt(Math.max(0, 1 - t * t));
-                return body + 2.1; // 본체 상단 + 범프 높이
-            }
-            return -100;
+            return maxY;
         }
     }
 };
