@@ -275,7 +275,7 @@ const TERRAINS_cloud_garden2 = {
         init: function(seed) {
             const rnd = (min, max) => Math.random() * (max - min) + min;
             this.islands3 = {
-                sole: { x0: -20, x1: 20, baseY: rnd(1.0, 2.5) }
+                sole: { x0: -26, x1: 26, baseY: rnd(-6.0, -4.5) }
             };
         },
         func: function(x) {
@@ -284,33 +284,32 @@ const TERRAINS_cloud_garden2 = {
             const { x0, x1, baseY } = isl.sole;
             if (x < x0 - 0.1 || x > x1 + 0.1) return -100;
 
-            const W  = x1 - x0;  // 40 units
-            const s  = baseY;    // 매 게임마다 달라지는 보조 시드
+            const W = x1 - x0;
+            const s = baseY; // 매 게임마다 달라지는 보조 시드
 
-            // 뭉게구름 봉우리 7개 (상대 위치 relX, 높이 h, 폭 w)
-            // (1 - d²)² 형태의 쿼틱 범프 → 둥글고 부드러운 솜사탕 모양
+            // 윗면: 아랫면과 유사하게 굴곡 거의 없는 완만한 물결 (최대 ~0.9)
             const puffs = [
-                { relX: 0.06, h: 2.0 + Math.sin(s * 3.1) * 0.5, w: 4.5 },
-                { relX: 0.20, h: 3.4 + Math.cos(s * 2.7) * 0.6, w: 5.5 },
-                { relX: 0.35, h: 4.2 + Math.sin(s * 1.9) * 0.5, w: 6.5 },
-                { relX: 0.50, h: 4.8 + Math.cos(s * 4.1) * 0.4, w: 7.0 },
-                { relX: 0.65, h: 4.0 + Math.sin(s * 2.3) * 0.6, w: 6.0 },
-                { relX: 0.80, h: 3.0 + Math.cos(s * 3.7) * 0.5, w: 5.0 },
-                { relX: 0.93, h: 1.8 + Math.sin(s * 1.7) * 0.4, w: 4.0 },
+                { relX: 0.08, h: 0.35 + Math.sin(s * 3.1) * 0.1,  w: 6.0 },
+                { relX: 0.22, h: 0.60 + Math.cos(s * 2.7) * 0.12, w: 7.0 },
+                { relX: 0.38, h: 0.80 + Math.sin(s * 1.9) * 0.1,  w: 8.0 },
+                { relX: 0.52, h: 0.90 + Math.cos(s * 4.1) * 0.08, w: 8.5 },
+                { relX: 0.66, h: 0.75 + Math.sin(s * 2.3) * 0.12, w: 7.5 },
+                { relX: 0.80, h: 0.55 + Math.cos(s * 3.7) * 0.1,  w: 7.0 },
+                { relX: 0.93, h: 0.30 + Math.sin(s * 1.7) * 0.08, w: 5.5 },
             ];
 
-            let topY = baseY; // 최솟값 = baseY (섬 바닥선)
+            let topY = baseY;
             for (const p of puffs) {
                 const cx = x0 + W * p.relX;
                 const d  = (x - cx) / p.w;
                 if (Math.abs(d) < 1.0) {
                     const t    = 1 - d * d;
-                    const bump = p.h * t * t; // 쿼틱: 꼭대기 둥글고 가장자리 완만
+                    const bump = p.h * t * t;
                     if (baseY + bump > topY) topY = baseY + bump;
                 }
             }
 
-            // 양 끝 15% 구간에서 부드럽게 낮아지게 (엣지 드롭)
+            // 양 끝 15%에서 부드럽게 낮아지게
             const absT = Math.abs(x - (x0 + W / 2)) / (W / 2);
             if (absT > 0.85) {
                 const fade = 1 - (absT - 0.85) / 0.15;
