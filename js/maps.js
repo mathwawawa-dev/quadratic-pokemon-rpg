@@ -279,32 +279,33 @@ const TERRAINS_cloud_garden2 = {
             };
         },
         func: function(x) {
+            // 뒤집기: 기존 아랫면 dip → 위로 반전하여 걷는 면의 언덕이 됨
             const isl = TERRAINS.cloud_garden2.islands3;
             if (!isl || !isl.sole) return -100;
             const { x0, x1, baseY } = isl.sole;
             if (x < x0 - 0.1 || x > x1 + 0.1) return -100;
 
             const W = x1 - x0;
-            const s = baseY; // 매 게임마다 달라지는 보조 시드
+            const s = baseY;
 
-            // 윗면: 아랫면과 유사하게 굴곡 거의 없는 완만한 물결 (최대 ~0.9)
-            const puffs = [
-                { relX: 0.08, h: 0.35 + Math.sin(s * 3.1) * 0.1,  w: 6.0 },
-                { relX: 0.22, h: 0.60 + Math.cos(s * 2.7) * 0.12, w: 7.0 },
-                { relX: 0.38, h: 0.80 + Math.sin(s * 1.9) * 0.1,  w: 8.0 },
-                { relX: 0.52, h: 0.90 + Math.cos(s * 4.1) * 0.08, w: 8.5 },
-                { relX: 0.66, h: 0.75 + Math.sin(s * 2.3) * 0.12, w: 7.5 },
-                { relX: 0.80, h: 0.55 + Math.cos(s * 3.7) * 0.1,  w: 7.0 },
-                { relX: 0.93, h: 0.30 + Math.sin(s * 1.7) * 0.08, w: 5.5 },
+            // 기존 아랫면 dip 위치(0.13,0.28,0.45,0.62,0.78,0.90)를 위로 반전
+            // 우측(0.78, 0.90)은 +0.7 추가로 더 높게
+            const bumps = [
+                { relX: 0.13, h: 0.9 + Math.cos(s * 2.3) * 0.3,        w: 5.0 },
+                { relX: 0.28, h: 1.2 + Math.sin(s * 3.7) * 0.3,        w: 5.5 },
+                { relX: 0.45, h: 1.1 + Math.cos(s * 1.7) * 0.2,        w: 6.0 },
+                { relX: 0.62, h: 1.3 + Math.sin(s * 2.9) * 0.3,        w: 5.5 },
+                { relX: 0.78, h: 1.0 + Math.cos(s * 4.3) * 0.2 + 0.7,  w: 5.0 }, // 우측 +0.7
+                { relX: 0.90, h: 0.7 + Math.sin(s * 1.3) * 0.2 + 0.7,  w: 4.0 }, // 우측 +0.7
             ];
 
             let topY = baseY;
-            for (const p of puffs) {
+            for (const p of bumps) {
                 const cx = x0 + W * p.relX;
                 const d  = (x - cx) / p.w;
                 if (Math.abs(d) < 1.0) {
                     const t    = 1 - d * d;
-                    const bump = p.h * t * t;
+                    const bump = p.h * t * t; // 위로 볼록
                     if (baseY + bump > topY) topY = baseY + bump;
                 }
             }
@@ -318,7 +319,7 @@ const TERRAINS_cloud_garden2 = {
 
             return topY;
         },
-        // 하단 바닥면: 상단과 다른 위치에 5개 작은 굴곡 (진폭 상단의 25%, 전체 두께 ~5)
+        // 아랫면: 기존 윗면(완만한 물결)을 아래로 반전
         funcBottom: function(x) {
             const isl = TERRAINS.cloud_garden2.islands3;
             if (!isl || !isl.sole) return -100;
@@ -327,32 +328,32 @@ const TERRAINS_cloud_garden2 = {
 
             const W = x1 - x0;
             const s = baseY;
-            const cloudThickness = 5.0; // 전체 두께
+            const cloudThickness = 5.0;
 
-            // 상단 봉우리 사이사이에 배치 (위상 0.13씩 어긋남)
-            const bottomPuffs = [
-                { relX: 0.13, h: 0.9 + Math.cos(s * 2.3) * 0.3, w: 5.0 },
-                { relX: 0.28, h: 1.2 + Math.sin(s * 3.7) * 0.3, w: 5.5 },
-                { relX: 0.45, h: 1.1 + Math.cos(s * 1.7) * 0.2, w: 6.0 },
-                { relX: 0.62, h: 1.3 + Math.sin(s * 2.9) * 0.3, w: 5.5 },
-                { relX: 0.78, h: 1.0 + Math.cos(s * 4.3) * 0.2, w: 5.0 },
-                { relX: 0.90, h: 0.7 + Math.sin(s * 1.3) * 0.2, w: 4.0 },
+            // 기존 윗면 puff 위치(0.08,0.22,0.38,0.52,0.66,0.80,0.93)를 아래로 반전
+            const dips = [
+                { relX: 0.08, h: 0.35 + Math.sin(s * 3.1) * 0.1,  w: 6.0 },
+                { relX: 0.22, h: 0.60 + Math.cos(s * 2.7) * 0.12, w: 7.0 },
+                { relX: 0.38, h: 0.80 + Math.sin(s * 1.9) * 0.1,  w: 8.0 },
+                { relX: 0.52, h: 0.90 + Math.cos(s * 4.1) * 0.08, w: 8.5 },
+                { relX: 0.66, h: 0.75 + Math.sin(s * 2.3) * 0.12, w: 7.5 },
+                { relX: 0.80, h: 0.55 + Math.cos(s * 3.7) * 0.1,  w: 7.0 },
+                { relX: 0.93, h: 0.30 + Math.sin(s * 1.7) * 0.08, w: 5.5 },
             ];
 
-            // 기준 바닥선 = baseY - cloudThickness, 굴곡은 아래로 볼록
             let botY = baseY - cloudThickness;
-            for (const p of bottomPuffs) {
+            for (const p of dips) {
                 const cx = x0 + W * p.relX;
                 const d  = (x - cx) / p.w;
                 if (Math.abs(d) < 1.0) {
                     const t    = 1 - d * d;
-                    const dip  = p.h * t * t; // 아래로 볼록
+                    const dip  = p.h * t * t; // 아래로
                     const candidate = baseY - cloudThickness - dip;
                     if (candidate < botY) botY = candidate;
                 }
             }
 
-            // 양 끝에서 baseY 쪽으로 올라와 자연스럽게 닫힘
+            // 양 끝에서 자연스럽게 닫힘
             const absT = Math.abs(x - (x0 + W / 2)) / (W / 2);
             if (absT > 0.85) {
                 const fade = 1 - (absT - 0.85) / 0.15;
