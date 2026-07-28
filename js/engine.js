@@ -666,7 +666,12 @@ function initStage() {
     let px = 0;
     let attempts = 0;
     do {
-        if (stage.terrain === 'garden' || stage.terrain === 'cloud_garden2') {
+        if (stage.terrain === 'cloud_garden2') {
+            // 단일 넓은 섬(-20~20) 위에 스폰
+            const _cg2 = TERRAINS.cloud_garden2.islands3;
+            const _sole = _cg2 && _cg2.sole;
+            px = _sole ? _sole.x0 + 2 + Math.random() * (_sole.x1 - _sole.x0 - 4) : Math.random() * 16 - 8;
+        } else if (stage.terrain === 'garden') {
             // 중앙 섬(-5~5) 위에 스폰
             px = -3 + Math.random() * 6;
         } else if (stage.terrain === 'cloud_garden') {
@@ -4010,7 +4015,9 @@ function render() {
 
         const gardenIslands = tData.islands3;
         const islandRanges = gardenIslands
-            ? [gardenIslands.left, gardenIslands.mid, gardenIslands.right]
+            ? (gardenIslands.sole
+                ? [gardenIslands.sole]
+                : [gardenIslands.left, gardenIslands.mid, gardenIslands.right])
             : [];
 
         // 각 섬을 sky 맵과 동일한 방식으로 개별 폴리곤으로 렌더링

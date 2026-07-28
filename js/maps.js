@@ -271,25 +271,19 @@ const TERRAINS_cloud_garden2 = {
         color: "rgba(255, 228, 235, 0.95)",
         outColor: "rgba(244, 114, 182, 0.95)",
         deathZoneY: -25,
-        islands3: null,
+        islands3: null,  // { sole: {x0, x1, baseY} }
         init: function(seed) {
             const rnd = (min, max) => Math.random() * (max - min) + min;
             this.islands3 = {
-                left:  { x0: -24, x1: -10, baseY: rnd(-1.0, 1.0)  },
-                mid:   { x0:  -6, x1:   6, baseY: rnd( 2.0, 3.5)  },
-                right: { x0:  10, x1:  24, baseY: rnd( 0.0, 1.5)  }
+                sole: { x0: -20, x1: 20, baseY: rnd(1.0, 2.5) }
             };
         },
         func: function(x) {
             const isl = TERRAINS.cloud_garden2.islands3;
-            if (!isl) return -100;
-            let island = null;
-            if (x >= isl.left.x0 - 0.1 && x <= isl.left.x1 + 0.1) island = isl.left;
-            else if (x >= isl.mid.x0 - 0.1 && x <= isl.mid.x1 + 0.1) island = isl.mid;
-            else if (x >= isl.right.x0 - 0.1 && x <= isl.right.x1 + 0.1) island = isl.right;
-            if (!island) return -100;
+            if (!isl || !isl.sole) return -100;
+            const { x0, x1, baseY } = isl.sole;
+            if (x < x0 - 0.1 || x > x1 + 0.1) return -100;
 
-            const { x0, x1, baseY } = island;
             const t = (x - (x0 + x1) / 2) / ((x1 - x0) / 2);
             const edgeFade = Math.cos(Math.max(-1, Math.min(1, t)) * Math.PI / 2.2);
 
