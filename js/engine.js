@@ -619,14 +619,14 @@ function initStage() {
                       terrainHeights[key] = [y];
                       terrainBottoms[key] = [y - 5.0];
                   }
-              } else if (stage.terrain === 'garden' || stage.terrain === 'cloud_garden2') {
+              } else if (stage.terrain === 'garden' || stage.terrain === 'cloud_garden2' || stage.terrain === 'cloud_garden') {
                   // sky와 동일한 단일 func 방식: 섬 밖은 -100
                   if (y <= -99) {
                       terrainHeights[key] = [-100];
                       terrainBottoms[key] = [-100];
                   } else {
                       terrainHeights[key] = [y];
-                      if (stage.terrain === 'cloud_garden2') {
+                      if (stage.terrain === 'cloud_garden2' || stage.terrain === 'cloud_garden') {
                           // funcBottom으로 자연스러운 구름 바닥면 계산
                           const botY = tData.funcBottom ? tData.funcBottom(x) : y - 5.0;
                           terrainBottoms[key] = [botY > -99 ? botY : -100];
@@ -4080,7 +4080,7 @@ function render() {
                 if (inIsland) drawIslandPoly(islandPoints, islandThickness);
             }
         }
-    } else if (stage.terrain === 'garden' || stage.terrain === 'cloud_garden2') {
+    } else if (stage.terrain === 'garden' || stage.terrain === 'cloud_garden2' || stage.terrain === 'cloud_garden') {
         const thickness = 4.5;
 
         let targetCtx = ctx;

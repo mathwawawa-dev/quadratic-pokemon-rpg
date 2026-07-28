@@ -160,7 +160,7 @@ const TERRAINS = {
         isFloating: true,
         deathZoneY: -25,
         init: function(seed) {
-            this.islands = [[], [], []];
+            this.islands = [[]];
             const rnd = (min, max) => Math.random() * (max - min) + min;
 
             const addCloudCluster = (layer, startX, endX, baseY) => {
@@ -209,49 +209,39 @@ const TERRAINS = {
             };
 
             // Middle Layer (3개) - x축 부근, 서로 가깝게 재배치
-            addCloudCluster(1, rnd(-25, -23), rnd(-9,  -7), rnd(1, 3));   // 좌: -24~-8
-            addCloudCluster(1, rnd(-6,  -4),  rnd(6,   8), rnd(-1, 1));   // 중: -5~7
-            addCloudCluster(1, rnd(8.2, 10.2),rnd(22,  24),rnd(3, 5));   // 우: 9.2~23
+            addCloudCluster(0, rnd(-25, -23), rnd(-9,  -7), rnd(1, 3));   // 좌: -24~-8
+            addCloudCluster(0, rnd(-6,  -4),  rnd(6,   8), rnd(-1, 1));   // 중: -5~7
+            addCloudCluster(0, rnd(8.2, 10.2),rnd(22,  24),rnd(3, 5));   // 우: 9.2~23
         },
-        layers: [
-            (x) => {
-                let maxY = -100;
-                if (!TERRAINS.cloud_garden.islands || !TERRAINS.cloud_garden.islands[0]) return maxY;
-                for (let s of TERRAINS.cloud_garden.islands[0]) {
-                    const dx = Math.abs(x - s.cx);
-                    if (dx <= s.rx) {
-                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
-                        if (topY > maxY) maxY = topY;
-                    }
+        // 단일 func 방식으로 지형 상단 반환
+        func: function(x) {
+            const isl = TERRAINS.cloud_garden.islands;
+            if (!isl) return -100;
+            let maxY = -100;
+            for (const s of isl[0]) {
+                const dx = Math.abs(x - s.cx);
+                if (dx <= s.rx) {
+                    const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx*dx)/(s.rx*s.rx)));
+                    if (topY > maxY) maxY = topY;
                 }
-                return maxY;
-            },
-            (x) => {
-                let maxY = -100;
-                if (!TERRAINS.cloud_garden.islands || !TERRAINS.cloud_garden.islands[1]) return maxY;
-                for (let s of TERRAINS.cloud_garden.islands[1]) {
-                    const dx = Math.abs(x - s.cx);
-                    if (dx <= s.rx) {
-                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
-                        if (topY > maxY) maxY = topY;
-                    }
-                }
-                return maxY;
-            },
-            (x) => {
-                let maxY = -100;
-                if (!TERRAINS.cloud_garden.islands || !TERRAINS.cloud_garden.islands[2]) return maxY;
-                for (let s of TERRAINS.cloud_garden.islands[2]) {
-                    const dx = Math.abs(x - s.cx);
-                    if (dx <= s.rx) {
-                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
-                        if (topY > maxY) maxY = topY;
-                    }
-                }
-                return maxY;
             }
-        ],
-        func: (x) => -100
+            return maxY;
+        },
+        // 단일 funcBottom 방식으로 지형 하단 반환
+        funcBottom: function(x) {
+            const isl = TERRAINS.cloud_garden.islands;
+            if (!isl || !isl[0]) return -100;
+            let minY = 1000;
+            let found = false;
+            for (const s of isl[0]) {
+                if (x >= s.cx - s.rx && x <= s.cx + s.rx) {
+                    const dx = x - s.cx;
+                    const bY = s.cy - s.ry * Math.sqrt(Math.max(0, 1 - (dx*dx)/(s.rx*s.rx)));
+                    if (bY < minY) { minY = bY; found = true; }
+                }
+            }
+            return found ? minY : -100;
+        }
     }
 };
 
