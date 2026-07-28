@@ -34,7 +34,7 @@ const TERRAINS = {
             const blockIdx = Math.floor((x + seed * 1.7) / 4.0);
             const h1 = Math.abs(Math.sin(blockIdx * 13.7 + seed * 0.5) * 43758.5453) % 1;
             const h2 = Math.abs(Math.cos(blockIdx * 7.3 - seed * 0.3) * 19234.1234) % 1;
-            return 4.0; // 6발 완전파괴 (0.7x6=4.2>4.0), 시각/물리 100% 동기화
+            return 7.0; // 10발 유효히트 후 완전파괴 (0.7x10=7.0), 적 히트 보정 포함
         }
     },
     sky: {
