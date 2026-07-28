@@ -620,13 +620,15 @@ function initStage() {
                       terrainBottoms[key] = [y - 5.0];
                   }
               } else if (stage.terrain === 'cloud_garden2') {
-                  // 성층권 동일 물리: 지형 있으면 [y], 없으면 [-100]
-                  if (y <= -99) {
+                  // 범위 -25~+25, 있으면 [y], 없으면 [-100]
+                  if (y <= -99 || x < -25 || x > 25) {
                       terrainHeights[key] = [-100];
                       terrainBottoms[key] = [-100];
                   } else {
                       terrainHeights[key] = [y];
-                      const t = (x - (-28 + 28) / 2) / 28; terrainBottoms[key] = [-2.0 - 1.5 * Math.sqrt(Math.max(0, 1 - t * t))];
+                      // 아랫면 울퉁불퉁: 윗면(y)에서 두께 6.0 + 아랫면 범프
+                      const botBumps = Math.abs(Math.sin(x * 0.45 + 1.5)) * 0.8 + Math.abs(Math.cos(x * 0.3 + 0.8)) * 0.5 - 0.3;
+                      terrainBottoms[key] = [y - 6.0 - botBumps];
                   }
               } else if (stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
@@ -926,8 +928,8 @@ function initStage() {
             { bx: -2,  by: 5.0,  speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
         ];
     } else if (stage.terrain === 'cloud_garden2') {
-        const cloudStartX = -28;
-        const cloudEndX = 28;
+        const cloudStartX = -25;
+        const cloudEndX = 25;
         
         let targetCtx = ctx;
         let craterCanvas = null;
@@ -4084,8 +4086,8 @@ function render() {
             }
         }
     } else if (stage.terrain === 'cloud_garden2') {
-        const cloudStartX = -28;
-        const cloudEndX = 28;
+        const cloudStartX = -25;
+        const cloudEndX = 25;
         
         let targetCtx = ctx;
         let craterCanvas = null;

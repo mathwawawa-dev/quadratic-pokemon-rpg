@@ -311,21 +311,23 @@ const TERRAINS_cloud_garden2 = {
         // isFloating 없음 -> 성층권(sky)처럼 표준 폴리곤 렌더링 사용
         deathZoneY: -25,
 
-        // 물리 func: 몽글몽글한 구름 윗면의 수학적 곡선
+        // 물리 func: 넓고 납작한 뭉게구름 윗면 (x -25~+25, y -1~3)
         func: function(x) {
-            const startX = -28;
-            const endX = 28;
+            const startX = -25;
+            const endX = 25;
             
             if (x < startX || x > endX) return -100;
 
-            // 전체적인 둥근 몸통 곡선 (가운데가 높고 양끝이 낮음)
+            // 납작한 타원형 기본 몸통: 가운데 y≈3, 양끝 y≈-1
             const width = endX - startX;
             const t = (x - (startX + endX) / 2) / (width / 2);
-            const mainArc = -2.0 + 2.0 * Math.sqrt(Math.max(0, 1 - t * t));
-            
-            // 몽글몽글한 범프 (절댓값 사인파형을 겹쳐서 올록볼록하게)
-            // x값에 따라 주기적으로 볼록 튀어나오게 함
-            const bumps = Math.sin(x * 0.6) * 0.7 + Math.cos(x * 0.4) * 0.4;
+            const mainArc = 1.0 + 2.0 * Math.sqrt(Math.max(0, 1 - t * t * 0.85));
+
+            // 윗면 몽글몽글 범프: 완만한 주기로 올록볼록
+            const bumps =
+                Math.abs(Math.sin(x * 0.55 + 0.3)) * 0.9
+              + Math.abs(Math.cos(x * 0.38 + 1.1)) * 0.5
+              - 0.5; // 평균 높이 보정
 
             return mainArc + bumps;
         }
