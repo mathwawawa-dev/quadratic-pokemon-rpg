@@ -626,7 +626,7 @@ function initStage() {
                       terrainBottoms[key] = [-100];
                   } else {
                       terrainHeights[key] = [y];
-                      terrainBottoms[key] = [-100.0]; // 솜사탕(2) 관통 방지
+                      const t = (x - (-28 + 28) / 2) / 28; terrainBottoms[key] = [-2.0 - 1.5 * Math.sqrt(Math.max(0, 1 - t * t))];
                   }
               } else if (stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
