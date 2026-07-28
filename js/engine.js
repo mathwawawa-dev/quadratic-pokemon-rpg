@@ -1092,6 +1092,7 @@ window.addEventListener('keydown', (e) => {
     }
     // Ctrl+Shift+Q: 정답 함수 자동 계산 & 즉시 발사 (스타팅 화면 Q 3회 연타 치트 해금 시만 작동)
     if (e.ctrlKey && e.shiftKey && (e.key === 'q' || e.key === 'Q')) {
+        if (!window.isCheatUnlocked) return;
         const currentTerrainData = TERRAINS[LEVELS[currentStage % LEVELS.length].terrain];
         const deathZoneY = currentTerrainData.deathZoneY !== undefined ? currentTerrainData.deathZoneY : -8;
         const aliveEnemies = enemies.filter(ent => ent.hp > 0 && ent.y >= deathZoneY);
