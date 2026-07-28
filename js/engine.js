@@ -389,7 +389,12 @@ function createCrater(cx, cy, radius) {
             if (y !== -100 && y >= craterBottomY && y <= craterTopY + 0.3) {
                 terrainHeights[key][i] = Math.min(y, craterBottomY);
                 if (isFloating || stage.terrain === 'sky' || stage.terrain === 'log_bridge') {
-                    if (terrainBottoms[key] && terrainHeights[key][i] < terrainBottoms[key][i]) {
+                    if (stage.terrain === 'log_bridge') {
+                        // 외나무다리: destination-out 시각 렌더링과 물리 충돌 동기화
+                        // terrainBottoms가 초기화되지 않아 기존 조건이 항상 false → 지형이 낮아지기만 하고 제거 안 됨
+                        // → 폭발 구체 범위에 닿으면 즉시 완전 파괴(-100) 처리하여 시각·물리 일치
+                        terrainHeights[key][i] = -100;
+                    } else if (terrainBottoms[key] && terrainHeights[key][i] < terrainBottoms[key][i]) {
                         terrainHeights[key][i] = -100;
                     }
                 }
