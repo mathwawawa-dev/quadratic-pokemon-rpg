@@ -388,7 +388,7 @@ function createCrater(cx, cy, radius) {
             // 폭발 구체 범위(craterBottomY ~ craterTopY) 내에 위치한 표면 지형만 파괴되도록 정밀 검증 (상단 천장 언덕 유지를 통해 순간이동 슬라이딩 버그 예방)
             if (y !== -100 && y >= craterBottomY && y <= craterTopY + 0.3) {
                 terrainHeights[key][i] = Math.min(y, craterBottomY);
-                if (isFloating || stage.terrain === 'sky' || stage.terrain === 'log_bridge') {
+                if (isFloating || stage.terrain === 'sky' || stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2') {
                     // terrainBottoms는 부유맵·log_bridge 모두 buildTerrain에서 초기화됨
                     //   <  조건: 바닥보다 0.5 아래 갔을 때 -> 1발 늦음
                     //   <= 조건: 표면이 정확히 바닥에 닿을 때 -> 타이밍 정확
@@ -2505,7 +2505,7 @@ function updateGame() {
                             for (let i = 0; i < origYs.length; i++) {
                                 const origY = origYs[i];
                                 if (ty <= origY && origY !== -100) {
-                                    if (isFloatingMapLocal || stage.terrain === 'sky' || stage.terrain === 'log_bridge') {
+                                    if (isFloatingMapLocal || stage.terrain === 'sky' || stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2') {
                                         const bottomY = origY - 5.0; 
                                         if (ty >= bottomY) { insideTerrain = true; break; }
                                     } else {
