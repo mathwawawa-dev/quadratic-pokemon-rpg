@@ -126,8 +126,8 @@ const TERRAINS = {
             const rnd = (min, max) => Math.random() * (max - min) + min;
             this.islands3 = {
                 left:  { x0: -24, x1: -10, baseY: rnd(-1.0, 1.0)  },
-                mid:   { x0:  -6, x1:   6, baseY: rnd( 2.0, 3.5)  },
-                right: { x0:  10, x1:  24, baseY: rnd( 0.0, 1.5)  }
+                mid:   { x0:  -6, x1:   6, baseY: rnd(-4.0, -2.5) },
+                right: { x0:  10, x1:  24, baseY: rnd( 2.0, 3.5)  }
             };
         },
 
