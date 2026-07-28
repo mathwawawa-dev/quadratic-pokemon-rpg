@@ -390,8 +390,13 @@ function createCrater(cx, cy, radius) {
                 terrainHeights[key][i] = Math.min(y, craterBottomY);
                 if (isFloating || stage.terrain === 'sky' || stage.terrain === 'log_bridge') {
                     // terrainBottoms는 부유맵·log_bridge 모두 buildTerrain에서 초기화됨
-                    // log_bridge: surfaceY - getThickness(x), 두께 4~7유닛 완전 관통 시 -100
-                    if (terrainBottoms[key] && terrainHeights[key][i] < terrainBottoms[key][i]) {
+                    // log_bridge: 폭발 1발당 표면 -0.5유닛. 엄격 부등호(<)만 사용 시
+                    // 마지막 한 방에서 craterBottomY = terrainBottoms - ε → 딱 경계 → "한 방 더" 현상
+                    // → 0.5유닛 마진 추가로 시각 파괴 시점과 물리 파괴 시점 동기화
+                    const _destroyThreshold = (stage.terrain === 'log_bridge' && terrainBottoms[key])
+                        ? terrainBottoms[key][i] + 0.5
+                        : (terrainBottoms[key] ? terrainBottoms[key][i] : -Infinity);
+                    if (terrainBottoms[key] && terrainHeights[key][i] < _destroyThreshold) {
                         terrainHeights[key][i] = -100;
                     }
                 }
