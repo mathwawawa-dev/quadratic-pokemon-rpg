@@ -208,18 +208,10 @@ const TERRAINS = {
                 }
             };
 
-            // 사진 형태 상단/중단/하단 지그재그 구름섬 6개 무작위 생성
-            // Top Layer (1개)
-            addCloudCluster(0, rnd(-12, -8), rnd(10, 14), rnd(11, 13));
-
-            // Middle Layer (3개)
-            addCloudCluster(1, rnd(-32, -30), rnd(-18, -16), rnd(1, 3));
-            addCloudCluster(1, rnd(-6, -4), rnd(6, 8), rnd(-1, 1));
-            addCloudCluster(1, rnd(16, 18), rnd(30, 32), rnd(3, 5));
-
-            // Bottom Layer (2개)
-            addCloudCluster(2, rnd(-24, -22), rnd(-6, -4), rnd(-12, -10));
-            addCloudCluster(2, rnd(8, 10), rnd(26, 28), rnd(-14, -12));
+            // Middle Layer (3개) - x축 부근, 서로 가깝게 재배치
+            addCloudCluster(1, rnd(-25, -23), rnd(-9,  -7), rnd(1, 3));   // 좌: -24~-8
+            addCloudCluster(1, rnd(-6,  -4),  rnd(6,   8), rnd(-1, 1));   // 중: -5~7
+            addCloudCluster(1, rnd(8.2, 10.2),rnd(22,  24),rnd(3, 5));   // 우: 9.2~23
         },
         layers: [
             (x) => {
