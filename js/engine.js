@@ -953,9 +953,9 @@ function initStage() {
         ];
     } else if (stage.terrain === 'cloud_garden2') {
         cloudParams = [
-            { bx: -12, by: 3.0,  speed: 4000, radius: 0.65, alpha: 0.9, isPowerCloud: true, colorType: starterData.type },
-            { bx:   6, by: 1.5,  speed: 4500, radius: 0.75, alpha: 0.9, isPowerCloud: true, colorType: starterData.type },
-            { bx:  16, by: 2.5,  speed: 3800, radius: 0.55, alpha: 0.9, isPowerCloud: true, colorType: starterData.type }
+            { bx: -12, by: 10.0, speed: 4000, radius: 0.65, alpha: 0.9, isPowerCloud: true, colorType: starterData.type },
+            { bx:   6, by:  8.5, speed: 4500, radius: 0.75, alpha: 0.9, isPowerCloud: true, colorType: starterData.type },
+            { bx:  16, by:  9.5, speed: 3800, radius: 0.55, alpha: 0.9, isPowerCloud: true, colorType: starterData.type }
         ];
     } else if (stage.terrain === 'ocean') {
         cloudParams = [
@@ -2301,9 +2301,9 @@ function updateGame() {
                                 life: 35 + Math.random()*20,
                                 color: candyColors[pi % candyColors.length] });
                         }
-                        // 새 위치에 재생성 (지형 위 공중)
-                        cp.bx = (Math.random() - 0.5) * 44; // -22 ~ 22
-                        cp.by = -2.5 + Math.random() * 3.5; // -2.5 ~ 1.0 (지형 위 공중)
+                        // 새 위치에 재생성 (지형 위 공중, 높이 상향)
+                        cp.bx = (Math.random() - 0.5) * 44;
+                        cp.by = 7.5 + Math.random() * 4.0; // 7.5 ~ 11.5
                     } else {
                         // 일반 파워업 구름의 통과 이펙트
                         for (let pi=0; pi<5; pi++) {
@@ -3785,13 +3785,15 @@ function render() {
         if (stage.terrain === 'cloud_garden2' && cp.isPowerCloud) {
             const r = scaleLength(currentRadius);
             offCtx.save();
-            // 무지개 방사형 그라데이션
-            const hue = (Date.now() / 20 + cp.bx * 30) % 360;
+            // 핑크/라벤더/연표 계열 hue만 순환 (280~360)
+            const hueBase = 280;
+            const hueRange = 80;
+            const hue = hueBase + ((Date.now() / 25 + cp.bx * 20) % hueRange);
             const grad = offCtx.createRadialGradient(c.x - r*0.3, c.y - r*0.3, 0, c.x, c.y, r);
-            grad.addColorStop(0,   `hsla(${hue},       100%, 95%, 0.95)`);
-            grad.addColorStop(0.4, `hsla(${(hue+60)%360}, 100%, 80%, 0.85)`);
-            grad.addColorStop(0.8, `hsla(${(hue+180)%360},100%, 65%, 0.70)`);
-            grad.addColorStop(1,   `hsla(${(hue+240)%360},100%, 50%, 0.40)`);
+            grad.addColorStop(0,   `hsla(${hue},              100%, 95%, 0.95)`);
+            grad.addColorStop(0.4, `hsla(${hueBase + ((hue - hueBase + 20) % hueRange)}, 100%, 82%, 0.88)`);
+            grad.addColorStop(0.8, `hsla(${hueBase + ((hue - hueBase + 50) % hueRange)}, 90%,  70%, 0.70)`);
+            grad.addColorStop(1,   `hsla(${hueBase + ((hue - hueBase + 70) % hueRange)}, 80%,  55%, 0.40)`);
             offCtx.beginPath();
             offCtx.arc(c.x, c.y, r, 0, Math.PI * 2);
             offCtx.fillStyle = grad;
@@ -3804,7 +3806,7 @@ function render() {
             // 윤곽 링
             offCtx.beginPath();
             offCtx.arc(c.x, c.y, r, 0, Math.PI*2);
-            offCtx.strokeStyle = `hsla(${(hue+120)%360},100%,75%,0.55)`;
+            offCtx.strokeStyle = `hsla(${hueBase + ((hue - hueBase + 40) % hueRange)},100%,75%,0.55)`;
             offCtx.lineWidth = Math.max(1.5, r*0.07);
             offCtx.stroke();
             offCtx.restore();
