@@ -395,7 +395,6 @@ function createCrater(cx, cy, radius) {
                     if (terrainBottoms[key] && terrainHeights[key][i] <= terrainBottoms[key][i]) {
                         terrainHeights[key][i] = -100;
                     }
-                    }
                 }
             }
         }
