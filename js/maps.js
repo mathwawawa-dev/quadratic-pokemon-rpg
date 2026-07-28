@@ -319,8 +319,10 @@ const TERRAINS_cloud_garden2 = {
                 const _fade = 0.5 * (1 + Math.cos(_t * Math.PI)); // cosine 1→0
                 topY = baseY + (topY - baseY) * _fade;
             } else if (_nT > 0.80) {
-                const _t    = (_nT - 0.80) / 0.20; // 0→1
-                topY = baseY + (topY - baseY) * Math.max(0, 1 - _t);
+                // 우측: cosine으로 둥궽게 수렴 (선형 대신)
+                const _t    = (_nT - 0.80) / 0.20;
+                const _cosFade = 0.5 * (1 + Math.cos(_t * Math.PI)); // 1→0 부드럽게
+                topY = baseY + (topY - baseY) * _cosFade;
             }
 
             return topY;
@@ -363,14 +365,16 @@ const TERRAINS_cloud_garden2 = {
             const normT = (x - mid) / (W / 2);
 
             if (normT < -0.50) {
-                // 좌측: cosine으로 baseY에 수렴 (이등변삼각형 둥근 테이퍼, 상단과 동일 범위)
+                // 좌측: cosine으로 (baseY - 1.5)에 수렴 → 끝이 살짝 아래로
                 const _t    = (-0.50 - normT) / 0.50;
                 const _fade = 0.5 * (1 + Math.cos(_t * Math.PI));
-                botY = baseY + (botY - baseY) * _fade;
+                const _botTarget = baseY - 1.5; // 끝점을 baseY보다 약간 낮게
+                botY = _botTarget + (botY - _botTarget) * _fade;
             } else if (normT > 0.80) {
-                // 우측: 선형으로 baseY에 수렴 (위아래 동시 얇아짐)
-                const _t = (normT - 0.80) / 0.20;
-                botY = baseY + (botY - baseY) * Math.max(0, 1 - _t);
+                // 우측: cosine으로 baseY에 수렴 (둥궽게 끓준)
+                const _t    = (normT - 0.80) / 0.20;
+                const _cosFade = 0.5 * (1 + Math.cos(_t * Math.PI));
+                botY = baseY + (botY - baseY) * _cosFade;
             }
 
             return botY;
