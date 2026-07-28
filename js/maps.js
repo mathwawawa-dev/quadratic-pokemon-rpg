@@ -24,17 +24,17 @@ const TERRAINS = {
     },
     log_bridge: {
         name: "외나무다리",
-        bg: ["#1a4a25", "#3a8a48", "#80cc90", "#c8f0d0"],
+        bg: ["#38bdf8", "#7dd3fc", "#bae6fd"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -8,
-        func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 - 1.0,
+        func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 + 0.7,
         getThickness: (x) => {
             // 4.0 단위 블록 기반 해시 → 블록 경계에서만 두께 변화 (파도 너울 방지)
             const seed = terrainSeed || 0;
             const blockIdx = Math.floor((x + seed * 1.7) / 4.0);
             const h1 = Math.abs(Math.sin(blockIdx * 13.7 + seed * 0.5) * 43758.5453) % 1;
             const h2 = Math.abs(Math.cos(blockIdx * 7.3 - seed * 0.3) * 19234.1234) % 1;
-            return 7.0; // 10발 유효히트 후 완전파괴 (0.7x10=7.0), 적 히트 보정 포함
+            return 4.0 + h1 * 1.5 + h2 * 1.5; // 4.0 ~ 7.0
         }
     },
     sky: {
