@@ -125,9 +125,9 @@ const TERRAINS = {
         init: function(seed) {
             const rnd = (min, max) => Math.random() * (max - min) + min;
             this.islands3 = {
-                left:  { x0: -24, x1: -12, baseY: rnd(-1.0, 1.0)  },
-                mid:   { x0:  -5, x1:   5, baseY: rnd( 2.0, 3.5)  },
-                right: { x0:  12, x1:  24, baseY: rnd( 0.0, 1.5)  }
+                left:  { x0: -24, x1: -10, baseY: rnd(-1.0, 1.0)  },
+                mid:   { x0:  -6, x1:   6, baseY: rnd( 2.0, 3.5)  },
+                right: { x0:  10, x1:  24, baseY: rnd( 0.0, 1.5)  }
             };
         },
 
@@ -135,20 +135,21 @@ const TERRAINS = {
         func: function(x) {
             const isl = TERRAINS.garden.islands3; // this 바인딩 손실 방지
             if (!isl) return -100;
-            // 어느 섬에 속하는지 확인
+            // 어느 섬에 속하는지 확인 (부동소수점 오차 방지를 위해 0.1 여유)
             let island = null;
-            if (x >= isl.left.x0  && x <= isl.left.x1)  island = isl.left;
-            else if (x >= isl.mid.x0 && x <= isl.mid.x1) island = isl.mid;
-            else if (x >= isl.right.x0 && x <= isl.right.x1) island = isl.right;
+            if (x >= isl.left.x0 - 0.1 && x <= isl.left.x1 + 0.1) island = isl.left;
+            else if (x >= isl.mid.x0 - 0.1 && x <= isl.mid.x1 + 0.1) island = isl.mid;
+            else if (x >= isl.right.x0 - 0.1 && x <= isl.right.x1 + 0.1) island = isl.right;
             if (!island) return -100;
 
             const { x0, x1, baseY } = island;
             const t = (x - (x0 + x1) / 2) / ((x1 - x0) / 2); // -1 ~ +1
-            const edgeFade = Math.sqrt(Math.max(0, 1 - t * t * 0.96)); // 양끝 부드럽게 마감
+            // 가장자리로 갈수록 부드럽게 떨어지는 코사인 곡선 적용 (더 예쁜 섬 모양)
+            const edgeFade = Math.cos(Math.max(-1, Math.min(1, t)) * Math.PI / 2.2);
 
             // 섬 위 지형 굴곡 (적당히 자연스럽게)
             const bumps = Math.sin(x * 0.55) * 0.6 + Math.cos(x * 0.9 + 1.0) * 0.4;
-            return (baseY + bumps) * edgeFade + (1 - edgeFade) * (baseY - 1.0);
+            return (baseY + bumps) * edgeFade + (1 - edgeFade) * (baseY - 1.5);
         }
     }
     ,cloud_garden: {
