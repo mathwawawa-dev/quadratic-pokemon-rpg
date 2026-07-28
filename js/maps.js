@@ -317,7 +317,8 @@ const TERRAINS_cloud_garden2 = {
             if (_nT < -0.50) {
                 const _t    = (-0.50 - _nT) / 0.50; // 0→1
                 const _fade = 0.5 * (1 + Math.cos(_t * Math.PI)); // cosine 1→0
-                topY = baseY + (topY - baseY) * _fade;
+                const _topTargetL = baseY - 1.0; // 좌측 끝 상단 수렴점 (살짝 체짐)
+                topY = _topTargetL + (topY - _topTargetL) * _fade;
             } else if (_nT > 0.80) {
                 // 우측: cosine 수렴, 끝점은 baseY+0.8로 (일정 두께 유지)
                 const _t      = (_nT - 0.80) / 0.20;
@@ -375,7 +376,7 @@ const TERRAINS_cloud_garden2 = {
                 // 우측: cosine 수렴, 끝점은 baseY-1.0으로 (야래에 남는 두께 유지)
                 const _t      = (normT - 0.80) / 0.20;
                 const _cosFade = 0.5 * (1 + Math.cos(_t * Math.PI));
-                const _botTarget2 = baseY - 1.5; // 끝점 하단 최소값 (-1.0→-1.5)
+                const _botTarget2 = baseY - 3.0; // 끝점 하단 최소값 (-1.5→-3.0)
                 botY = _botTarget2 + (botY - _botTarget2) * _cosFade;
             }
 
