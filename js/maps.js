@@ -308,29 +308,73 @@ const TERRAINS_cloud_garden2 = {
         bg: ["#0284c7", "#38bdf8", "#bae6fd"],
         color: "rgba(255, 228, 235, 0.95)",
         outColor: "rgba(244, 114, 182, 0.95)",
-        // isFloating 없음 -> 성층권(sky)처럼 표준 폴리곤 렌더링 사용
+        isFloating: true,
         deathZoneY: -25,
+        init: function(seed) {
+            this.islands = [[]]; // Single layer
+            const rnd = (min, max) => Math.random() * (max - min) + min;
 
-        // 물리 func: 넓고 납작한 뭉게구름 윗면 (x -25~+25, y -1~3)
-        func: function(x) {
             const startX = -25;
             const endX = 25;
-            
-            if (x < startX || x > endX) return -100;
-
-            // 납작한 타원형 기본 몸통: 가운데 y≈3, 양끝 y≈-1
+            const baseY = 1.0;
             const width = endX - startX;
-            const t = (x - (startX + endX) / 2) / (width / 2);
-            const mainArc = 1.0 + 2.0 * Math.sqrt(Math.max(0, 1 - t * t * 0.85));
+            const midX = (startX + endX) / 2;
+            
+            // 중심 타원 (전체를 받쳐주는 기둥 역할)
+            this.islands[0].push({
+                type: 'ellipse',
+                cx: midX,
+                cy: baseY,
+                rx: width / 2 + 0.5,
+                ry: 2.5 + (Math.abs(Math.sin(midX * 0.7 + seed)) * 0.5),
+                rot: 0
+            });
+            
+            // 폭신폭신 원형 구름 뭉치 배치
+            for (let x = startX; x <= endX; x += 1.6) {
+                const progress = (x - startX) / Math.max(1, width);
+                const edgeFactor = Math.sin(progress * Math.PI); // 양끝은 작고 가운데는 큼
+                
+                const rTop = 2.0 + edgeFactor * 1.5 + (Math.cos(x * 1.5 + seed) * 0.5);
+                const yOff = Math.sin(x * 1.1 + seed) * 0.5;
+                this.islands[0].push({
+                    type: 'circle',
+                    cx: x,
+                    cy: baseY + yOff,
+                    rx: rTop,
+                    ry: rTop,
+                    rot: 0
+                });
 
-            // 윗면 몽글몽글 범프: 완만한 주기로 올록볼록
-            const bumps =
-                Math.abs(Math.sin(x * 0.55 + 0.3)) * 0.9
-              + Math.abs(Math.cos(x * 0.38 + 1.1)) * 0.5
-              - 0.5; // 평균 높이 보정
-
-            return mainArc + bumps;
-        }
+                if (Math.random() > 0.3) {
+                    const rxSub = 2.0 + Math.random() * 1.2;
+                    const rySub = 1.2 + Math.random() * 1.5;
+                    this.islands[0].push({
+                        type: 'ellipse',
+                        cx: x + (Math.random() - 0.5) * 1.2,
+                        cy: baseY - 0.6 + (Math.random() - 0.5) * 0.8,
+                        rx: rxSub,
+                        ry: rySub,
+                        rot: 0
+                    });
+                }
+            }
+        },
+        layers: [
+            (x) => {
+                let maxY = -100;
+                if (!TERRAINS.cloud_garden2.islands || !TERRAINS.cloud_garden2.islands[0]) return maxY;
+                for (let s of TERRAINS.cloud_garden2.islands[0]) {
+                    const dx = Math.abs(x - s.cx);
+                    if (dx <= s.rx) {
+                        const topY = s.cy + s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
+                        if (topY > maxY) maxY = topY;
+                    }
+                }
+                return maxY;
+            }
+        ],
+        func: (x) => -100
     }
 };
 Object.assign(TERRAINS, TERRAINS_cloud_garden2);

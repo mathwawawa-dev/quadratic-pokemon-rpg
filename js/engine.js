@@ -619,17 +619,7 @@ function initStage() {
                       terrainHeights[key] = [y];
                       terrainBottoms[key] = [y - 5.0];
                   }
-              } else if (stage.terrain === 'cloud_garden2') {
-                  // 범위 -25~+25, 있으면 [y], 없으면 [-100]
-                  if (y <= -99 || x < -25 || x > 25) {
-                      terrainHeights[key] = [-100];
-                      terrainBottoms[key] = [-100];
-                  } else {
-                      terrainHeights[key] = [y];
-                      // 아랫면 거의 평탄: 윗면(y)에서 두께 5.5, 극미세 굴곡만
-                      const botBumps = Math.sin(x * 0.18) * 0.2;
-                      terrainBottoms[key] = [y - 5.5 + botBumps];
-                  }
+              
               } else if (stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
                   if (roundedX < -45 || roundedX > 45) {
@@ -653,29 +643,7 @@ function initStage() {
                   }
                   
                   terrainHeights[key] = [y];
-              } else if (stage.terrain === 'cloud_garden2') {
-                  // cloud_garden2: isFloating이지만 단일 func 물리.
-                  // terrainBottoms를 섬 모양에서 직접 계산하여 "아래서 솟구치기" 방지
-                  if (y <= -99) {
-                      terrainHeights[key] = [-100];
-                      terrainBottoms[key] = [-100];
-                  } else {
-                      let minBottom = 1000;
-                      let found = false;
-                      const isShapes = TERRAINS.cloud_garden2.islands && TERRAINS.cloud_garden2.islands[0];
-                      if (isShapes) {
-                          for (const s of TERRAINS.cloud_garden2.islands[0]) {
-                              const dx = x - s.cx;
-                              if (Math.abs(dx) <= s.rx) {
-                                  const bY = s.cy - s.ry * Math.sqrt(Math.max(0, 1 - (dx * dx) / (s.rx * s.rx)));
-                                  if (bY < minBottom) { minBottom = bY; found = true; }
-                              }
-                          }
-                      }
-                      terrainHeights[key] = [y];
-                      terrainBottoms[key] = [found ? minBottom : y - 4.0];
-                  }
-              } else {
+
                   terrainHeights[key] = [y];
               }
         }
@@ -927,99 +895,7 @@ function initStage() {
             { bx: -18, by: 6.0,  speed: 5000, radius: 1.6, alpha: 0.4 },
             { bx: -2,  by: 5.0,  speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type }
         ];
-    } else if (stage.terrain === 'cloud_garden2') {
-        const cloudStartX = -25;
-        const cloudEndX = 25;
-        
-        let targetCtx = ctx;
-        let craterCanvas = null;
-        if (typeof craters !== 'undefined' && craters.length > 0) {
-            const cc = getCraterCanvas(canvas.width, canvas.height);
-            craterCanvas = cc.canvas; targetCtx = cc.ctx;
-        }
-
-        const getOrigY = (x) => {
-            const key = (Math.round(x * 10) / 10).toFixed(1);
-            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
-        };
-        const getBotY = (x) => {
-            const key = (Math.round(x * 10) / 10).toFixed(1);
-            return (terrainBottoms[key] && terrainBottoms[key].length > 0) ? terrainBottoms[key][0] : -100;
-        };
-
-        // 타원형 마감: 양 끝에서 부드럽게 수렴하는 구름 형태
-        const capSteps = 20;
-        
-        // 상단 곡선: cloudStartX -> cloudEndX
-        targetCtx.beginPath();
-        {
-            const p0 = gridToScreen(cloudStartX, getOrigY(cloudStartX));
-            targetCtx.moveTo(p0.x, p0.y);
-            for (let x = cloudStartX; x <= cloudEndX; x += 0.2) {
-                const cx = Math.min(x, cloudEndX);
-                const p = gridToScreen(cx, getOrigY(cx));
-                targetCtx.lineTo(p.x, p.y);
-            }
-        }
-
-        // 우측 타원형 캡: 상단 끝 -> 하단 끝 (반타원)
-        {
-            const rtY = getOrigY(cloudEndX);
-            const rbY = getBotY(cloudEndX);
-            const capMidY = (rtY + rbY) / 2;
-            const capHalfH = (rtY - rbY) / 2;
-            for (let i = 0; i <= capSteps; i++) {
-                const angle = (Math.PI / 2) - (Math.PI / capSteps) * i; // π/2 -> -π/2
-                const ex = cloudEndX + Math.abs(capHalfH) * 0.6 * Math.cos(angle);
-                const ey = capMidY + capHalfH * Math.sin(angle);
-                const p = gridToScreen(ex, ey);
-                targetCtx.lineTo(p.x, p.y);
-            }
-        }
-
-        // 하단 곡선: cloudEndX -> cloudStartX (거의 평탄)
-        for (let x = cloudEndX; x >= cloudStartX; x -= 0.2) {
-            const cx = Math.max(x, cloudStartX);
-            const by = getBotY(cx);
-            if (by <= -50) continue;
-            const p = gridToScreen(cx, by);
-            targetCtx.lineTo(p.x, p.y);
-        }
-
-        // 좌측 타원형 캡: 하단 끝 -> 상단 끝
-        {
-            const ltY = getOrigY(cloudStartX);
-            const lbY = getBotY(cloudStartX);
-            const capMidY = (ltY + lbY) / 2;
-            const capHalfH = (ltY - lbY) / 2;
-            for (let i = 0; i <= capSteps; i++) {
-                const angle = (-Math.PI / 2) + (Math.PI / capSteps) * i; // -π/2 -> π/2
-                const ex = cloudStartX - Math.abs(capHalfH) * 0.6 * Math.cos(angle);
-                const ey = capMidY + capHalfH * Math.sin(angle);
-                const p = gridToScreen(ex, ey);
-                targetCtx.lineTo(p.x, p.y);
-            }
-        }
-
-        targetCtx.closePath();
-        targetCtx.fillStyle = tData.color;
-        targetCtx.fill();
-        targetCtx.strokeStyle = tData.outColor;
-        targetCtx.lineWidth = 3;
-        targetCtx.stroke();
-
-        if (craterCanvas) {
-            targetCtx.globalCompositeOperation = 'destination-out';
-            for (const crater of craters) {
-                const p = gridToScreen(crater.x, crater.y);
-                const pr = scaleLength(crater.r);
-                targetCtx.beginPath();
-                targetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
-                targetCtx.fill();
-            }
-            targetCtx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(craterCanvas, 0, 0);
-        }
+    
     } else if (stage.terrain === 'sky') {
         cloudParams = [
             { bx: 4,  by: 14.0, speed: 4000, radius: 0.8, alpha: 0.8, isPowerCloud: true, colorType: starterData.type },
