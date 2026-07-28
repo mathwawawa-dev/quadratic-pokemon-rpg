@@ -27,14 +27,14 @@ const TERRAINS = {
         bg: ["#1a4a25", "#3a8a48", "#80cc90", "#c8f0d0"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -8,
-        func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 + 2.0,
+        func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 - 1.0,
         getThickness: (x) => {
             // 4.0 단위 블록 기반 해시 → 블록 경계에서만 두께 변화 (파도 너울 방지)
             const seed = terrainSeed || 0;
             const blockIdx = Math.floor((x + seed * 1.7) / 4.0);
             const h1 = Math.abs(Math.sin(blockIdx * 13.7 + seed * 0.5) * 43758.5453) % 1;
             const h2 = Math.abs(Math.cos(blockIdx * 7.3 - seed * 0.3) * 19234.1234) % 1;
-            return 4.0; // 물리 하단(y-4)과 시각 일치: 상단 y≈2, 하단 y≈-2
+            return 6.0; // 미사일 관통 방지: 상단 y≈-1, 하단 y≈-7
         }
     },
     sky: {
