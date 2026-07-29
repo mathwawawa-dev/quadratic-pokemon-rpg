@@ -2702,8 +2702,10 @@ function updateGame() {
                     return;
                 } else {
                     missile.active = false; GAME_STATE = 'IDLE';
-                    const targetX = missile.x;
-                    const targetY = missile.y;
+                    // hitPoint = 실제 충돌 좌표 (기둥 등 수직 지형에서 missile.x와 다를 수 있음)
+                    const targetX = hitPoint ? hitPoint.x : missile.x;
+                    const targetY = hitPoint ? hitPoint.y : missile.y;
+                    missile.x = targetX; missile.y = targetY; // 미사일을 충돌 위치로 스냅
                     createExplosion(targetX, targetY, getMissileColor());
                     createCrater(targetX, targetY, explosionRadius);
                     let hitSomeone = false;
