@@ -27,7 +27,6 @@ const TERRAINS = {
         bg: ["#38bdf8", "#7dd3fc", "#bae6fd"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -11,
-        cameraOffsetY: -6.2, // y=0축 화면상 6.2단위 위로 이동
         initZoomSpanMin: 42,  // 초기 배율: Y분산 없어 과도하게 줌인되는 현상 방지 (다른 맵 수준으로 맞춤)
         func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 + 0.7,
         getThickness: (x) => {
