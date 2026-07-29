@@ -678,15 +678,8 @@ function initStage() {
                       terrainBottoms[key] = [-100];
                   } else {
                       terrainHeights[key] = [y];
-                      // 기둥 구역: 평탄한 바닥 (y=-15)
-                      const pW   = 3.0;
-                      const pBot = -15.0;
-                      let botY = y - 5.0;
-                      if ((roundedX >= logX0 && roundedX <= logX0 + pW) ||
-                          (roundedX >= logX1 - pW && roundedX <= logX1)) {
-                          botY = pBot;
-                      }
-                      terrainBottoms[key] = [botY];
+                      // 통나무 바닥 = y - 5.0 (기둥 구역 포함, 크레이터 시스템 정상 작동)
+                      terrainBottoms[key] = [y - 5.0];
                   }
               } else if (stage.terrain === 'grass' || stage.terrain === 'ice' || stage.terrain === 'lava' || stage.terrain === 'cave' || stage.terrain === 'electric' || stage.terrain === 'ocean' || stage.terrain === 'psychic') {
                   const roundedX = Math.round(x * 10) / 10;
@@ -2475,6 +2468,15 @@ function updateGame() {
                         }
                     }
                 }
+                // log_bridge 기둥 구역 추가 충돌 판정 (통나무 아랫면 ~ y=-15)
+                if (!insideTerrain && stage.terrain === 'log_bridge') {
+                    const tDp = LEVELS[currentStage % LEVELS.length];
+                    const lx0p = tDp.logX0 ?? -31, lx1p = tDp.logX1 ?? 31, pWp = 3.0;
+                    if ((tx >= lx0p && tx <= lx0p + pWp) || (tx >= lx1p - pWp && tx <= lx1p)) {
+                        const oSurf = (originalTerrainHeights[key]?.[0] ?? 1.7);
+                        if (ty <= oSurf - 5.0 && ty >= -15.0) insideTerrain = true;
+                    }
+                }
                 
                 if (insideTerrain) {
                     let insideCrater = false;
@@ -3198,30 +3200,36 @@ function render() {
         const logX0 = tData.logX0 ?? -31;
         const logX1 = tData.logX1 ??  31;
         const pW = 3.0;
-        const logThick = 5.0; // 통나무 두께 (buildTerrain과 일치)
+        const logThick = 5.0;
         const pillarZones = [[logX0, logX0 + pW], [logX1 - pW, logX1]];
+        const hasPillarCraters = craters.length > 0;
+
         for (const [pX0, pX1] of pillarZones) {
             ctx.save();
+            // 기둥 폴리곤 경로 (clip에도 사용)
             ctx.beginPath();
-            let started = false;
-            // 상단: 통나무 아랫면 (topY - logThick) — 코너 없이 매끄럽게 연결
+            let pStarted = false;
+            // 상단: originalTerrainHeights - logThick (로그 파괴와 무관하게 고정)
             for (let px = pX0; px <= pX1 + 0.05; px += 0.1) {
                 const k = (Math.round(px * 10) / 10).toFixed(1);
-                const topY = terrainHeights[k]?.[0];
-                if (!topY || topY < -50) continue;
-                const sc = gridToScreen(px, topY - logThick);
-                if (!started) { ctx.moveTo(sc.x, sc.y); started = true; }
-                else           { ctx.lineTo(sc.x, sc.y); }
+                const origTop = originalTerrainHeights[k]?.[0];
+                if (!origTop || origTop < -50) continue;
+                const sc = gridToScreen(px, origTop - logThick);
+                if (!pStarted) { ctx.moveTo(sc.x, sc.y); pStarted = true; }
+                else ctx.lineTo(sc.x, sc.y);
             }
-            // 하단: terrainBottoms (buildTerrain에서 -15로 평탄 설정)
-            for (let px = pX1; px >= pX0 - 0.05; px -= 0.1) {
-                const k = (Math.round(px * 10) / 10).toFixed(1);
-                const botY = terrainBottoms[k]?.[0];
-                if (botY === undefined || botY < -50) continue;
-                const sc = gridToScreen(px, botY);
-                ctx.lineTo(sc.x, sc.y);
-            }
+            // 하단: terrainBottoms = y-5.0 (원래 로그 바닥과 동일, 기둥 구역은 y=-3.3)
+            //   → 기둥 시각 바닥은 y=-15 고정 라인으로 닫음
+            const botL = gridToScreen(pX0, -15.0);
+            const botR = gridToScreen(pX1, -15.0);
+            ctx.lineTo(botR.x, botR.y);
+            ctx.lineTo(botL.x, botL.y);
             ctx.closePath();
+
+            // clip → 이 영역 안에서만 그리고 destination-out 적용
+            ctx.clip();
+
+            // 그라데이션 채우기 (전체 canvas 채우면 clip이 잘라줌)
             const midX = (pX0 + pX1) / 2;
             const scT = gridToScreen(midX, -3.3);
             const scB = gridToScreen(midX, -15.0);
@@ -3230,10 +3238,20 @@ function render() {
             grad.addColorStop(0.45,'#3e200e');
             grad.addColorStop(1,   '#1a0a04');
             ctx.fillStyle = grad;
-            ctx.fill();
-            ctx.strokeStyle = '#1a0a04';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 크레이터를 destination-out으로 잘라냄 (clip 영역 내에서만)
+            if (hasPillarCraters) {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.fillStyle = 'rgba(0,0,0,1)';
+                for (const c of craters) {
+                    const sc = gridToScreen(c.x, c.y);
+                    ctx.beginPath();
+                    ctx.arc(sc.x, sc.y, c.r * scaleX, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
             ctx.restore();
         }
     }
