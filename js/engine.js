@@ -73,12 +73,6 @@ let cloudHoles = []; // { x, y, radius, maxRadius, life, maxLife }
 let craters = [];
 // 크레이터 마스킹용 오프스크린 캔버스 — 매 프레임 new canvas 생성 방지 (GC 병목 제거)
 let _craterCanvas = null;
-// log_bridge 기둥 전용 오프스크린 캔버스 (destination-out 크레이터 적용)
-let _pillarCanvas = null;
-// 기둥 독립 내구도: [left, right]. 3발 맞으면 파괴 (크레이터 배열과 무관)
-let _pillarHits = [0, 0];
-let _pillarDestroyed = [false, false];
-const PILLAR_MAX_HITS = 1; // 기둥은 1발 직격으로 파괴
 let _craterCtx = null;
 function getCraterCanvas(w, h) {
     if (!_craterCanvas) {
@@ -537,8 +531,6 @@ function initStage() {
     ceilHeights = {};
     terrainSpikes = [];
     craters = [];
-    _pillarHits = [0, 0];
-    _pillarDestroyed = [false, false];
     window.caveCeilOffset = 5.0 + Math.random() * 5.0; // 동굴 천장 높이 5~10 무작위 상승 오프셋
     window.lastElectricLightningTime = Date.now();
     window.lastCaveWarningTime = Date.now();
@@ -678,15 +670,13 @@ function initStage() {
                   }
               } else if (stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
-                  const logX0 = tData.logX0 ?? -31;
-                  const logX1 = tData.logX1 ??  31;
-                  if (roundedX < logX0 - 0.05 || roundedX > logX1 + 0.05) {
+                  if (roundedX < -45 || roundedX > 45) {
                       y = -100;
                       terrainHeights[key] = [-100];
                       terrainBottoms[key] = [-100];
                   } else {
+                      // 렌더링 thickness=5.0(고정)과 물리 바닥 일치 - getThickness 가변값 불일치 방지
                       terrainHeights[key] = [y];
-                      // 통나무 바닥 = y - 5.0 (기둥 구역 포함, 크레이터 시스템 정상 작동)
                       terrainBottoms[key] = [y - 5.0];
                   }
               } else if (stage.terrain === 'grass' || stage.terrain === 'ice' || stage.terrain === 'lava' || stage.terrain === 'cave' || stage.terrain === 'electric' || stage.terrain === 'ocean' || stage.terrain === 'psychic') {
@@ -2427,7 +2417,6 @@ function updateGame() {
             let hitPoint = null;
             let hitY = -100;
             let directHitTarget = null;
-            let hitPillarZoneIdx = -1; // 기둥 충돌 시 어느 기둥인지 (0=좌, 1=우, -1=기둥아님)
             
             for (let step = 1; step <= steps; step++) {
                 const tx = prevStepX + (stepVx * step) / steps;
@@ -2463,14 +2452,9 @@ function updateGame() {
 
                         if (!insideTerrain) {
                             const origYs = originalTerrainHeights[key] || [];
-                            const currYs = terrainHeights[key] || [];
                             for (let i = 0; i < origYs.length; i++) {
                                 const origY = origYs[i];
-                                if (origY === -100) continue;
-                                // 파괴된 지형(-100)은 미사일 통과 허용 (버벅임 방지)
-                                if ((isFloatingMapLocal || stage.terrain === 'sky' || stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2')
-                                    && currYs[i] === -100) continue;
-                                if (ty <= origY) {
+                                if (ty <= origY && origY !== -100) {
                                     if (isFloatingMapLocal || stage.terrain === 'sky' || stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2') {
                                         const bottomY = origY - 5.0; 
                                         if (ty >= bottomY) { insideTerrain = true; break; }
@@ -2482,40 +2466,10 @@ function updateGame() {
                         }
                     }
                 }
-                // log_bridge 기둥 구역 충돌 판정 — !insideTerrain 가드 제거:
-                // 로그 체크(insideTerrain=true)가 먼저 실행됐어도 기둥 y범위(≤pillarTopY)에서는
-                // 항상 기둥 충돌을 우선 적용해야 함.
-                let fromPillarZone = false;
-                if (stage.terrain === 'log_bridge') {
-                    const tDp  = LEVELS[currentStage % LEVELS.length];
-                    const lx0p = tDp.logX0 ?? -31, lx1p = tDp.logX1 ?? 31;
-                    const pWp  = 3.0, insetP = 2.0;
-                    const inLeftP  = tx >= lx0p + insetP && tx <= lx0p + insetP + pWp;
-                    const inRightP = tx >= lx1p - insetP - pWp && tx <= lx1p - insetP;
-                    if (inLeftP || inRightP) {
-                        const pillarKey = (Math.round(tx * 10) / 10).toFixed(1);
-                        const oSurf = (originalTerrainHeights[pillarKey]?.[0] ?? 1.7);
-                        const pillarTopY = oSurf - 5.0; // 통나무 아랫면 = 기둥 상단
-                        if (ty <= pillarTopY + 0.2 && ty >= -30.0) { // +0.2: 로그-기둥 경계 모호 구간 기둥으로 흡수
-                            const zoneIdx = inLeftP ? 0 : 1;
-                            if (!_pillarDestroyed[zoneIdx]) {
-                                // 기둥 미파괴 → 강제로 기둥 충돌 우선 설정
-                                insideTerrain = true;
-                                fromPillarZone = true;
-                                hitPillarZoneIdx = zoneIdx;
-                            } else {
-                                // 기둥 완전 파괴 → 통과, 이전 로그 충돌도 무효화
-                                insideTerrain = false;
-                                fromPillarZone = false;
-                            }
-                        }
-                    }
-                }
-
+                
                 if (insideTerrain) {
                     let insideCrater = false;
-                    if (!fromPillarZone && typeof craters !== 'undefined') {
-                        // 기둥 구역은 _pillarDestroyed로 판단하므로 크레이터 배열 미사용
+                    if (typeof craters !== 'undefined') {
                         for (const c of craters) {
                             if (Math.hypot(tx - c.x, ty - c.y) <= c.r) { insideCrater = true; break; }
                         }
@@ -2527,7 +2481,6 @@ function updateGame() {
                         }
                     }
                 }
-
 
                 // 2. 적 포켓몬 충돌 검사
                 let directHit = null;
@@ -2728,19 +2681,10 @@ function updateGame() {
                     return;
                 } else {
                     missile.active = false; GAME_STATE = 'IDLE';
-                    // hitPoint = 실제 충돌 좌표 (기둥 등 수직 지형에서 missile.x와 다를 수 있음)
-                    const targetX = hitPoint ? hitPoint.x : missile.x;
-                    const targetY = hitPoint ? hitPoint.y : missile.y;
-                    missile.x = targetX; missile.y = targetY; // 미사일을 충돌 위치로 스냅
+                    const targetX = missile.x;
+                    const targetY = missile.y;
                     createExplosion(targetX, targetY, getMissileColor());
                     createCrater(targetX, targetY, explosionRadius);
-                    // 기둥 충돌 시: 내구도 차감 → PILLAR_MAX_HITS 이상이면 파괴
-                    if (hitPillarZoneIdx >= 0) {
-                        _pillarHits[hitPillarZoneIdx]++;
-                        if (_pillarHits[hitPillarZoneIdx] >= PILLAR_MAX_HITS) {
-                            _pillarDestroyed[hitPillarZoneIdx] = true;
-                        }
-                    }
                     let hitSomeone = false;
                     // 직격(공중 포켓몬 포함) 처리: directHitTarget이 있으면 우선 적용
                     if (directHitTarget && directHitTarget.hp > 0) {
@@ -3236,114 +3180,6 @@ function render() {
             }
         }
         ctx.restore();
-    }
-
-
-
-    // 외나무다리('log_bridge') 고인돌 기둥: terrainBottoms 포물선 기반 폴리곤 렌더링 (파괴 시 자동 반영)
-    if (stage.terrain === 'log_bridge') {
-        const logX0    = tData.logX0 ?? -31;
-        const logX1    = tData.logX1 ??  31;
-        const pW       = 3.0;
-        const inset    = 2.0;
-        const logThick = 5.0;
-        const pillarZones = [
-            [logX0 + inset,      logX0 + inset + pW],
-            [logX1 - inset - pW, logX1 - inset]
-        ];
-
-        // module-level 오프스크린 캔버스 재사용 (크기 변경 시만 재생성)
-        if (!_pillarCanvas ||
-            _pillarCanvas.width  !== canvas.width ||
-            _pillarCanvas.height !== canvas.height) {
-            _pillarCanvas = document.createElement('canvas');
-            _pillarCanvas.width  = canvas.width;
-            _pillarCanvas.height = canvas.height;
-        }
-        const pc   = _pillarCanvas;
-        const pctx = pc.getContext('2d');
-        pctx.clearRect(0, 0, pc.width, pc.height);
-
-        for (const [pX0, pX1] of pillarZones) {
-            const pW_   = pX1 - pX0;           // = 3.0
-            const pCX   = (pX0 + pX1) / 2;     // 기둥 중심 x
-            const BOTTOM = -200;                // 캔버스 훨씬 아래 (자동 클리핑)
-
-            // 중심 x에서 원래 통나무 아랫면 y
-            const ck = (Math.round(pCX * 10) / 10).toFixed(1);
-            const origTopC = originalTerrainHeights[ck]?.[0] ?? 1.7;
-            const capTopY   = origTopC - logThick; // ≈ -3.3 (통나무 아랫면)
-            const capBotY   = capTopY - 1.6;       // 캡 하단 (1.6 유닛 두께)
-            const taperBotY = capBotY - 1.0;       // 테이퍼 끝 y
-            const baseTY    = -13.0;               // 발판 플레어 시작 y
-            const flareY    = baseTY - 1.0;        // 샤프트→발판 전환 y
-            const shaftHW   = 0.50;                // 샤프트 반폭 (전체 1.0)
-            const baseHW    = pW_ * 0.63;          // 발판 반폭 (전체 ≈ 3.78)
-
-            pctx.beginPath();
-
-            // ── 상단 캡: 통나무 아랫면 곡선 따라감 ──
-            let pStarted = false;
-            for (let px = pX0; px <= pX1 + 0.05; px += 0.1) {
-                const k = (Math.round(px * 10) / 10).toFixed(1);
-                const origTop = originalTerrainHeights[k]?.[0];
-                if (origTop === undefined || origTop < -50) continue;
-                const sc2 = gridToScreen(px, origTop - logThick);
-                if (!pStarted) { pctx.moveTo(sc2.x, sc2.y); pStarted = true; }
-                else pctx.lineTo(sc2.x, sc2.y);
-            }
-            if (!pStarted) continue;
-
-            // ── 우측: 캡→테이퍼→샤프트→발판 플레어→바닥 ──
-            let s;
-            s = gridToScreen(pX1,                capBotY);    pctx.lineTo(s.x, s.y);
-            s = gridToScreen(pCX + shaftHW + 0.3, taperBotY); pctx.lineTo(s.x, s.y);
-            s = gridToScreen(pCX + shaftHW,       taperBotY); pctx.lineTo(s.x, s.y);
-            s = gridToScreen(pCX + shaftHW,       flareY);    pctx.lineTo(s.x, s.y);
-            s = gridToScreen(pCX + baseHW,        baseTY);    pctx.lineTo(s.x, s.y);
-            s = gridToScreen(pCX + baseHW,        BOTTOM);    pctx.lineTo(s.x, s.y);
-
-            // ── 바닥 가로선 ──
-            s = gridToScreen(pCX - baseHW, BOTTOM);           pctx.lineTo(s.x, s.y);
-
-            // ── 좌측: 바닥→발판 플레어→샤프트→테이퍼→캡 ──
-            s = gridToScreen(pCX - baseHW,        baseTY);    pctx.lineTo(s.x, s.y);
-            s = gridToScreen(pCX - shaftHW,       flareY);    pctx.lineTo(s.x, s.y);
-            s = gridToScreen(pCX - shaftHW,       taperBotY); pctx.lineTo(s.x, s.y);
-            s = gridToScreen(pCX - shaftHW - 0.3, taperBotY); pctx.lineTo(s.x, s.y);
-            s = gridToScreen(pX0,                capBotY);    pctx.lineTo(s.x, s.y);
-            pctx.closePath();
-
-            // ── 그라디언트 ──
-            const gT = gridToScreen(pCX, capTopY);
-            const gB = gridToScreen(pCX, baseTY);
-            const grad = pctx.createLinearGradient(gT.x, gT.y, gB.x, gB.y);
-            grad.addColorStop(0.00, '#6b3a1f');   // 캡 상단 밝은 갈색
-            grad.addColorStop(0.18, '#3e200e');   // 캡 하단
-            grad.addColorStop(0.46, '#251206');   // 샤프트 중간 (가장 어두움)
-            grad.addColorStop(0.76, '#3e200e');   // 발판 상단
-            grad.addColorStop(1.00, '#1a0a04');   // 발판 하단
-            pctx.fillStyle = grad;
-            pctx.fill();
-        }
-
-
-        // 크레이터를 오프스크린에 destination-out 적용 (scaleX 미사용 → gridToScreen으로 반경 계산)
-        if (craters.length > 0) {
-            pctx.globalCompositeOperation = 'destination-out';
-            pctx.fillStyle = 'rgba(0,0,0,1)';
-            for (const c of craters) {
-                const sc  = gridToScreen(c.x, c.y);
-                const scR = gridToScreen(c.x + c.r, c.y);
-                const pr  = Math.abs(scR.x - sc.x);   // scaleX 불필요
-                pctx.beginPath();
-                pctx.arc(sc.x, sc.y, pr, 0, Math.PI * 2);
-                pctx.fill();
-            }
-            pctx.globalCompositeOperation = 'source-over';
-        }
-
-        ctx.drawImage(pc, 0, 0);
     }
 
     // 외나무다리('log_bridge') 지형 분위기: 초록 나뭇잎이 바람에 휘날리며 떨어지는 효과 (월드 좌표 연동)
