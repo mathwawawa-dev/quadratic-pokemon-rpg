@@ -28,7 +28,7 @@ const TERRAINS = {
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -8,
         cameraOffsetY: -6.2, // y=0축 화면상 6.2단위 위로 이동
-        logX0: -40, logX1: 40, // 통나무 고정 끝점 (줌 무관)
+        logX0: -31, logX1: 31, // 통나무 고정 끝점 (줌 무관)
         func: function(x) {
             const t = TERRAINS.log_bridge;
             if (x < t.logX0 - 0.05 || x > t.logX1 + 0.05) return -100; // 끝점 밖은 비워둠

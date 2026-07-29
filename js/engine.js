@@ -3187,9 +3187,9 @@ function render() {
         ctx.save();
         const pillarHalfW = 1.5;   // 너비 3유닛 (±1.5)
         const pillarBotY  = -15.0; // 하단 고정 y
-        // 통나무 고정 끝점 자체를 기둥 중심으로 (끝점에서 ±1.5 너비)
-        const logLeftX  = (tData.logX0 ?? -40);
-        const logRightX = (tData.logX1 ??  40);
+        // 기둥 중심: log끝점에서 2.5 안쪽 (범위 -30~-27, +27~+30)
+        const logLeftX  = (tData.logX0 ?? -31) + 2.5;
+        const logRightX = (tData.logX1 ??  31) - 2.5;
         const pillarCenters = [logLeftX, logRightX];
 
         for (const cx of pillarCenters) {
