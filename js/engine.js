@@ -916,6 +916,12 @@ function initStage() {
                 ry = terrainYAtRx + 0.75;
                 if (ry < -50) { e.isFlying = true; e.hasCloud = true; ry = 13 + idx * 2; }
             }
+            // 폴백에서도 기존 배치와 겹치지 않도록 ry를 3씩 올려 최대 10회 분리 시도
+            let fbOverlap = true, fbTry = 0;
+            while (fbOverlap && fbTry < 10) {
+                fbOverlap = placedPos.some(p => Math.hypot(rx - p.x, ry - p.y) < 6.0);
+                if (fbOverlap) { ry += 3.0; fbTry++; }
+            }
         }
         
         if (e.isFlying || isSkyMap) {
