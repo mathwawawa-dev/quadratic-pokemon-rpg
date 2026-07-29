@@ -2950,48 +2950,6 @@ function drawEntity(ent) {
         let drawType = 'none'; // 'none' | 'generating' | 'active' | 'flashing'
         let progress = 1.0;
         let isFlashVisible = true;
-        
-        if (cycleTime < timing.gen) {
-            drawType = 'generating';
-            progress = cycleTime / timing.gen;
-        } else if (cycleTime < timing.gen + timing.active) {
-            drawType = 'active';
-        } else if (cycleTime < timing.gen + timing.active + timing.flash) {
-            drawType = 'flashing';
-            const flashTime = cycleTime - (timing.gen + timing.active);
-            isFlashVisible = (flashTime % 0.5) < 0.25;
-        } else {
-            drawType = 'none';
-        }
-
-        const info = getBarrierColors(ent.barrierType);
-        
-        // 쉴드 원 및 외곽 가장자리 그리기
-        if (drawType !== 'none' && (drawType !== 'flashing' || isFlashVisible)) {
-            ctx.save();
-            ctx.strokeStyle = info.stroke;
-            ctx.fillStyle = info.fill;
-            const r = scaleLength(1.68); // 1.4 * 1.2배
-
-            if (ent.barrierType === 'reflect') {
-                // 반사 배리어: 날카로운 육각형 + 꼭짓점 가시 돌출형
-                ctx.lineWidth = 2.5;
-                pathHexagon(ctx, r, progress);
-                ctx.fill();
-                ctx.stroke();
-                
-                // 생성 중이 아닐 때만 가시 렌더링
-                if (drawType !== 'generating') {
-                    ctx.beginPath();
-                    const sides = 6;
-                    const startAngle = -Math.PI / 2;
-                    for (let i = 0; i < sides; i++) {
-                        const angle = startAngle + (i / sides) * Math.PI * 2;
-                        const px = Math.cos(angle) * r;
-                        const py = Math.sin(angle) * r;
-                        const spikeX = Math.cos(angle) * (r + scaleLength(0.22));
-                        const spikeY = Math.sin(angle) * (r + scaleLength(0.22));
-                        ctx.moveTo(px, py);
                         ctx.lineTo(spikeX, spikeY);
                     }
                     ctx.strokeStyle = info.stroke;
@@ -3239,33 +3197,68 @@ function render() {
         pctx.clearRect(0, 0, pc.width, pc.height);
 
         for (const [pX0, pX1] of pillarZones) {
+            const pW_   = pX1 - pX0;           // = 3.0
+            const pCX   = (pX0 + pX1) / 2;     // 기둥 중심 x
+            const BOTTOM = -200;                // 캔버스 훨씬 아래 (자동 클리핑)
+
+            // 중심 x에서 원래 통나무 아랫면 y
+            const ck = (Math.round(pCX * 10) / 10).toFixed(1);
+            const origTopC = originalTerrainHeights[ck]?.[0] ?? 1.7;
+            const capTopY   = origTopC - logThick; // ≈ -3.3 (통나무 아랫면)
+            const capBotY   = capTopY - 1.6;       // 캡 하단 (1.6 유닛 두께)
+            const taperBotY = capBotY - 1.0;       // 테이퍼 끝 y
+            const baseTY    = -13.0;               // 발판 플레어 시작 y
+            const flareY    = baseTY - 1.0;        // 샤프트→발판 전환 y
+            const shaftHW   = 0.50;                // 샤프트 반폭 (전체 1.0)
+            const baseHW    = pW_ * 0.63;          // 발판 반폭 (전체 ≈ 3.78)
+
             pctx.beginPath();
+
+            // ── 상단 캡: 통나무 아랫면 곡선 따라감 ──
             let pStarted = false;
             for (let px = pX0; px <= pX1 + 0.05; px += 0.1) {
                 const k = (Math.round(px * 10) / 10).toFixed(1);
                 const origTop = originalTerrainHeights[k]?.[0];
                 if (origTop === undefined || origTop < -50) continue;
-                const sc = gridToScreen(px, origTop - logThick);
-                if (!pStarted) { pctx.moveTo(sc.x, sc.y); pStarted = true; }
-                else pctx.lineTo(sc.x, sc.y);
+                const sc2 = gridToScreen(px, origTop - logThick);
+                if (!pStarted) { pctx.moveTo(sc2.x, sc2.y); pStarted = true; }
+                else pctx.lineTo(sc2.x, sc2.y);
             }
             if (!pStarted) continue;
-            const botR = gridToScreen(pX1, -15.0);
-            const botL = gridToScreen(pX0, -15.0);
-            pctx.lineTo(botR.x, botR.y);
-            pctx.lineTo(botL.x, botL.y);
+
+            // ── 우측: 캡→테이퍼→샤프트→발판 플레어→바닥 ──
+            let s;
+            s = gridToScreen(pX1,                capBotY);    pctx.lineTo(s.x, s.y);
+            s = gridToScreen(pCX + shaftHW + 0.3, taperBotY); pctx.lineTo(s.x, s.y);
+            s = gridToScreen(pCX + shaftHW,       taperBotY); pctx.lineTo(s.x, s.y);
+            s = gridToScreen(pCX + shaftHW,       flareY);    pctx.lineTo(s.x, s.y);
+            s = gridToScreen(pCX + baseHW,        baseTY);    pctx.lineTo(s.x, s.y);
+            s = gridToScreen(pCX + baseHW,        BOTTOM);    pctx.lineTo(s.x, s.y);
+
+            // ── 바닥 가로선 ──
+            s = gridToScreen(pCX - baseHW, BOTTOM);           pctx.lineTo(s.x, s.y);
+
+            // ── 좌측: 바닥→발판 플레어→샤프트→테이퍼→캡 ──
+            s = gridToScreen(pCX - baseHW,        baseTY);    pctx.lineTo(s.x, s.y);
+            s = gridToScreen(pCX - shaftHW,       flareY);    pctx.lineTo(s.x, s.y);
+            s = gridToScreen(pCX - shaftHW,       taperBotY); pctx.lineTo(s.x, s.y);
+            s = gridToScreen(pCX - shaftHW - 0.3, taperBotY); pctx.lineTo(s.x, s.y);
+            s = gridToScreen(pX0,                capBotY);    pctx.lineTo(s.x, s.y);
             pctx.closePath();
 
-            const midX = (pX0 + pX1) / 2;
-            const scT  = gridToScreen(midX, -3.3);
-            const scB  = gridToScreen(midX, -15.0);
-            const grad = pctx.createLinearGradient(scT.x, scT.y, scB.x, scB.y);
-            grad.addColorStop(0,    '#5c3317');
-            grad.addColorStop(0.45, '#3e200e');
-            grad.addColorStop(1,    '#1a0a04');
+            // ── 그라디언트 ──
+            const gT = gridToScreen(pCX, capTopY);
+            const gB = gridToScreen(pCX, baseTY);
+            const grad = pctx.createLinearGradient(gT.x, gT.y, gB.x, gB.y);
+            grad.addColorStop(0.00, '#6b3a1f');   // 캡 상단 밝은 갈색
+            grad.addColorStop(0.18, '#3e200e');   // 캡 하단
+            grad.addColorStop(0.46, '#251206');   // 샤프트 중간 (가장 어두움)
+            grad.addColorStop(0.76, '#3e200e');   // 발판 상단
+            grad.addColorStop(1.00, '#1a0a04');   // 발판 하단
             pctx.fillStyle = grad;
             pctx.fill();
         }
+
 
         // 크레이터를 오프스크린에 destination-out 적용 (scaleX 미사용 → gridToScreen으로 반경 계산)
         if (craters.length > 0) {
