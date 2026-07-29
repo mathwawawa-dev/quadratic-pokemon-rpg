@@ -936,12 +936,34 @@ function initStage() {
                     ry = e.isFlying ? ry : (getTerrainY(rx) > -50 ? getTerrainY(rx) + 0.75 : ry);
                 } else break;
             }
-            // 2단계: rx가 한계에 막혀도 겹치면 ry를 3씩 올려 분리 (최대 10회)
-            let fbTry = 0;
-            while (placedPos.some(p => Math.hypot(rx - p.x, ry - p.y) < 6.0) && fbTry < 10) {
-                ry += 3.0; fbTry++;
+            // 2단계-A: 공중 포켓몬 → ry를 3씩 올려 수직 분리 (최대 10회)
+            if (e.isFlying) {
+                let fbTry = 0;
+                while (placedPos.some(p => Math.hypot(rx - p.x, ry - p.y) < 6.0) && fbTry < 10) {
+                    ry += 3.0; fbTry++;
+                }
+            } else {
+                // 2단계-B: 지상 포켓몬 → rx를 1씩 bagging하며 최적 위치 탐색 (중력 낙하 고려)
+                // ry push는 낙하 후 무효이므로 rx만 조정
+                let bestRx = rx, bestDist = 0;
+                for (let nudge = 1; nudge <= 12; nudge++) {
+                    for (const dir of [1, -1]) {
+                        const testRx = Math.max(-fbLimitX, Math.min(fbLimitX, rx + nudge * dir));
+                        const testRy = getTerrainY(testRx) > -50 ? getTerrainY(testRx) + 0.75 : ry;
+                        const minDist = Math.min(...placedPos.map(p => Math.hypot(testRx - p.x, testRy - p.y)));
+                        if (minDist >= 6.0) { rx = testRx; ry = testRy; bestDist = minDist; break; }
+                        if (minDist > bestDist) { bestDist = minDist; bestRx = testRx; }
+                    }
+                    if (bestDist >= 6.0) break;
+                }
+                // 12 nudge 내 ≥6 확보 실패 → 가장 멀었던 위치로 배치 (best effort)
+                if (placedPos.some(p => Math.hypot(rx - p.x, ry - p.y) < 6.0)) {
+                    rx = bestRx;
+                    ry = getTerrainY(rx) > -50 ? getTerrainY(rx) + 0.75 : ry;
+                }
             }
         }
+
         
         if (e.isFlying || isSkyMap) {
             flyingYIdx++;
