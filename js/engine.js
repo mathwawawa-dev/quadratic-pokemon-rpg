@@ -2476,6 +2476,7 @@ function updateGame() {
                     }
                 }
                 // log_bridge 기둥 구역 추가 충돌 판정 (통나무 아랫면 ~ y=-15)
+                let fromPillarZone = false;
                 if (!insideTerrain && stage.terrain === 'log_bridge') {
                     const tDp  = LEVELS[currentStage % LEVELS.length];
                     const lx0p = tDp.logX0 ?? -31, lx1p = tDp.logX1 ?? 31;
@@ -2484,7 +2485,10 @@ function updateGame() {
                     const inRightP = tx >= lx1p - insetP - pWp && tx <= lx1p - insetP;
                     if (inLeftP || inRightP) {
                         const oSurf = (originalTerrainHeights[key]?.[0] ?? 1.7);
-                        if (ty <= oSurf - 5.0 && ty >= -15.0) insideTerrain = true;
+                        if (ty <= oSurf - 5.0 && ty >= -15.0) {
+                            insideTerrain = true;
+                            fromPillarZone = true; // 기둥 전용 플래그
+                        }
                     }
                 }
                 
@@ -2492,6 +2496,9 @@ function updateGame() {
                     let insideCrater = false;
                     if (typeof craters !== 'undefined') {
                         for (const c of craters) {
+                            // 기둥 구역 충돌 시: 로그 크레이터(y>-3.0)는 기둥 관통 허용 안 함
+                            // → 기둥 전용 크레이터(y<=-3.0)만 기둥 내 통과 허용
+                            if (fromPillarZone && c.y > -3.0) continue;
                             if (Math.hypot(tx - c.x, ty - c.y) <= c.r) { insideCrater = true; break; }
                         }
                     }
