@@ -149,7 +149,7 @@ function resize() {
 
     // Pan limit: Y_MIN >= -40 (log_bridge는 -20), Y_MAX <= 50
     const stage = LEVELS[currentStage % LEVELS.length];
-    const minYLimit = (stage && stage.terrain === 'log_bridge') ? -20 : -40;
+    const minYLimit = (stage && stage.terrain === 'log_bridge') ? -30 : -40;
     
     let yCenter = (Y_MIN + Y_MAX) / 2;
     if (yCenter - yRange / 2 < minYLimit) {
