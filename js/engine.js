@@ -2482,25 +2482,31 @@ function updateGame() {
                         }
                     }
                 }
-                // log_bridge 기둥 구역 추가 충돌 판정 (통나무 아랫면 ~ y=-15)
+                // log_bridge 기둥 구역 충돌 판정 — !insideTerrain 가드 제거:
+                // 로그 체크(insideTerrain=true)가 먼저 실행됐어도 기둥 y범위(≤pillarTopY)에서는
+                // 항상 기둥 충돌을 우선 적용해야 함.
                 let fromPillarZone = false;
-                if (!insideTerrain && stage.terrain === 'log_bridge') {
+                if (stage.terrain === 'log_bridge') {
                     const tDp  = LEVELS[currentStage % LEVELS.length];
                     const lx0p = tDp.logX0 ?? -31, lx1p = tDp.logX1 ?? 31;
                     const pWp  = 3.0, insetP = 2.0;
                     const inLeftP  = tx >= lx0p + insetP && tx <= lx0p + insetP + pWp;
                     const inRightP = tx >= lx1p - insetP - pWp && tx <= lx1p - insetP;
                     if (inLeftP || inRightP) {
-                        const pillarKey = (Math.round(tx * 10) / 10).toFixed(1); // key는 else블록 스코프라 여기서 재계산
+                        const pillarKey = (Math.round(tx * 10) / 10).toFixed(1);
                         const oSurf = (originalTerrainHeights[pillarKey]?.[0] ?? 1.7);
-                        if (ty <= oSurf - 5.0 && ty >= -15.0) {
+                        const pillarTopY = oSurf - 5.0; // 통나무 아랫면 = 기둥 상단
+                        if (ty <= pillarTopY && ty >= -30.0) {
                             const zoneIdx = inLeftP ? 0 : 1;
-                            if (_pillarDestroyed[zoneIdx]) {
-                                // 기둥 완전 파괴 → 그냥 통과
-                            } else {
+                            if (!_pillarDestroyed[zoneIdx]) {
+                                // 기둥 미파괴 → 강제로 기둥 충돌 우선 설정
                                 insideTerrain = true;
                                 fromPillarZone = true;
                                 hitPillarZoneIdx = zoneIdx;
+                            } else {
+                                // 기둥 완전 파괴 → 통과, 이전 로그 충돌도 무효화
+                                insideTerrain = false;
+                                fromPillarZone = false;
                             }
                         }
                     }
