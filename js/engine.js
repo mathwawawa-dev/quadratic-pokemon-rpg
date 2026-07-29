@@ -75,6 +75,10 @@ let craters = [];
 let _craterCanvas = null;
 // log_bridge 기둥 전용 오프스크린 캔버스 (destination-out 크레이터 적용)
 let _pillarCanvas = null;
+// 기둥 독립 내구도: [left, right]. 3발 맞으면 파괴 (크레이터 배열과 무관)
+let _pillarHits = [0, 0];
+let _pillarDestroyed = [false, false];
+const PILLAR_MAX_HITS = 3;
 let _craterCtx = null;
 function getCraterCanvas(w, h) {
     if (!_craterCanvas) {
@@ -533,6 +537,8 @@ function initStage() {
     ceilHeights = {};
     terrainSpikes = [];
     craters = [];
+    _pillarHits = [0, 0];
+    _pillarDestroyed = [false, false];
     window.caveCeilOffset = 5.0 + Math.random() * 5.0; // 동굴 천장 높이 5~10 무작위 상승 오프셋
     window.lastElectricLightningTime = Date.now();
     window.lastCaveWarningTime = Date.now();
@@ -2421,6 +2427,7 @@ function updateGame() {
             let hitPoint = null;
             let hitY = -100;
             let directHitTarget = null;
+            let hitPillarZoneIdx = -1; // 기둥 충돌 시 어느 기둥인지 (0=좌, 1=우, -1=기둥아님)
             
             for (let step = 1; step <= steps; step++) {
                 const tx = prevStepX + (stepVx * step) / steps;
@@ -2486,19 +2493,23 @@ function updateGame() {
                     if (inLeftP || inRightP) {
                         const oSurf = (originalTerrainHeights[key]?.[0] ?? 1.7);
                         if (ty <= oSurf - 5.0 && ty >= -15.0) {
-                            insideTerrain = true;
-                            fromPillarZone = true; // 기둥 전용 플래그
+                            const zoneIdx = inLeftP ? 0 : 1;
+                            if (_pillarDestroyed[zoneIdx]) {
+                                // 기둥 완전 파괴 → 그냥 통과
+                            } else {
+                                insideTerrain = true;
+                                fromPillarZone = true;
+                                hitPillarZoneIdx = zoneIdx;
+                            }
                         }
                     }
                 }
-                
+
                 if (insideTerrain) {
                     let insideCrater = false;
-                    if (typeof craters !== 'undefined') {
+                    if (!fromPillarZone && typeof craters !== 'undefined') {
+                        // 기둥 구역은 _pillarDestroyed로 판단하므로 크레이터 배열 미사용
                         for (const c of craters) {
-                            // 기둥 구역 충돌 시: 로그 크레이터(y>-3.0)는 기둥 관통 허용 안 함
-                            // → 기둥 전용 크레이터(y<=-3.0)만 기둥 내 통과 허용
-                            if (fromPillarZone && c.y > -3.0) continue;
                             if (Math.hypot(tx - c.x, ty - c.y) <= c.r) { insideCrater = true; break; }
                         }
                     }
@@ -2509,6 +2520,7 @@ function updateGame() {
                         }
                     }
                 }
+
 
                 // 2. 적 포켓몬 충돌 검사
                 let directHit = null;
@@ -2715,6 +2727,13 @@ function updateGame() {
                     missile.x = targetX; missile.y = targetY; // 미사일을 충돌 위치로 스냅
                     createExplosion(targetX, targetY, getMissileColor());
                     createCrater(targetX, targetY, explosionRadius);
+                    // 기둥 충돌 시: 내구도 차감 → PILLAR_MAX_HITS 이상이면 파괴
+                    if (hitPillarZoneIdx >= 0) {
+                        _pillarHits[hitPillarZoneIdx]++;
+                        if (_pillarHits[hitPillarZoneIdx] >= PILLAR_MAX_HITS) {
+                            _pillarDestroyed[hitPillarZoneIdx] = true;
+                        }
+                    }
                     let hitSomeone = false;
                     // 직격(공중 포켓몬 포함) 처리: directHitTarget이 있으면 우선 적용
                     if (directHitTarget && directHitTarget.hp > 0) {
