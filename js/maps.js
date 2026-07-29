@@ -40,7 +40,7 @@ const TERRAINS = {
     },
     sky: {
         name: "성층권",
-        bg: ["#c8e8f8", "#70b8e8", "#3a90d8", "#5080c8", "#2050a8"],
+        bg: ["#3a8fa0", "#4ca1af", "#96c8d8", "#c4e0e5"],
         color: "rgba(255,255,255,0.8)", outColor: "#4ca1af",
         deathZoneY: -30,
         func: (x) => Math.sin((x + terrainSeed) / 4) * 2 + Math.sin((x - terrainSeed) / 1.5) * 0.5 - 2
