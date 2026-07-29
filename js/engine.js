@@ -854,7 +854,7 @@ function initStage() {
                     const terrainYAtRx = getTerrainY(rx);
                     if (terrainYAtRx > -50) {
                         // 모든 맵(일반, 스파이크 언덕, 공중정원): 지형/스파이크 표면(terrainYAtRx) 위로 최소 +2.5~4.0 공중 배치 (지형 파묻힘 완벽 방지)
-                        ry = Math.max(terrainYAtRx + 2.5, flyingYPool[flyingYIdx % flyingYPool.length]) + Math.random() * 1.5;
+                        ry = Math.max(terrainYAtRx + 4.5, flyingYPool[flyingYIdx % flyingYPool.length]) + Math.random() * 1.5;
                     } else {
                         ry = flyingYPool[flyingYIdx % flyingYPool.length] + (Math.random()-0.5)*4;
                     }
@@ -909,8 +909,9 @@ function initStage() {
             const spawnLimitX = 18;
             rx = Math.max(-spawnLimitX, Math.min(spawnLimitX, rx));
             const terrainYAtRx = getTerrainY(rx);
-            if (e.isFlying) {
-                ry = terrainYAtRx > -50 ? terrainYAtRx + 2.8 : 13 + idx * 2;
+            if (e.isFlying || isSkyMap) {
+                // sky 맵: 항상 공중 배치, idx로 겹침 방지
+                ry = terrainYAtRx > -50 ? Math.max(terrainYAtRx + 4.5, 12 + idx * 2) : 12 + idx * 2;
             } else {
                 ry = terrainYAtRx + 0.75;
                 if (ry < -50) { e.isFlying = true; e.hasCloud = true; ry = 13 + idx * 2; }
