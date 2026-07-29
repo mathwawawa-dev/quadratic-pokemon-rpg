@@ -4488,7 +4488,7 @@ function render() {
         targetCtx.restore(); // 잔디 레이어 save 해제
         targetCtx.restore(); // 클리핑 해제
 
-        // 5. 폭발 구멍(craters) 타공 — 모든 지형 요소(통나무, 잔디, Dot Rim, 흙 띠)를 그리고 난 후 일괄 타공하여 뚫린 구멍 위 잔상 완벽 제거
+        // 5. 폭발 구멍(craters) 타공 — 모든 지형 요소(통나무, 잔디, Dot Rim, 흙 띠)를 그리고 난 후 일괄 타공
         if (craterCanvas) {
             targetCtx.globalCompositeOperation = 'destination-out';
             for (const crater of craters) {
@@ -4497,10 +4497,30 @@ function render() {
                 targetCtx.beginPath();
                 targetCtx.arc(p.x, p.y, pr, 0, Math.PI * 2);
                 targetCtx.fill();
+
+                // 확장 구간(|x|>30): 크레이터가 지표면보다 낮을 때 잔디 미타공 버그 수정
+                // → 지표면 y에도 추가 타공하여 녹색 잔디를 항상 제거
+                if (crater.x < skyStartX || crater.x > skyEndX) {
+                    const logBoundX = crater.x < skyStartX ? skyStartX : skyEndX;
+                    const boundKey2 = (Math.round(logBoundX * 10) / 10).toFixed(1);
+                    const boundYs2 = originalTerrainHeights[boundKey2] || [];
+                    if (boundYs2.length > 0 && boundYs2[0] !== -100) {
+                        const dx2 = crater.x - logBoundX;
+                        const surfaceY2 = boundYs2[0] + dx2 * dx2 * 0.007;
+                        // 크레이터가 지표면 근처에 없을 때만 추가 타공 (이미 닿으면 불필요)
+                        if (crater.y + crater.r < surfaceY2 - 0.05) {
+                            const sp = gridToScreen(crater.x, surfaceY2);
+                            targetCtx.beginPath();
+                            targetCtx.arc(sp.x, sp.y, pr, 0, Math.PI * 2);
+                            targetCtx.fill();
+                        }
+                    }
+                }
             }
             targetCtx.globalCompositeOperation = 'source-over';
             ctx.drawImage(craterCanvas, 0, 0);
         }
+
     } else {
         // 지형 데이터는 -60~60 범위에서만 초기화됨.
         // ★ terrainHeights(크레이터로 영구 수정된 값) 사용 → craters 배열 캡 오버플로우와 무관하게
