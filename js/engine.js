@@ -3146,7 +3146,18 @@ function render() {
         ctx.fillStyle = '#0d0d0d';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
-        const grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
+        let gradStartY = canvas.height; // colorStop 0 기준 screen Y (기본: 캔버스 하단)
+        let gradEndY   = 0;             // colorStop 1 기준 screen Y (기본: 캔버스 상단)
+        if (stage.terrain === 'log_bridge') {
+            // 배경을 월드 Y 좌표에 고정 → 카메라 이동 시 배경도 함께 움직임
+            const bgWorldMin = -28; // 그라데이션 하단 월드 Y (사망 구역 아래)
+            const bgWorldMax = +25; // 그라데이션 상단 월드 Y (화면 위)
+            const sBot = gridToScreen(0, bgWorldMin);
+            const sTop = gridToScreen(0, bgWorldMax);
+            gradStartY = sBot.y;
+            gradEndY   = sTop.y;
+        }
+        const grad = ctx.createLinearGradient(0, gradStartY, 0, gradEndY);
         tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
         ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
