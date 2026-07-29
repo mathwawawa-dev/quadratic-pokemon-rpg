@@ -3187,9 +3187,9 @@ function render() {
         ctx.save();
         const pillarHalfW = 1.5;   // 너비 3유닛 (±1.5)
         const pillarBotY  = -15.0; // 하단 고정 y
-        // 통나무 끝 = 현재 카메라 좌우 끝
-        const logLeftX  = Math.ceil(X_MIN)  + pillarHalfW;
-        const logRightX = Math.floor(X_MAX) - pillarHalfW;
+        // 통나무 고정 끝점 (줌/팬 무관)
+        const logLeftX  = (tData.logX0 ?? -40) + pillarHalfW;
+        const logRightX = (tData.logX1 ??  40) - pillarHalfW;
         const pillarCenters = [logLeftX, logRightX];
 
         for (const cx of pillarCenters) {
