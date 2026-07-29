@@ -24,7 +24,7 @@ const TERRAINS = {
     },
     log_bridge: {
         name: "외나무다리",
-        bg: ["#38bdf8", "#7dd3fc", "#bae6fd"],
+        bg: ["#9a3412", "#f97316", "#fde68a"],
         color: "#652810", outColor: "#3d1708",
         deathZoneY: -16,
         initZoomSpanMin: 42,  // 초기 배율: Y분산 없어 과도하게 줌인되는 현상 방지 (다른 맵 수준으로 맞춤)
