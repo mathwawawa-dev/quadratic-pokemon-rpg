@@ -885,6 +885,8 @@ function initStage() {
             } while (!valid && attempts < 500);
         };
 
+        let usedFallback = false;
+
         tryPlacement(e.isFlying); // 1차 배치 시도
 
         // 1차 실패 시: log_bridge는 지형이 연속적이므로 공중 변환 없이 강제 지상 배치
@@ -894,16 +896,9 @@ function initStage() {
                 // 통나무 위에 강제 배치 (공중 변환 금지)
                 rx = side === 'L' ? -(8 + idx * 4) : (8 + idx * 4);
                 rx = Math.max(-17, Math.min(17, rx));
-                // 겹침 방지: 이미 배치된 포켓몬과 거리가 6 미만이면 rx를 바깥으로 6씩 밀기 (최대 4회)
-                for (let lb = 0; lb < 4; lb++) {
-                    const preRy = getTerrainY(rx) + 0.75;
-                    if (placedPos.some(p => Math.hypot(rx - p.x, preRy - p.y) < 6.0)) {
-                        rx += (side === 'L' ? -6.0 : 6.0);
-                        rx = Math.max(-17, Math.min(17, rx));
-                    } else break;
-                }
                 ry = getTerrainY(rx) + 0.75;
                 valid = true;
+                usedFallback = true;
             } else {
                 e.isFlying = true;
                 e.hasCloud = true;
@@ -911,7 +906,7 @@ function initStage() {
                 if (valid) flyingYIdx++;
             }
         }
-        
+
         // 2차 실패 시 (혹은 처음부터 공중이었는데 실패): 최후의 수단으로 겹치지 않게 강제 분산 배치
         if (!valid) {
             rx = side === 'L' ? player.x - 10 - idx*6 : player.x + 10 + idx*6;
@@ -924,11 +919,27 @@ function initStage() {
                 ry = terrainYAtRx + 0.75;
                 if (ry < -50) { e.isFlying = true; e.hasCloud = true; ry = 13 + idx * 2; }
             }
-            // 폴백에서도 기존 배치와 겹치지 않도록 ry를 3씩 올려 최대 10회 분리 시도
-            let fbOverlap = true, fbTry = 0;
-            while (fbOverlap && fbTry < 10) {
-                fbOverlap = placedPos.some(p => Math.hypot(rx - p.x, ry - p.y) < 6.0);
-                if (fbOverlap) { ry += 3.0; fbTry++; }
+            usedFallback = true;
+        }
+
+        // ── 통합 겹침 해소 (폴백 경로 전체 적용) ──────────────────────────────
+        // tryPlacement는 checkValidPos로 이미 보장, 폴백들은 보장 안 되므로 여기서 처리
+        if (usedFallback) {
+            const fbLimitX = stage.terrain === 'log_bridge' ? 17 : 18;
+            // 1단계: rx를 바깥으로 6씩 밀기 (최대 4회)
+            for (let lb = 0; lb < 4; lb++) {
+                if (placedPos.some(p => Math.hypot(rx - p.x, ry - p.y) < 6.0)) {
+                    const newRx = rx + (side === 'L' ? -6.0 : 6.0);
+                    const clampedRx = Math.max(-fbLimitX, Math.min(fbLimitX, newRx));
+                    if (Math.abs(clampedRx - rx) < 0.5) break; // clamp에 막히면 중단
+                    rx = clampedRx;
+                    ry = e.isFlying ? ry : (getTerrainY(rx) > -50 ? getTerrainY(rx) + 0.75 : ry);
+                } else break;
+            }
+            // 2단계: rx가 한계에 막혀도 겹치면 ry를 3씩 올려 분리 (최대 10회)
+            let fbTry = 0;
+            while (placedPos.some(p => Math.hypot(rx - p.x, ry - p.y) < 6.0) && fbTry < 10) {
+                ry += 3.0; fbTry++;
             }
         }
         
