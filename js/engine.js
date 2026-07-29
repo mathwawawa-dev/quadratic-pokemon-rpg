@@ -78,7 +78,7 @@ let _pillarCanvas = null;
 // 기둥 독립 내구도: [left, right]. 3발 맞으면 파괴 (크레이터 배열과 무관)
 let _pillarHits = [0, 0];
 let _pillarDestroyed = [false, false];
-const PILLAR_MAX_HITS = 3;
+const PILLAR_MAX_HITS = 1; // 기둥은 1발 직격으로 파괴
 let _craterCtx = null;
 function getCraterCanvas(w, h) {
     if (!_craterCanvas) {
@@ -2496,7 +2496,7 @@ function updateGame() {
                         const pillarKey = (Math.round(tx * 10) / 10).toFixed(1);
                         const oSurf = (originalTerrainHeights[pillarKey]?.[0] ?? 1.7);
                         const pillarTopY = oSurf - 5.0; // 통나무 아랫면 = 기둥 상단
-                        if (ty <= pillarTopY && ty >= -30.0) {
+                        if (ty <= pillarTopY + 0.2 && ty >= -30.0) { // +0.2: 로그-기둥 경계 모호 구간 기둥으로 흡수
                             const zoneIdx = inLeftP ? 0 : 1;
                             if (!_pillarDestroyed[zoneIdx]) {
                                 // 기둥 미파괴 → 강제로 기둥 충돌 우선 설정
