@@ -26,7 +26,6 @@ canvas.addEventListener('mouseleave', () => {
 
 // ---------- Coordinate System ----------
 let X_MIN = -10, X_MAX = 20, Y_MIN = -15, Y_MAX = 25;
-let bgGradWorldMin = -30, bgGradWorldMax = 30; // 배경 그라데이션 월드 Y 앵커 범위 (스테이지 시작 시 고정)
 
 let caveCeilingCanvas = null;
 let needsCaveRedraw = true;
@@ -783,18 +782,11 @@ function initStage() {
 
     const isSkyMap = (stage.terrain === 'sky' || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden');
     const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
-    const isUnderwater = !!(TERRAINS[stage.terrain].isUnderwater); // 해저 맵: 모든 포켓몬 지면 위 부유
-    let flyingYPool;
-    if (stage.terrain === 'garden') {
-        // 부유하는 섬: 섬 높이(y≈-4~+1) 기준으로 2~14 사이 3유닛 간격 분산
-        flyingYPool = [2, 5, 8, 11, 14].sort(() => Math.random() - 0.5);
-    } else if (isSkyMap) {
-        flyingYPool = [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5);
-    } else if (isFloatingMapLocal) {
-        flyingYPool = [8, 10, 12, 13, 14].sort(() => Math.random() - 0.5);
-    } else {
-        flyingYPool = [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
-    }
+    let flyingYPool = isSkyMap
+        ? [8, 10, 12, 14, 16].sort(() => Math.random() - 0.5)
+        : (isFloatingMapLocal
+            ? [8, 10, 12, 13, 14].sort(() => Math.random() - 0.5)
+            : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5));
     let flyingYIdx = 0;
 
     const barrierTypes = ['reflect', 'absorb', 'absolute', 'warp'].sort(() => Math.random() - 0.5);
@@ -857,15 +849,11 @@ function initStage() {
                 const spawnLimitX = 18;
                 rx = Math.max(-spawnLimitX, Math.min(spawnLimitX, rx));
                 
-                if (isFlying || isSkyMap || isUnderwater) {
+                if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
                     if (terrainYAtRx > -50) {
-                        if (isUnderwater && !isFlying) {
-                            // 해저 맵: 지형 위 2~5 유닛 사이에 부유 (구름 없이)
-                            ry = terrainYAtRx + 2.0 + Math.random() * 3.0;
-                        } else {
-                            ry = Math.max(terrainYAtRx + 4.5, flyingYPool[flyingYIdx % flyingYPool.length]) + Math.random() * 1.5;
-                        }
+                        // 모든 맵(일반, 스파이크 언덕, 공중정원): 지형/스파이크 표면(terrainYAtRx) 위로 최소 +2.5~4.0 공중 배치 (지형 파묻힘 완벽 방지)
+                        ry = Math.max(terrainYAtRx + 2.5, flyingYPool[flyingYIdx % flyingYPool.length]) + Math.random() * 1.5;
                     } else {
                         ry = flyingYPool[flyingYIdx % flyingYPool.length] + (Math.random()-0.5)*4;
                     }
@@ -877,7 +865,7 @@ function initStage() {
                 
                 // 300번 이상 실패하면 한 섬에 한 마리 규칙을 완화하여 무조건 지상에 배치되게 유도
                 const strictIsland = attempts < 300;
-                valid = checkValidPos(rx, ry, (isFlying || isSkyMap || isUnderwater), strictIsland);
+                valid = checkValidPos(rx, ry, (isFlying || isSkyMap), strictIsland);
                 
                 if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
@@ -897,8 +885,6 @@ function initStage() {
             } while (!valid && attempts < 500);
         };
 
-        tryPlacement(e.isFlying || isUnderwater); // 1차 배치 시도 (해저 맵은 항상 부유 경로)
-
         // 1차 실패 시: log_bridge는 지형이 연속적이므로 공중 변환 없이 강제 지상 배치
         // 그 외 맵은 공중 몬스터로 변환하여 재시도
         if (!valid && !e.isFlying && !isSkyMap) {
@@ -910,7 +896,7 @@ function initStage() {
                 valid = true;
             } else {
                 e.isFlying = true;
-                e.hasCloud = !isUnderwater; // 해저 맵은 구름 없이 부유
+                e.hasCloud = true;
                 tryPlacement(true);
                 if (valid) flyingYIdx++;
             }
@@ -922,9 +908,8 @@ function initStage() {
             const spawnLimitX = 18;
             rx = Math.max(-spawnLimitX, Math.min(spawnLimitX, rx));
             const terrainYAtRx = getTerrainY(rx);
-            if (e.isFlying || isSkyMap) {
-                // sky 맵: 항상 공중 배치, idx로 겹침 방지
-                ry = terrainYAtRx > -50 ? Math.max(terrainYAtRx + 4.5, 12 + idx * 2) : 12 + idx * 2;
+            if (e.isFlying) {
+                ry = terrainYAtRx > -50 ? terrainYAtRx + 2.8 : 13 + idx * 2;
             } else {
                 ry = terrainYAtRx + 0.75;
                 if (ry < -50) { e.isFlying = true; e.hasCloud = true; ry = 13 + idx * 2; }
@@ -933,11 +918,6 @@ function initStage() {
         
         if (e.isFlying || isSkyMap) {
             flyingYIdx++;
-            if (isUnderwater) e.hasCloud = false; // 해저: 기존 공중 포켓몬도 구름 제거
-        } else if (isUnderwater) {
-            // 해저 맵: 지상 포켓몬도 부유 처리 (구름 없이)
-            e.isFlying = true;
-            e.hasCloud = false;
         }
 
         if (isSkyMap && ry >= 19.8) {
@@ -956,7 +936,7 @@ function initStage() {
             const safeTerrainY = getTerrainY(rx);
             ry = safeTerrainY > -50 ? safeTerrainY + 2.5 : spawnDeathZoneY + 8;
             e.isFlying = true;
-            e.hasCloud = !isUnderwater; // 해저 맵은 구름 없이
+            e.hasCloud = true;
         }
         if (stage.terrain === 'garden' && (e.isFlying || isSkyMap) && ry >= 15.0) {
             ry = 14.5;
@@ -971,7 +951,7 @@ function initStage() {
             shake: 0, vx: 0, vy: 0,
             rotation: 0, angularVelocity: 0, isKnockedBack: false, groundLayerIdx: -1,
             name: e.name, type: e.type,
-            isSurfaced: !!(TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating || isSkyMap || isUnderwater || e.isFlying),
+            isSurfaced: TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating ? true : false,
             barrierType: barrierType,
             barrierStartTime: Date.now() + (isPsychic ? 3000 : 0) + idx * 2500
         };
@@ -1084,9 +1064,6 @@ function initStage() {
     balloons.push({ x: bx, y: by, type, active: true, radius: 0.65, phase: Math.random() * Math.PI * 2 });
 
     resetView();
-    // 배경 그라데이션 월드 앵커링: 초기 카메라 Y 범위를 10유닛 여유분 포함하여 고정
-    bgGradWorldMin = Y_MIN - 10;
-    bgGradWorldMax = Y_MAX + 10;
 
     // 모든 스프라이트 이미지가 실제로 로드 완료된 시점에 오버레이를 닫음
     // (고정 타이머 대신) - 단, 최대 1500ms 캡으로 너무 길어지지 않게 제한
@@ -3169,10 +3146,18 @@ function render() {
         ctx.fillStyle = '#0d0d0d';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
-        // 모든 맵: 월드 Y 좌표에 앵커링된 배경 그라데이션 (카메라 이동 시 배경도 함께 스크롤)
-        const sBot = gridToScreen(0, bgGradWorldMin);
-        const sTop = gridToScreen(0, bgGradWorldMax);
-        const grad = ctx.createLinearGradient(0, sBot.y, 0, sTop.y);
+        let gradStartY = canvas.height; // colorStop 0 기준 screen Y (기본: 캔버스 하단)
+        let gradEndY   = 0;             // colorStop 1 기준 screen Y (기본: 캔버스 상단)
+        if (stage.terrain === 'log_bridge') {
+            // 배경을 월드 Y 좌표에 고정 → 카메라 이동 시 배경도 함께 움직임
+            const bgWorldMin = -28; // 그라데이션 하단 월드 Y (사망 구역 아래)
+            const bgWorldMax = +25; // 그라데이션 상단 월드 Y (화면 위)
+            const sBot = gridToScreen(0, bgWorldMin);
+            const sTop = gridToScreen(0, bgWorldMax);
+            gradStartY = sBot.y;
+            gradEndY   = sTop.y;
+        }
+        const grad = ctx.createLinearGradient(0, gradStartY, 0, gradEndY);
         tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
         ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
     }

@@ -40,7 +40,7 @@ const TERRAINS = {
     },
     sky: {
         name: "성층권",
-        bg: ["#3a8fa0", "#4ca1af", "#96c8d8", "#c4e0e5"],
+        bg: ["#4ca1af", "#c4e0e5"],
         color: "rgba(255,255,255,0.8)", outColor: "#4ca1af",
         deathZoneY: -30,
         func: (x) => Math.sin((x + terrainSeed) / 4) * 2 + Math.sin((x - terrainSeed) / 1.5) * 0.5 - 2
@@ -97,7 +97,6 @@ const TERRAINS = {
     },
     ocean: {
         name: "깊은 바닷속",
-        isUnderwater: true,  // 모든 포켓몬 해저 부유 (지면 위 2~5 유닛, 구름 없이)
         bg: ["#020617", "#0c3460", "#0e7490"], // 해저 하단 칠흑 → 짙은 청남 → 상단 청록 3단 그라데이션
         color: "#0284c7", outColor: "#0369a1", // 선명하고 맑은 네온 사이안 해저 모래 언덕 지형
         func: (x) => {
