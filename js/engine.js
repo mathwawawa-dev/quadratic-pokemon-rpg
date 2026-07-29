@@ -670,14 +670,29 @@ function initStage() {
                   }
               } else if (stage.terrain === 'log_bridge') {
                   const roundedX = Math.round(x * 10) / 10;
-                  if (roundedX < -45 || roundedX > 45) {
+                  const logX0 = tData.logX0 ?? -31;
+                  const logX1 = tData.logX1 ??  31;
+                  if (roundedX < logX0 - 0.05 || roundedX > logX1 + 0.05) {
                       y = -100;
                       terrainHeights[key] = [-100];
                       terrainBottoms[key] = [-100];
                   } else {
-                      // 렌더링 thickness=5.0(고정)과 물리 바닥 일치 - getThickness 가변값 불일치 방지
                       terrainHeights[key] = [y];
-                      terrainBottoms[key] = [y - 5.0];
+                      // 기둥 구역: 포물선 바닥 — 양 끝이 제일 두껍고 중심은 오목한 스킨돌 형태
+                      const pW   = 3.0;   // 기둥 너비
+                      const pBot = -15.0; // 기둥 최저 y
+                      const pRise = 5.0;  // 오목 깊이 (양끝 -15, 중심 -10)
+                      const lCx = logX0 + pW / 2;
+                      const rCx = logX1 - pW / 2;
+                      let botY = y - 5.0;
+                      if (roundedX >= logX0 && roundedX <= logX0 + pW) {
+                          const dx = (roundedX - lCx) / (pW / 2);
+                          botY = pBot + pRise * (1 - dx * dx);
+                      } else if (roundedX >= logX1 - pW && roundedX <= logX1) {
+                          const dx = (roundedX - rCx) / (pW / 2);
+                          botY = pBot + pRise * (1 - dx * dx);
+                      }
+                      terrainBottoms[key] = [botY];
                   }
               } else if (stage.terrain === 'grass' || stage.terrain === 'ice' || stage.terrain === 'lava' || stage.terrain === 'cave' || stage.terrain === 'electric' || stage.terrain === 'ocean' || stage.terrain === 'psychic') {
                   const roundedX = Math.round(x * 10) / 10;
@@ -3182,69 +3197,7 @@ function render() {
         ctx.restore();
     }
 
-    // 외나무다리('log_bridge') 고인돌 지지대: 통나무 좌우 끝에 두꺼운 기둥 (너비 3유닛, y=-15까지)
-    if (stage.terrain === 'log_bridge') {
-        ctx.save();
-        const pillarHalfW = 1.5;   // 너비 3유닛 (±1.5)
-        const pillarBotY  = -15.0; // 하단 고정 y
-        // 기둥 중심: log끝점에서 2.5 안쪽 (범위 -30~-27, +27~+30)
-        const logLeftX  = (tData.logX0 ?? -31) + 2.5;
-        const logRightX = (tData.logX1 ??  31) - 2.5;
-        const pillarCenters = [logLeftX, logRightX];
 
-        for (const cx of pillarCenters) {
-            const key = (Math.round(cx * 10) / 10).toFixed(1);
-            // 통나무 실제 하단 y: terrainBottoms 사용 (buildTerrain에서 y-5.0으로 저장됨)
-            const botArr = terrainBottoms[key];
-            const pillarTopY = (botArr && botArr[0] !== undefined && botArr[0] !== -100)
-                ? botArr[0]
-                : ((terrainHeights[key] ?? [1.7])[0] - 5.0);
-
-            // 화면 좌표 (사다리꼴: 아래로 갈수록 ±0.4 넓어짐)
-            const flare = 0.4;
-            const tl = gridToScreen(cx - pillarHalfW,          pillarTopY);
-            const tr = gridToScreen(cx + pillarHalfW,          pillarTopY);
-            const br = gridToScreen(cx + pillarHalfW + flare,  pillarBotY);
-            const bl = gridToScreen(cx - pillarHalfW - flare,  pillarBotY);
-
-            // 그라데이션 (상단: 갈색, 하단: 짙은 흑갈색)
-            const grad = ctx.createLinearGradient(tl.x, tl.y, bl.x, bl.y);
-            grad.addColorStop(0,   '#5c3317');
-            grad.addColorStop(0.4, '#3e200e');
-            grad.addColorStop(1,   '#1e0e06');
-            ctx.fillStyle = grad;
-
-            ctx.beginPath();
-            ctx.moveTo(tl.x, tl.y);
-            ctx.lineTo(tr.x, tr.y);
-            ctx.lineTo(br.x, br.y);
-            ctx.lineTo(bl.x, bl.y);
-            ctx.closePath();
-            ctx.fill();
-
-            // 테두리
-            ctx.strokeStyle = '#1a0a04';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // 수평 나무결 (5줄)
-            ctx.strokeStyle = 'rgba(0,0,0,0.18)';
-            ctx.lineWidth = 1;
-            for (let g = 1; g <= 5; g++) {
-                const t = g / 6;
-                const gy = pillarTopY + (pillarBotY - pillarTopY) * t;
-                const lx = cx - pillarHalfW - flare * t;
-                const rx = cx + pillarHalfW + flare * t;
-                const sl = gridToScreen(lx, gy);
-                const sr = gridToScreen(rx, gy);
-                ctx.beginPath();
-                ctx.moveTo(sl.x, sl.y);
-                ctx.lineTo(sr.x, sr.y);
-                ctx.stroke();
-            }
-        }
-        ctx.restore();
-    }
 
     // 외나무다리('log_bridge') 지형 분위기: 초록 나뭇잎이 바람에 휘날리며 떨어지는 효과 (월드 좌표 연동)
     if (stage.terrain === 'log_bridge') {
