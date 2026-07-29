@@ -4335,9 +4335,9 @@ function render() {
             const logTop = gridToScreen(0, 0);
             const logBot = gridToScreen(0, -6);
             const logGrad = targetCtx.createLinearGradient(0, logTop.y, 0, logBot.y);
-            logGrad.addColorStop(0.0, '#351608'); // 상단 — 어두운 갈색
-            logGrad.addColorStop(0.55, '#1e0903'); // 중간 — 매우 짙은 브라운
-            logGrad.addColorStop(1.0, '#0f0401'); // 하단 — 거의 흑갈
+            logGrad.addColorStop(0.0, '#6b2d10'); // 상단 중간 갈색
+            logGrad.addColorStop(0.55, '#3d1207'); // 중간 딥 브라운
+            logGrad.addColorStop(1.0, '#1e0803'); // 하단 매우 짙은 다크브라운
             targetCtx.fillStyle = logGrad;
             targetCtx.fill();
         }
@@ -4356,7 +4356,7 @@ function render() {
                 if (x === extStartX) targetCtx.moveTo(p.x, p.y);
                 else targetCtx.lineTo(p.x, p.y);
             }
-            targetCtx.strokeStyle = (Math.round(relRatio * 100) % 2 === 0) ? 'rgba(30, 10, 3, 0.45)' : 'rgba(61, 23, 9, 0.35)';
+            targetCtx.strokeStyle = (Math.round(relRatio * 100) % 2 === 0) ? 'rgba(61, 21, 6, 0.45)' : 'rgba(122, 47, 18, 0.35)';
             targetCtx.lineWidth = 2.5;
             targetCtx.stroke();
         }
