@@ -25,7 +25,7 @@ const TERRAINS = {
     log_bridge: {
         name: "외나무다리",
         bg: ["#590a20", "#753306", "#110202"],
-        color: "#652810", outColor: "#3d1708",
+        color: "#1a0a04", outColor: "#0a0301",
         deathZoneY: -16,
         initZoomSpanMin: 42,  // 초기 배율: Y분산 없어 과도하게 줌인되는 현상 방지 (다른 맵 수준으로 맞춤)
         func: (x) => Math.sin((x + terrainSeed) / 10) * 0.15 + Math.cos((x - terrainSeed) / 13) * 0.05 + 0.7,
