@@ -192,6 +192,12 @@ function resetView() {
 
     let reqXSpan = Math.max(spanX, spanY * aspect) * 1.18; // 초기 진입 시 배율 1단계 축소(줌아웃)
     if (reqXSpan < 19) reqXSpan = 19;
+    // 맵별 최소 시야 폭 보정 (log_bridge처럼 Y분산이 없어 zoom이 과도하게 좁아지는 경우 방지)
+    const _rvStageEarly = LEVELS[currentStage % LEVELS.length];
+    const _rvTDataEarly = _rvStageEarly && TERRAINS[_rvStageEarly.terrain];
+    if (_rvTDataEarly && _rvTDataEarly.initZoomSpanMin) {
+        reqXSpan = Math.max(reqXSpan, _rvTDataEarly.initZoomSpanMin);
+    }
     let reqYSpan = reqXSpan / aspect;
 
     // 3. 하단 계기판 UI 영역(22%)을 감안해 시각적 유효 영역 중앙에 포켓몬 평균 좌표(centerX, centerY) 배치
@@ -200,7 +206,6 @@ function resetView() {
     Y_MIN = centerY - reqYSpan * 0.61;
     Y_MAX = Y_MIN + reqYSpan;
 
-    // 맵별 카메라 오프셋 적용 (예: log_bridge cameraOffsetY: -3)
     const _rvStage = LEVELS[currentStage % LEVELS.length];
     const _rvTData = _rvStage && TERRAINS[_rvStage.terrain];
     const _rvCamOff = (_rvTData && _rvTData.cameraOffsetY) || 0;
