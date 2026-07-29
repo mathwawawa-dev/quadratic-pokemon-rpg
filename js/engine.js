@@ -2491,7 +2491,8 @@ function updateGame() {
                     const inLeftP  = tx >= lx0p + insetP && tx <= lx0p + insetP + pWp;
                     const inRightP = tx >= lx1p - insetP - pWp && tx <= lx1p - insetP;
                     if (inLeftP || inRightP) {
-                        const oSurf = (originalTerrainHeights[key]?.[0] ?? 1.7);
+                        const pillarKey = (Math.round(tx * 10) / 10).toFixed(1); // key는 else블록 스코프라 여기서 재계산
+                        const oSurf = (originalTerrainHeights[pillarKey]?.[0] ?? 1.7);
                         if (ty <= oSurf - 5.0 && ty >= -15.0) {
                             const zoneIdx = inLeftP ? 0 : 1;
                             if (_pillarDestroyed[zoneIdx]) {
