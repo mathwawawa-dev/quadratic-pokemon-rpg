@@ -2950,6 +2950,48 @@ function drawEntity(ent) {
         let drawType = 'none'; // 'none' | 'generating' | 'active' | 'flashing'
         let progress = 1.0;
         let isFlashVisible = true;
+        
+        if (cycleTime < timing.gen) {
+            drawType = 'generating';
+            progress = cycleTime / timing.gen;
+        } else if (cycleTime < timing.gen + timing.active) {
+            drawType = 'active';
+        } else if (cycleTime < timing.gen + timing.active + timing.flash) {
+            drawType = 'flashing';
+            const flashTime = cycleTime - (timing.gen + timing.active);
+            isFlashVisible = (flashTime % 0.5) < 0.25;
+        } else {
+            drawType = 'none';
+        }
+
+        const info = getBarrierColors(ent.barrierType);
+        
+        // 쉴드 원 및 외곽 가장자리 그리기
+        if (drawType !== 'none' && (drawType !== 'flashing' || isFlashVisible)) {
+            ctx.save();
+            ctx.strokeStyle = info.stroke;
+            ctx.fillStyle = info.fill;
+            const r = scaleLength(1.68); // 1.4 * 1.2배
+
+            if (ent.barrierType === 'reflect') {
+                // 반사 배리어: 날카로운 육각형 + 꼭짓점 가시 돌출형
+                ctx.lineWidth = 2.5;
+                pathHexagon(ctx, r, progress);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 생성 중이 아닐 때만 가시 렌더링
+                if (drawType !== 'generating') {
+                    ctx.beginPath();
+                    const sides = 6;
+                    const startAngle = -Math.PI / 2;
+                    for (let i = 0; i < sides; i++) {
+                        const angle = startAngle + (i / sides) * Math.PI * 2;
+                        const px = Math.cos(angle) * r;
+                        const py = Math.sin(angle) * r;
+                        const spikeX = Math.cos(angle) * (r + scaleLength(0.22));
+                        const spikeY = Math.sin(angle) * (r + scaleLength(0.22));
+                        ctx.moveTo(px, py);
                         ctx.lineTo(spikeX, spikeY);
                     }
                     ctx.strokeStyle = info.stroke;
