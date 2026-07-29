@@ -802,16 +802,26 @@ function initStage() {
             while (rightBound < 35 && Math.max(...getTerrainYAll(rightBound)) > -50) rightBound += 0.5;
         }
 
+        // 새 포켓몬의 '정착 예상 y' (공중/땅속 모두 terrain+0.75로 투영)
+        const newTerrainY = getTerrainY(rx);
+        const projRy = newTerrainY > -50 ? newTerrainY + 0.75 : ry;
+
         for (const p of placedPos) {
             const dx = Math.abs(rx - p.x);
             const dy = Math.abs(ry - p.y);
-            // 1. 유클리드 거리 6 이상
+            // 1. 실제 spawn 위치 유클리드 거리 6 이상
             if (Math.hypot(dx, dy) < 6.0) return false;
             // 2. x좌표 동일 방지 (오차 0.1)
             if (dx < 0.1) return false;
             // 3. y좌표 동일 방지 (오차 0.1)
             if (dy < 0.1) return false;
-            
+
+            // 4. 정착 예상 위치 체크: 공중→착지, 땅속→지표면 투영 후 거리 6 이상
+            //    (낙하 후 겹침 방지 — 실제 위치와 투영 위치 중 하나라도 6 미만이면 무효)
+            const pTerrainY = getTerrainY(p.x);
+            const projPy = pTerrainY > -50 ? pTerrainY + 0.75 : p.y;
+            if (Math.hypot(rx - p.x, projRy - projPy) < 6.0) return false;
+
             // 공중정원 맵에서는 한 땅(island)에 한 마리만 (플레이어 포함)
             // 비행 포켓몬이거나 strict 모드가 꺼져있으면 이 규칙을 무시합니다.
             if (strictIslandCheck && isFloating && !isFlyingCheck && !p.isFlying) {
