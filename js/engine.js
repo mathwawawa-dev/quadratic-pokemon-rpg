@@ -4266,11 +4266,21 @@ function render() {
             craterCanvas = cc.canvas; targetCtx = cc.ctx;
         }
 
-        // getOrigY: 지형 범위(-30~30) 밖은 경계값으로 클램핑 → 통나무가 평평하게 이어지는 느낌
+        // getOrigY: 지형 범위(-30~30) 밖은 경계값 클램핑 + 양끝 위로 휘어지는 2차함수 리프트
         const getOrigY = (x) => {
             const clampedX = Math.max(skyStartX, Math.min(skyEndX, x));
             const key = (Math.round(clampedX * 10) / 10).toFixed(1);
-            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
+            const baseY = (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
+            // 경계 밖에서 들려 올라가는 효과 (dx² × k), k=0.007 → x=±60에서 약 +6.3 유닛 상승
+            let lift = 0;
+            if (x < skyStartX) {
+                const dx = x - skyStartX;
+                lift = dx * dx * 0.007;
+            } else if (x > skyEndX) {
+                const dx = x - skyEndX;
+                lift = dx * dx * 0.007;
+            }
+            return baseY + lift;
         };
 
         // 통나무 전체 외형 패스: 화면 밖(extStartX~extEndX)까지 연장, 끝단 캡 없음
