@@ -885,14 +885,21 @@ function initStage() {
             } while (!valid && attempts < 500);
         };
 
-        tryPlacement(e.isFlying);
-
-        // 1차 실패 시: 지상 몬스터였다면 공중 몬스터로 변환하여 재시도!
+        // 1차 실패 시: log_bridge는 지형이 연속적이므로 공중 변환 없이 강제 지상 배치
+        // 그 외 맵은 공중 몬스터로 변환하여 재시도
         if (!valid && !e.isFlying && !isSkyMap) {
-            e.isFlying = true;
-            e.hasCloud = true;
-            tryPlacement(true);
-            if (valid) flyingYIdx++; 
+            if (stage.terrain === 'log_bridge') {
+                // 통나무 위에 강제 배치 (공중 변환 금지)
+                rx = side === 'L' ? -(8 + idx * 4) : (8 + idx * 4);
+                rx = Math.max(-17, Math.min(17, rx));
+                ry = getTerrainY(rx) + 0.75;
+                valid = true;
+            } else {
+                e.isFlying = true;
+                e.hasCloud = true;
+                tryPlacement(true);
+                if (valid) flyingYIdx++;
+            }
         }
         
         // 2차 실패 시 (혹은 처음부터 공중이었는데 실패): 최후의 수단으로 겹치지 않게 강제 분산 배치
