@@ -26,6 +26,7 @@ canvas.addEventListener('mouseleave', () => {
 
 // ---------- Coordinate System ----------
 let X_MIN = -10, X_MAX = 20, Y_MIN = -15, Y_MAX = 25;
+let bgGradWorldMin = -30, bgGradWorldMax = 30; // 배경 그라데이션 월드 Y 앵커 범위 (스테이지 시작 시 고정)
 
 let caveCeilingCanvas = null;
 let needsCaveRedraw = true;
@@ -1064,6 +1065,9 @@ function initStage() {
     balloons.push({ x: bx, y: by, type, active: true, radius: 0.65, phase: Math.random() * Math.PI * 2 });
 
     resetView();
+    // 배경 그라데이션 월드 앵커링: 초기 카메라 Y 범위를 10유닛 여유분 포함하여 고정
+    bgGradWorldMin = Y_MIN - 10;
+    bgGradWorldMax = Y_MAX + 10;
 
     // 모든 스프라이트 이미지가 실제로 로드 완료된 시점에 오버레이를 닫음
     // (고정 타이머 대신) - 단, 최대 1500ms 캡으로 너무 길어지지 않게 제한
@@ -3146,18 +3150,10 @@ function render() {
         ctx.fillStyle = '#0d0d0d';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
-        let gradStartY = canvas.height; // colorStop 0 기준 screen Y (기본: 캔버스 하단)
-        let gradEndY   = 0;             // colorStop 1 기준 screen Y (기본: 캔버스 상단)
-        if (stage.terrain === 'log_bridge') {
-            // 배경을 월드 Y 좌표에 고정 → 카메라 이동 시 배경도 함께 움직임
-            const bgWorldMin = -28; // 그라데이션 하단 월드 Y (사망 구역 아래)
-            const bgWorldMax = +25; // 그라데이션 상단 월드 Y (화면 위)
-            const sBot = gridToScreen(0, bgWorldMin);
-            const sTop = gridToScreen(0, bgWorldMax);
-            gradStartY = sBot.y;
-            gradEndY   = sTop.y;
-        }
-        const grad = ctx.createLinearGradient(0, gradStartY, 0, gradEndY);
+        // 모든 맵: 월드 Y 좌표에 앵커링된 배경 그라데이션 (카메라 이동 시 배경도 함께 스크롤)
+        const sBot = gridToScreen(0, bgGradWorldMin);
+        const sTop = gridToScreen(0, bgGradWorldMax);
+        const grad = ctx.createLinearGradient(0, sBot.y, 0, sTop.y);
         tData.bg.forEach((c, i) => grad.addColorStop(i / (tData.bg.length - 1), c));
         ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
