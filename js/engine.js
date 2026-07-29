@@ -2470,9 +2470,12 @@ function updateGame() {
                 }
                 // log_bridge 기둥 구역 추가 충돌 판정 (통나무 아랫면 ~ y=-15)
                 if (!insideTerrain && stage.terrain === 'log_bridge') {
-                    const tDp = LEVELS[currentStage % LEVELS.length];
-                    const lx0p = tDp.logX0 ?? -31, lx1p = tDp.logX1 ?? 31, pWp = 3.0;
-                    if ((tx >= lx0p && tx <= lx0p + pWp) || (tx >= lx1p - pWp && tx <= lx1p)) {
+                    const tDp  = LEVELS[currentStage % LEVELS.length];
+                    const lx0p = tDp.logX0 ?? -31, lx1p = tDp.logX1 ?? 31;
+                    const pWp  = 3.0, insetP = 2.0;
+                    const inLeftP  = tx >= lx0p + insetP && tx <= lx0p + insetP + pWp;
+                    const inRightP = tx >= lx1p - insetP - pWp && tx <= lx1p - insetP;
+                    if (inLeftP || inRightP) {
                         const oSurf = (originalTerrainHeights[key]?.[0] ?? 1.7);
                         if (ty <= oSurf - 5.0 && ty >= -15.0) insideTerrain = true;
                     }
@@ -3197,63 +3200,73 @@ function render() {
 
     // 외나무다리('log_bridge') 고인돌 기둥: terrainBottoms 포물선 기반 폴리곤 렌더링 (파괴 시 자동 반영)
     if (stage.terrain === 'log_bridge') {
-        const logX0 = tData.logX0 ?? -31;
-        const logX1 = tData.logX1 ??  31;
-        const pW = 3.0;
+        const logX0    = tData.logX0 ?? -31;
+        const logX1    = tData.logX1 ??  31;
+        const pW       = 3.0;
+        const inset    = 2.0;   // 기둥을 통나무 끝에서 안쪽으로 이동
         const logThick = 5.0;
-        const pillarZones = [[logX0, logX0 + pW], [logX1 - pW, logX1]];
-        const hasPillarCraters = craters.length > 0;
+        const pillarZones = [
+            [logX0 + inset,           logX0 + inset + pW],
+            [logX1 - inset - pW,      logX1 - inset]
+        ];
+
+        // 오프스크린 캔버스 (최초 1회 할당, 크기 변경 시 재생성)
+        if (!tData._pillarCanvas ||
+            tData._pillarCanvas.width  !== canvas.width ||
+            tData._pillarCanvas.height !== canvas.height) {
+            tData._pillarCanvas = document.createElement('canvas');
+            tData._pillarCanvas.width  = canvas.width;
+            tData._pillarCanvas.height = canvas.height;
+        }
+        const pc   = tData._pillarCanvas;
+        const pctx = pc.getContext('2d');
+        pctx.clearRect(0, 0, pc.width, pc.height);
 
         for (const [pX0, pX1] of pillarZones) {
-            ctx.save();
-            // 기둥 폴리곤 경로 (clip에도 사용)
-            ctx.beginPath();
+            pctx.beginPath();
             let pStarted = false;
-            // 상단: originalTerrainHeights - logThick (로그 파괴와 무관하게 고정)
+            // 상단: 원래 로그 아랫면 (파괴와 무관하게 고정)
             for (let px = pX0; px <= pX1 + 0.05; px += 0.1) {
                 const k = (Math.round(px * 10) / 10).toFixed(1);
                 const origTop = originalTerrainHeights[k]?.[0];
-                if (!origTop || origTop < -50) continue;
+                if (origTop === undefined || origTop < -50) continue;
                 const sc = gridToScreen(px, origTop - logThick);
-                if (!pStarted) { ctx.moveTo(sc.x, sc.y); pStarted = true; }
-                else ctx.lineTo(sc.x, sc.y);
+                if (!pStarted) { pctx.moveTo(sc.x, sc.y); pStarted = true; }
+                else pctx.lineTo(sc.x, sc.y);
             }
-            // 하단: terrainBottoms = y-5.0 (원래 로그 바닥과 동일, 기둥 구역은 y=-3.3)
-            //   → 기둥 시각 바닥은 y=-15 고정 라인으로 닫음
-            const botL = gridToScreen(pX0, -15.0);
+            if (!pStarted) continue;
+            // 하단: y=-15 고정 직선
             const botR = gridToScreen(pX1, -15.0);
-            ctx.lineTo(botR.x, botR.y);
-            ctx.lineTo(botL.x, botL.y);
-            ctx.closePath();
+            const botL = gridToScreen(pX0, -15.0);
+            pctx.lineTo(botR.x, botR.y);
+            pctx.lineTo(botL.x, botL.y);
+            pctx.closePath();
 
-            // clip → 이 영역 안에서만 그리고 destination-out 적용
-            ctx.clip();
-
-            // 그라데이션 채우기 (전체 canvas 채우면 clip이 잘라줌)
             const midX = (pX0 + pX1) / 2;
-            const scT = gridToScreen(midX, -3.3);
-            const scB = gridToScreen(midX, -15.0);
-            const grad = ctx.createLinearGradient(scT.x, scT.y, scB.x, scB.y);
-            grad.addColorStop(0,   '#5c3317');
-            grad.addColorStop(0.45,'#3e200e');
-            grad.addColorStop(1,   '#1a0a04');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 크레이터를 destination-out으로 잘라냄 (clip 영역 내에서만)
-            if (hasPillarCraters) {
-                ctx.globalCompositeOperation = 'destination-out';
-                ctx.fillStyle = 'rgba(0,0,0,1)';
-                for (const c of craters) {
-                    const sc = gridToScreen(c.x, c.y);
-                    ctx.beginPath();
-                    ctx.arc(sc.x, sc.y, c.r * scaleX, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-
-            ctx.restore();
+            const scT  = gridToScreen(midX, -3.3);
+            const scB  = gridToScreen(midX, -15.0);
+            const grad = pctx.createLinearGradient(scT.x, scT.y, scB.x, scB.y);
+            grad.addColorStop(0,    '#5c3317');
+            grad.addColorStop(0.45, '#3e200e');
+            grad.addColorStop(1,    '#1a0a04');
+            pctx.fillStyle = grad;
+            pctx.fill();
         }
+
+        // 크레이터를 오프스크린에 destination-out으로 적용 (메인 캔버스 보호)
+        if (craters.length > 0) {
+            pctx.globalCompositeOperation = 'destination-out';
+            pctx.fillStyle = 'rgba(0,0,0,1)';
+            for (const c of craters) {
+                const sc = gridToScreen(c.x, c.y);
+                pctx.beginPath();
+                pctx.arc(sc.x, sc.y, c.r * scaleX, 0, Math.PI * 2);
+                pctx.fill();
+            }
+            pctx.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.drawImage(pc, 0, 0);
     }
 
     // 외나무다리('log_bridge') 지형 분위기: 초록 나뭇잎이 바람에 휘날리며 떨어지는 효과 (월드 좌표 연동)
