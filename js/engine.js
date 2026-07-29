@@ -2463,7 +2463,25 @@ function updateGame() {
                                     }
                                 }
                             }
+
+                            // log_bridge 확장 구간(|x|>30) 가상 지형 합성
+                            // 렌더링의 getOrigY/getBaseY와 동일한 로직으로 충돌 판정
+                            if (!insideTerrain && stage.terrain === 'log_bridge' && origYs.length === 0) {
+                                const logBoundX = tx < -30 ? -30 : 30;
+                                const boundKey = (Math.round(logBoundX * 10) / 10).toFixed(1);
+                                const boundYs = originalTerrainHeights[boundKey] || [];
+                                if (boundYs.length > 0 && boundYs[0] !== -100) {
+                                    const dx = tx - logBoundX;
+                                    const lift = dx * dx * 0.007; // 상단 리프트
+                                    const surfaceY = boundYs[0] + lift;
+                                    const bottomY  = boundYs[0] - 5.0; // 하단은 리프트 없음
+                                    if (ty <= surfaceY && ty >= bottomY) {
+                                        insideTerrain = true;
+                                    }
+                                }
+                            }
                         }
+
                     }
                 }
                 
