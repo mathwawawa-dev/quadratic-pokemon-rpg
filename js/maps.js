@@ -99,6 +99,7 @@ const TERRAINS = {
         name: "깊은 바닷속",
         bg: ["#020617", "#0c3460", "#0e7490"], // 해저 하단 칠흑 → 짙은 청남 → 상단 청록 3단 그라데이션
         color: "#0284c7", outColor: "#0369a1", // 선명하고 맑은 네온 사이안 해저 모래 언덕 지형
+        deathZoneY: -15, // 해저 지형 최저점 y≈-5.7 + ground포켓몬 -1.3 = -7.0 → 기본값 -8 safety check 오발동 방지
         func: (x) => {
             const seed = terrainSeed || 0;
             // 완만하게 굽이치는 해저 모래 언덕 물결 지형
