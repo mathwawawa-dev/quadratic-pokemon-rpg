@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>맵 정보 상세 — v2.0.1 중간점검</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --card: #16213e;
+    --border: #2a2a4a;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --text: #e8e8f0;
+    --muted: #8888aa;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --cyan: #22d3ee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 32px 16px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  header p { color: var(--muted); font-size: 0.9rem; }
+
+  .version-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, #6c63ff33, #22d3ee33);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--cyan);
+    margin-bottom: 12px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-card .val { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+  .stat-card .lbl { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+  .section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--cyan);
+    margin: 32px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .map-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+    gap: 20px;
+  }
+
+  .map-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .map-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(108,99,255,0.2);
+  }
+
+  .map-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+  }
+  .map-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .map-stage-badge {
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .map-name-en {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .map-name-ko {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .floating-badge {
+    margin-left: auto;
+    background: linear-gradient(135deg, #22c55e33, #22d3ee33);
+    border: 1px solid var(--green);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 0.72rem;
+    color: var(--green);
+    white-space: nowrap;
+  }
+  .sky-badge {
+    margin-left: auto;
+    background: linear-gradient(135deg, #6c63ff33, #22d3ee33);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 0.72rem;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .map-body { padding: 16px 20px; }
+
+  .color-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .color-bar div { flex: 1; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  td { padding: 5px 8px; }
+  td:first-child {
+    color: var(--muted);
+    width: 140px;
+    white-space: nowrap;
+  }
+  td:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    word-break: break-all;
+  }
+  tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+
+  .func-box {
+    background: #0d0d1a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--cyan);
+    margin-top: 12px;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .func-box .label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-family: 'Noto Sans KR', sans-serif;
+    margin-bottom: 4px;
+  }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tag {
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 0.73rem;
+    font-weight: 600;
+  }
+  .tag-yellow { background: #eab30820; border: 1px solid var(--yellow); color: var(--yellow); }
+  .tag-red    { background: #ef444420; border: 1px solid var(--red);    color: var(--red);    }
+  .tag-cyan   { background: #22d3ee20; border: 1px solid var(--cyan);   color: var(--cyan);   }
+  .tag-green  { background: #22c55e20; border: 1px solid var(--green);  color: var(--green);  }
+  .tag-purple { background: #6c63ff20; border: 1px solid var(--accent); color: var(--accent); }
+
+  .pokemon-count {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .pcount {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .pcount .n { font-size: 1.4rem; font-weight: 700; }
+  .pcount .l { font-size: 0.72rem; color: var(--muted); }
+  .pcount.fly .n { color: var(--cyan); }
+  .pcount.gnd .n { color: var(--green); }
+  .pcount.tot .n { color: var(--accent); }
+
+  .note-box {
+    background: #1a1a1a;
+    border-left: 3px solid var(--yellow);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 0.82rem;
+    color: #d4c090;
+    line-height: 1.6;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 60px;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  /* Mini canvas for terrain preview */
+  canvas.terrain-preview {
+    width: 100%;
+    height: 80px;
+    border-radius: 6px;
+    margin-top: 10px;
+    display: block;
+    background: #0a0a14;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="version-tag">v2.0.1_260730_0554_중간점검</div>
+  <h1>📊 맵 정보 상세 레퍼런스</h1>
+  <p>이차함수 포켓몬 포트리스 — 전체 스테이지 지형 데이터</p>
+</header>
+
+<!-- 요약 통계 -->
+<div class="summary-grid">
+  <div class="stat-card"><div class="val">11</div><div class="lbl">총 스테이지 수</div></div>
+  <div class="stat-card"><div class="val">11</div><div class="lbl">고유 맵 종류</div></div>
+  <div class="stat-card"><div class="val">±18</div><div class="lbl">포켓몬 스폰 한계 X</div></div>
+  <div class="stat-card"><div class="val">6.0</div><div class="lbl">최소 유클리드 간격</div></div>
+  <div class="stat-card"><div class="val">500</div><div class="lbl">배치 시도 최대 횟수</div></div>
+  <div class="stat-card"><div class="val">3</div><div class="lbl">부유섬/하늘 맵 수</div></div>
+</div>
+
+<div class="section-title">🗺️ 스테이지별 맵 상세 정보</div>
+
+<!-- 좌표계 설명 -->
+<div class="note-box" style="margin-bottom: 24px;">
+  <strong>📐 좌표계 기준:</strong> 수학 좌표계 그대로 사용. 화면 중앙 = (0, 0). X: 플레이어 기준 ±18 이내 스폰. Y: 지형에 따라 가변. 1단위 = 그리드 1칸. 그라운드 포켓몬 y오프셋 = +0.75 (지표면 위), 땅속 포켓몬(ground type) = −1.3 (지표면 아래).
+  <br><br>
+  <strong>🛡️ deathZoneY:</strong> 이 y 미만으로 내려가면 즉사. 또한 스폰 시 <code>ry ≤ deathZoneY + 2.0</code>이면 강제 공중 변환 방지를 위해 각 맵에 별도 설정.
+</div>
+
+<div class="map-grid">
+
+  <!-- ====== STAGE 1: GRASS ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #1a4a2e44, #4a8f6244);">
+      <div>
+        <div class="map-stage-badge">Stage 1</div>
+        <div class="map-name-ko" style="color:#6ed89a;">🌿 푸른 들판</div>
+        <div class="map-name-en">grass</div>
+      </div>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#1a4a2e;"></div>
+        <div style="background:#4a8f62;"></div>
+        <div style="background:#87ceeb;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 18 (플레이어 기준)</td></tr>
+        <tr><td>지형 Y 범위</td><td>약 −6.5 ~ +2.5</td></tr>
+        <tr><td>deathZoneY</td><td>−8 (기본값)</td></tr>
+        <tr><td>지형 색</td><td>#2d6a4f (내부) / #1a4a2e (외곽)</td></tr>
+        <tr><td>배경 그라데이션</td><td>#1a4a2e → #4a8f62 → #87ceeb</td></tr>
+        <tr><td>부유 맵</td><td>아니오</td></tr>
+        <tr><td>하늘 맵</td><td>아니오</td></tr>
+        <tr><td>특수 천장</td><td>없음</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">지형 함수 f(x)</div>
+        sin((x+seed)/2)×1.5 + cos((x-seed)/5)×3 − 2
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">3</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">1</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">2</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-green">완만한 언덕</span>
+        <span class="tag tag-green">입문 맵</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 2: ICE ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #001428aa, #66adff22);">
+      <div>
+        <div class="map-stage-badge">Stage 2</div>
+        <div class="map-name-ko" style="color:#a8d4ff;">🏔️ 눈 덮인 산</div>
+        <div class="map-name-en">ice</div>
+      </div>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#001428;"></div>
+        <div style="background:#003d66;"></div>
+        <div style="background:#66adff;"></div>
+        <div style="background:#d9eaff;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 18</td></tr>
+        <tr><td>지형 Y 범위</td><td>약 −8.3 ~ +6.3 (크레바스↔봉우리 극심)</td></tr>
+        <tr><td>deathZoneY</td><td>−15</td></tr>
+        <tr><td>지형 색</td><td>rgba(179,217,255,0.95) / #002b4d</td></tr>
+        <tr><td>배경 그라데이션</td><td>#001428 → #003d66 → #66adff → #d9eaff</td></tr>
+        <tr><td>부유 맵</td><td>아니오</td></tr>
+        <tr><td>하늘 맵</td><td>아니오</td></tr>
+        <tr><td>특수 천장</td><td>없음</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">지형 함수 f(x) — 뾰족한 봉우리 + 깊은 크레바스</div>
+        peak = |sin((x+seed)/2.5)| × 6.0<br>
+        crevasse = sin((x−seed)/3.8) × 3.5<br>
+        detail = sin(x×1.8+seed) × 0.8<br>
+        <strong>f(x) = −4.0 + peak + crevasse + detail</strong>
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">3</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">1</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">2</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-cyan">극심한 고저차</span>
+        <span class="tag tag-yellow">crewasse y≈−8</span>
+        <span class="tag tag-red">deathZoneY 요주의</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 3: LOG_BRIDGE ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #3a182888, #d8387022);">
+      <div>
+        <div class="map-stage-badge">Stage 3</div>
+        <div class="map-name-ko" style="color:#e8a080;">🌉 외나무다리</div>
+        <div class="map-name-en">log_bridge</div>
+      </div>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#3a1828;"></div>
+        <div style="background:#6a2838;"></div>
+        <div style="background:#8e5361;"></div>
+        <div style="background:#c98c5d;"></div>
+        <div style="background:#d78678;"></div>
+        <div style="background:#d83870;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 17 (통나무 끝 제한)</td></tr>
+        <tr><td>지형 Y 범위</td><td>약 +0.5 ~ +0.9 (거의 평탄)</td></tr>
+        <tr><td>통나무 두께</td><td>4.0 ~ 7.0 (4단위 블록 해시)</td></tr>
+        <tr><td>deathZoneY</td><td>−16</td></tr>
+        <tr><td>초기 줌 최소폭</td><td>42 (과도 줌인 방지)</td></tr>
+        <tr><td>지형 색</td><td>#652810 / #3d1708</td></tr>
+        <tr><td>배경 그라데이션</td><td>#3a1828 → #d83870 (6단 그라데이션)</td></tr>
+        <tr><td>부유 맵</td><td>아니오 (단, 다리 밖 void)</td></tr>
+        <tr><td>구덩이(hole)</td><td>약 x=−8 ~ −3 부근 (랜덤 seed)</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">지형 함수 f(x) — 거의 평탄한 통나무 상면</div>
+        sin((x+seed)/10)×0.15 + cos((x−seed)/13)×0.05 + 0.7
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">3</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">1</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">2</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-yellow">좌우 17 제한</span>
+        <span class="tag tag-red">공중변환 금지(폴백)</span>
+        <span class="tag tag-cyan">평탄 지형</span>
+      </div>
+      <div class="note-box">폴백 배치 시 log_bridge 전용 로직: 공중 변환 없이 통나무 위 강제 배치. rx 범위 ±17 내에서 placedPos 기반 겹침 해소.</div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 4: SKY ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #4ca1af44, #c4e0e522);">
+      <div>
+        <div class="map-stage-badge">Stage 4</div>
+        <div class="map-name-ko" style="color:#c4e0e5;">☁️ 성층권</div>
+        <div class="map-name-en">sky</div>
+      </div>
+      <span class="sky-badge">🚀 isSkyMap</span>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#4ca1af;"></div>
+        <div style="background:#c4e0e5;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 18</td></tr>
+        <tr><td>지형 Y 범위</td><td>약 −4.5 ~ +0.5 (구름)</td></tr>
+        <tr><td>공중 포켓몬 Y</td><td>[5, 7, 9, 11, 13] pool 순환 + 랜덤 ±1.5, Y < 20 상한</td></tr>
+        <tr><td>deathZoneY</td><td>−30</td></tr>
+        <tr><td>지형 색</td><td>rgba(255,255,255,0.8) / #4ca1af</td></tr>
+        <tr><td>배경 그라데이션</td><td>#4ca1af → #c4e0e5</td></tr>
+        <tr><td>부유 맵(isFloating)</td><td>아니오 (isSkyMap = true)</td></tr>
+        <tr><td>전체 포켓몬</td><td>모두 공중 비행</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">지형 함수 f(x) — 구름 높이 곡선</div>
+        sin((x+seed)/4)×2 + sin((x−seed)/1.5)×0.5 − 2
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">3</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">3</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">0</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-purple">전원 비행</span>
+        <span class="tag tag-purple">isSkyMap</span>
+        <span class="tag tag-yellow">Y < 20 상한 캡</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 5: LAVA ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #2a000088, #a52a2a22);">
+      <div>
+        <div class="map-stage-badge">Stage 5</div>
+        <div class="map-name-ko" style="color:#ff9090;">🌋 화산</div>
+        <div class="map-name-en">lava</div>
+      </div>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#2a0000;"></div>
+        <div style="background:#5c0000;"></div>
+        <div style="background:#a52a2a;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 18</td></tr>
+        <tr><td>지형 Y 범위</td><td>약 −6.5 ~ +0.5</td></tr>
+        <tr><td>deathZoneY</td><td>−15</td></tr>
+        <tr><td>지형 색</td><td>#1a0505 / #0a0202</td></tr>
+        <tr><td>배경 그라데이션</td><td>#2a0000 → #5c0000 → #a52a2a</td></tr>
+        <tr><td>부유 맵</td><td>아니오</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">지형 함수 f(x) — 화산 분화구 지형</div>
+        cos((x+seed)/2.5)×2.5 + sin((x−seed)/1.2)×1 − 3
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">3</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">1</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">2</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-red">깊은 크레이터</span>
+        <span class="tag tag-red">y ≈ −6.5 최저</span>
+      </div>
+      <div class="note-box">ground 포켓몬 y = −6.5−1.3 = −7.8 → deathZoneY−8의 safety check 오발동 위험. deathZoneY = −15로 해결.</div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 6: CAVE ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #0d0d0d88, #40404022);">
+      <div>
+        <div class="map-stage-badge">Stage 6</div>
+        <div class="map-name-ko" style="color:#aaaaaa;">🦇 어두운 동굴</div>
+        <div class="map-name-en">cave</div>
+      </div>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#0d0d0d;"></div>
+        <div style="background:#262626;"></div>
+        <div style="background:#404040;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 18</td></tr>
+        <tr><td>지형 Y 범위</td><td>약 −5.0 ~ +1.0</td></tr>
+        <tr><td>천장 높이</td><td>floor_y + 24 + 7.5 ≈ y ≈ 26.5 (동굴 천장)</td></tr>
+        <tr><td>천장 경사</td><td>|x| > 20 구간에서 dx²×0.08 만큼 낮아짐</td></tr>
+        <tr><td>deathZoneY</td><td>−15</td></tr>
+        <tr><td>hasCaveWall</td><td>true (동굴 벽 렌더링)</td></tr>
+        <tr><td>지형 색</td><td>#595959 / #0d0d0d</td></tr>
+        <tr><td>배경 그라데이션</td><td>#0d0d0d → #262626 → #404040</td></tr>
+        <tr><td>부유 맵</td><td>아니오</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">바닥 f(x)</div>
+        sin((x+seed)/4) × cos((x−seed)/2) × 3 − 2<br>
+        <div class="label" style="margin-top:8px;">천장 ceilFunc(x)</div>
+        −floor(x) + 24 + 7.5 (|x|>20 구간 굴곡)
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">3</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">2</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">1</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-yellow">천장 있음</span>
+        <span class="tag tag-yellow">어둠 효과</span>
+        <span class="tag tag-red">cave wall 렌더링</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 7: ELECTRIC ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #0f050788, #451a2122);">
+      <div>
+        <div class="map-stage-badge">Stage 7</div>
+        <div class="map-name-ko" style="color:#ff9999;">⚡ 발전소</div>
+        <div class="map-name-en">electric</div>
+      </div>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#0f0507;"></div>
+        <div style="background:#270e12;"></div>
+        <div style="background:#451a21;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 18</td></tr>
+        <tr><td>지형 Y 범위</td><td>약 −5.4 ~ +1.4 (계단형 플랫폼)</td></tr>
+        <tr><td>deathZoneY</td><td>−15</td></tr>
+        <tr><td>지형 색</td><td>#7f1d1d / #450a0a</td></tr>
+        <tr><td>배경 그라데이션</td><td>#0f0507 → #270e12 → #451a21</td></tr>
+        <tr><td>부유 맵</td><td>아니오</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">지형 함수 f(x) — 완만한 계단식 플랫폼</div>
+        baseWave = sin((x+seed)/3.5) × 1.8<br>
+        lowStep = floor(sin((x+seed)/6) × 2) × 0.8<br>
+        <strong>f(x) = −2.0 + baseWave + lowStep</strong>
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">4</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">1</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">3</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-yellow">계단형 지형</span>
+        <span class="tag tag-cyan">4마리 등장</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 8: OCEAN ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #02061788, #0e749022);">
+      <div>
+        <div class="map-stage-badge">Stage 8</div>
+        <div class="map-name-ko" style="color:#22d3ee;">🌊 깊은 바닷속</div>
+        <div class="map-name-en">ocean</div>
+      </div>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#020617;"></div>
+        <div style="background:#0c3460;"></div>
+        <div style="background:#0e7490;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 18</td></tr>
+        <tr><td>지형 Y 범위</td><td>약 −5.7 ~ +0.7 (완만한 모래언덕)</td></tr>
+        <tr><td>deathZoneY</td><td>−15</td></tr>
+        <tr><td>지형 색</td><td>#0284c7 / #0369a1</td></tr>
+        <tr><td>배경 그라데이션</td><td>#020617 → #0c3460 → #0e7490</td></tr>
+        <tr><td>부유 맵</td><td>아니오</td></tr>
+        <tr><td>특수 효과</td><td>isUnderwater — 모든 포켓몬 수중 부유</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">지형 함수 f(x) — 해저 모래언덕 물결</div>
+        wave1 = sin((x+seed)/4) × 2.2<br>
+        wave2 = cos((x−seed)/2.5) × 1.0<br>
+        <strong>f(x) = −2.5 + wave1 + wave2</strong>
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">4</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">1</div><div class="l">공중(수중) 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">3</div><div class="l">지상(수중) 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-cyan">수중 부유 효과</span>
+        <span class="tag tag-cyan">isUnderwater</span>
+        <span class="tag tag-green">완만한 지형</span>
+      </div>
+      <div class="note-box">isUnderwater = true: ground 포켓몬도 지면 위 떠있는 연출. 공중 포켓몬만 진짜 고공 배치.</div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 9: PSYCHIC ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #3b076488, #f472b622);">
+      <div>
+        <div class="map-stage-badge">Stage 9</div>
+        <div class="map-name-ko" style="color:#d8b4fe;">🔮 왜곡된 차원</div>
+        <div class="map-name-en">psychic</div>
+      </div>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#3b0764;"></div>
+        <div style="background:#581c87;"></div>
+        <div style="background:#f472b6;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 18</td></tr>
+        <tr><td>지형 Y 범위</td><td>약 −6.5 ~ +2.5</td></tr>
+        <tr><td>deathZoneY</td><td>−15</td></tr>
+        <tr><td>지형 색</td><td>#3e1b5d / #1d0333</td></tr>
+        <tr><td>배경 그라데이션</td><td>#3b0764 → #581c87 → #f472b6</td></tr>
+        <tr><td>부유 맵</td><td>아니오</td></tr>
+        <tr><td>특수 장애물</td><td>배리어(barrierType) 랜덤 배치</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">지형 함수 f(x) — 파동형 왜곡 지형</div>
+        sin((x+seed)/3)×3 + cos((x−seed)/3)×1.5 − 2
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">4</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">2</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">2</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-purple">배리어 장애물</span>
+        <span class="tag tag-red">깊은 홈 y≈−6.5</span>
+        <span class="tag tag-cyan">4마리 등장</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 10: GARDEN ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #0ea5e988, #7dd3fc22);">
+      <div>
+        <div class="map-stage-badge">Stage 10</div>
+        <div class="map-name-ko" style="color:#7dd3fc;">🏝️ 부유하는 섬</div>
+        <div class="map-name-en">garden</div>
+      </div>
+      <span class="sky-badge">🚀 isSkyMap</span>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#0ea5e9;"></div>
+        <div style="background:#7dd3fc;"></div>
+        <div style="background:#e0f2fe;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>섬 내부만</td></tr>
+        <tr><td>섬 배치</td><td>좌 (x:−24~−10) / 중 (x:−6~6) / 우 (x:10~24)</td></tr>
+        <tr><td>섬 기준 Y</td><td>좌: −1~+1 / 중: −4~−2.5 / 우: +2~+3.5 (랜덤)</td></tr>
+        <tr><td>deathZoneY</td><td>−25</td></tr>
+        <tr><td>지형 색</td><td>#22c55e / #15803d</td></tr>
+        <tr><td>배경 그라데이션</td><td>#0ea5e9 → #7dd3fc → #e0f2fe</td></tr>
+        <tr><td>부유 맵(isFloating)</td><td>아니오 (isSkyMap)</td></tr>
+        <tr><td>섬 외 영역</td><td>f(x) = −100 (void)</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">섬 지형 — 코사인 페이드 + sin 굴곡</div>
+        edgeFade = cos(t × π/2.2)  (t = 섬 중심 기준 −1~+1)<br>
+        bumps = sin(x×0.55)×0.6 + cos(x×0.9+1.0)×0.4<br>
+        <strong>f(x) = (baseY + bumps) × edgeFade + (1−edgeFade) × (baseY−1.5)</strong>
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">4</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">2</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">2</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-purple">isSkyMap</span>
+        <span class="tag tag-green">3개 분리 섬</span>
+        <span class="tag tag-yellow">섬 외 즉사</span>
+        <span class="tag tag-cyan">랜덤 Y 위치</span>
+      </div>
+      <div class="note-box">각 스테이지 진입 시 3개 섬의 baseY가 랜덤 초기화. 섬 간 Y 위치차가 생겨 포켓몬 배치 분산됨.</div>
+    </div>
+  </div>
+
+  <!-- ====== STAGE 11: CLOUD_GARDEN2 ====== -->
+  <div class="map-card">
+    <div class="map-header" style="background: linear-gradient(135deg, #0284c788, #f472b622);">
+      <div>
+        <div class="map-stage-badge">Stage 11</div>
+        <div class="map-name-ko" style="color:#fce7f3;">🍬 솜사탕(2)</div>
+        <div class="map-name-en">cloud_garden2</div>
+      </div>
+      <span class="sky-badge">🚀 isSkyMap</span>
+    </div>
+    <div class="map-body">
+      <div class="color-bar">
+        <div style="background:#0284c7;"></div>
+        <div style="background:#38bdf8;"></div>
+        <div style="background:#bae6fd;"></div>
+      </div>
+      <table>
+        <tr><td>스폰 X 범위</td><td>± 26 (섬 내)</td></tr>
+        <tr><td>단일 섬 범위</td><td>x: −26 ~ +26 (전체 가로 52)</td></tr>
+        <tr><td>섬 기준 Y</td><td>baseY: −3.5 ~ −2.0 (랜덤)</td></tr>
+        <tr><td>상면 Y 범위</td><td>baseY ~ baseY + 1.3 (볼록한 봉우리)</td></tr>
+        <tr><td>하면 Y 범위</td><td>baseY − 5.0 ~ baseY − 6.0 (움푹 팬 하단)</td></tr>
+        <tr><td>구름 두께</td><td>약 5.0 단위 (상하면 차이)</td></tr>
+        <tr><td>deathZoneY</td><td>−25</td></tr>
+        <tr><td>지형 색</td><td>rgba(255,228,235,0.95) / rgba(244,114,182,0.95)</td></tr>
+        <tr><td>부유 맵</td><td>아니오 (isSkyMap)</td></tr>
+        <tr><td>좌우 분리</td><td>cloud_garden2 전용: L→x&lt;0, R→x&gt;0 절대 분리</td></tr>
+      </table>
+      <div class="func-box">
+        <div class="label">상면 func(x) — 6개 볼록 봉우리 파형</div>
+        bumps: relX = 0.13,0.28,0.45,0.62,0.78,0.90<br>
+        topY = baseY + Σ (h × (1−d²)²)  [우측 2개 +0.7 보정]<br>
+        <div class="label" style="margin-top:8px;">하면 funcBottom(x) — 7개 움푹 dip</div>
+        botY = baseY − 5.0 − Σ (h × (1−d²)²)
+      </div>
+      <div class="pokemon-count">
+        <div class="pcount tot"><div class="n">4</div><div class="l">총 적 수</div></div>
+        <div class="pcount fly"><div class="n">3</div><div class="l">공중 포켓몬</div></div>
+        <div class="pcount gnd"><div class="n">1</div><div class="l">지상 포켓몬</div></div>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-purple">isSkyMap</span>
+        <span class="tag tag-cyan">상하면 모두 렌더링</span>
+        <span class="tag tag-green">거대 단일 섬</span>
+        <span class="tag tag-yellow">L/R 절대 분리 스폰</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /map-grid -->
+
+<!-- 공통 시스템 정보 -->
+<div class="section-title">⚙️ 공통 배치 시스템</div>
+<div class="map-card" style="max-width: 100%;">
+  <div class="map-body">
+    <table style="font-size: 0.85rem;">
+      <tr><td style="width:200px;">포켓몬 스폰 X 한계</td><td>± 18 (기본) / log_bridge: ±17 / cloud_garden2: ±26</td></tr>
+      <tr><td>사이드 배분</td><td>총 N마리 → ceil(N/2)마리 오른쪽, floor(N/2)마리 왼쪽, 랜덤 shuffle</td></tr>
+      <tr><td>배치 시도 횟수</td><td>최대 500회 (spread 점진 증가: 12 + attempts/20)</td></tr>
+      <tr><td>유클리드 간격 조건</td><td>실제 spawn 거리 ≥ 6.0 AND 투영 정착 거리 ≥ 6.0</td></tr>
+      <tr><td>투영 정착 위치</td><td>공중·땅속 모두 → getTerrainY(x) + 0.75로 투영하여 착지 후 거리 체크</td></tr>
+      <tr><td>공중 포켓몬 Y pool</td><td>[5, 7, 9, 11, 13] (비-하늘 맵) / 성층권·부유섬: Y < 20 상한</td></tr>
+      <tr><td>ground 타입 yOffset</td><td>−1.3 (지형 아래 매장) / 그 외 +0.75 (지표면 위)</td></tr>
+      <tr><td>safety check 임계값</td><td>ry ≤ deathZoneY + 2.0 → 강제 공중 변환 방지 트리거</td></tr>
+      <tr><td>폴백 1 (지상 실패)</td><td>log_bridge: 지상 강제 배치 / 그 외: isFlying=true로 재시도</td></tr>
+      <tr><td>폴백 2 (완전 실패)</td><td>rx = player.x ± (10 + idx×6), usedFallback 겹침 해소 발동</td></tr>
+      <tr><td>겹침 해소 (usedFallback)</td><td>1단계: rx 바깥으로 6씩 밀기(최대 4회) → 2단계-A: 공중=ry 3씩 올리기 / 2단계-B: 지상=rx 1씩 nudge 최적화</td></tr>
+      <tr><td>부유섬 한 섬 규칙</td><td>strictIslandCheck: 하나의 섬(island)에 1마리만 (비행 포켓몬 예외)</td></tr>
+    </table>
+  </div>
+</div>
+
+<footer>
+  <p>이차함수 포켓몬 포트리스 — 맵 정보 레퍼런스</p>
+  <p style="margin-top:6px; font-family: 'JetBrains Mono', monospace;">v2.0.1_260730_0554_중간점검 · 생성일: 2026-07-30</p>
+</footer>
+
+</body>
+</html>
