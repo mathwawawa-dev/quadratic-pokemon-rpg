@@ -4255,7 +4255,9 @@ function render() {
     } else if (stage.terrain === 'log_bridge') {
         const skyStartX = -30;
         const skyEndX = 30;
-        const thickness = 5.0; // 고정 두께로 하단 라인을 x축과 평행하고 깔끔하게 렌더링 (연산 부하 제거)
+        const extStartX = -60; // 화면 밖까지 연장: 통나무가 이어지는 효과
+        const extEndX = 60;
+        const thickness = 5.0;
 
         let targetCtx = ctx;
         let craterCanvas = null;
@@ -4264,39 +4266,28 @@ function render() {
             craterCanvas = cc.canvas; targetCtx = cc.ctx;
         }
 
+        // getOrigY: 지형 범위(-30~30) 밖은 경계값으로 클램핑 → 통나무가 평평하게 이어지는 느낌
         const getOrigY = (x) => {
-            const key = (Math.round(x * 10) / 10).toFixed(1);
+            const clampedX = Math.max(skyStartX, Math.min(skyEndX, x));
+            const key = (Math.round(clampedX * 10) / 10).toFixed(1);
             return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
         };
 
-        // 통나무 전체 외형 패스 (상단 표면 -> 우측 캡 -> 평행 하단 라인 -> 좌측 캡)
+        // 통나무 전체 외형 패스: 화면 밖(extStartX~extEndX)까지 연장, 끝단 캡 없음
         targetCtx.beginPath();
-        const startP = gridToScreen(skyStartX, getOrigY(skyStartX));
+        const startP = gridToScreen(extStartX, getOrigY(extStartX));
         targetCtx.moveTo(startP.x, startP.y);
-        for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.4)) {
+        for (let x = extStartX; x <= extEndX; x = Math.min(extEndX, x + 0.4)) {
             const p = gridToScreen(x, getOrigY(x));
             targetCtx.lineTo(p.x, p.y);
-            if (x >= skyEndX) break;
+            if (x >= extEndX) break;
         }
-
-        // 우측 둥근 나이테 단면 캡 마감 (수직으로 잘린 느낌을 없애기 위해 둥글게 연장)
-        const rightTopY = getOrigY(skyEndX);
-        const rightMidP = gridToScreen(skyEndX + 2.5, rightTopY - thickness / 2);
-        const rightBotP = gridToScreen(skyEndX, rightTopY - thickness);
-        targetCtx.quadraticCurveTo(rightMidP.x, rightMidP.y, rightBotP.x, rightBotP.y);
-
-        // 하단 껍질 라인 (x축과 평행한 일직선 바닥, 고정 두께 5.0)
-        for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.4)) {
+        // 하단: 오른쪽 → 왼쪽 (화면 밖까지, 캡 없이 직선)
+        for (let x = extEndX; x >= extStartX; x = Math.max(extStartX, x - 0.4)) {
             const p = gridToScreen(x, getOrigY(x) - thickness);
             targetCtx.lineTo(p.x, p.y);
-            if (x <= skyStartX) break;
+            if (x <= extStartX) break;
         }
-
-        // 좌측 둥근 나이테 단면 캡 마감 (수직으로 잘린 느낌을 없애기 위해 둥글게 연장)
-        const leftTopY = getOrigY(skyStartX);
-        const leftMidP = gridToScreen(skyStartX - 2.5, leftTopY - thickness / 2);
-        const leftTopP = gridToScreen(skyStartX, leftTopY);
-        targetCtx.quadraticCurveTo(leftMidP.x, leftMidP.y, leftTopP.x, leftTopP.y);
         targetCtx.closePath();
 
         // 1. 통나무 기본 바탕 (어두운 계열 수직 그라데이션: 상단 중간 갈색 → 하단 짙은 다크브라운)
@@ -4315,14 +4306,14 @@ function render() {
         targetCtx.save();
         targetCtx.clip();
 
-        // 수평 나뭇결 흐름선 (유기적인 무늬, 반복 횟수 축소하여 최적화)
+        // 수평 나뭇결 흐름선 (화면 밖까지 연장하여 자연스럽게 이어지는 나무 결)
         for (let relRatio = 0.2; relRatio < 0.9; relRatio += 0.25) {
             targetCtx.beginPath();
-            for (let x = skyStartX - 2; x <= skyEndX + 2; x += 0.4) {
+            for (let x = extStartX; x <= extEndX; x += 0.4) {
                 const curThick = thickness;
                 const yVal = getOrigY(x) - curThick * relRatio + Math.sin(x * 0.7 + relRatio * 10) * 0.2;
                 const p = gridToScreen(x, yVal);
-                if (x === skyStartX - 2) targetCtx.moveTo(p.x, p.y);
+                if (x === extStartX) targetCtx.moveTo(p.x, p.y);
                 else targetCtx.lineTo(p.x, p.y);
             }
             targetCtx.strokeStyle = (Math.round(relRatio * 100) % 2 === 0) ? 'rgba(61, 21, 6, 0.45)' : 'rgba(122, 47, 18, 0.35)';
@@ -4398,35 +4389,35 @@ function render() {
         // 3. 통나무 상단 잔디 풀밭 레이어 (두께 절반 0.1625 슬림화, #22c55e -> #15803d 2색 그라데이션)
         targetCtx.save();
         targetCtx.beginPath();
-        const gStartP = gridToScreen(skyStartX, getOrigY(skyStartX));
+        const gStartP = gridToScreen(extStartX, getOrigY(extStartX));
         targetCtx.moveTo(gStartP.x, gStartP.y);
-        for (let x = skyStartX; x <= skyEndX; x = Math.min(skyEndX, x + 0.4)) {
+        for (let x = extStartX; x <= extEndX; x = Math.min(extEndX, x + 0.4)) {
             const p = gridToScreen(x, getOrigY(x));
             targetCtx.lineTo(p.x, p.y);
-            if (x >= skyEndX) break;
+            if (x >= extEndX) break;
         }
-        for (let x = skyEndX; x >= skyStartX; x = Math.max(skyStartX, x - 0.4)) {
+        for (let x = extEndX; x >= extStartX; x = Math.max(extStartX, x - 0.4)) {
             const p = gridToScreen(x, getOrigY(x) - 0.1625);
             targetCtx.lineTo(p.x, p.y);
-            if (x <= skyStartX) break;
+            if (x <= extStartX) break;
         }
         targetCtx.closePath();
 
-        // 부드러운 3단 수직 그라데이션 (상단 #22c55e -> 중앙 #16a34a -> 하단 #15803d)
+        // 부드러운 3단 수직 그라데이션
         const topScreenP = gridToScreen(0, 0);
         const botScreenP = gridToScreen(0, -0.1625);
         const grassGrad = targetCtx.createLinearGradient(0, topScreenP.y - 2, 0, botScreenP.y + 2);
-        grassGrad.addColorStop(0.0, '#22c55e');  // 상단 싱그러운 그린
-        grassGrad.addColorStop(0.5, '#16a34a');  // 중앙 중간 그린
-        grassGrad.addColorStop(1.0, '#15803d');  // 하단 차분한 딥 그린
+        grassGrad.addColorStop(0.0, '#22c55e');
+        grassGrad.addColorStop(0.5, '#16a34a');
+        grassGrad.addColorStop(1.0, '#15803d');
         targetCtx.fillStyle = grassGrad;
         targetCtx.fill();
 
-        // Dot Rim: 2가지 색상 배치 path로 묶어 fill() 2회만 호출 (300→2회 GPU flush 절감)
+        // Dot Rim: 화면 밖까지 확장
         {
             const microDotStep = 0.4;
             targetCtx.beginPath();
-            for (let x = skyStartX; x <= skyEndX; x += microDotStep * 2) {
+            for (let x = extStartX; x <= extEndX; x += microDotStep * 2) {
                 const topY = getOrigY(x);
                 const p = gridToScreen(x, topY);
                 const microDotR = scaleLength(0.01 + Math.abs(Math.sin(x * 6.3)) * 0.01);
@@ -4437,7 +4428,7 @@ function render() {
             targetCtx.fill();
 
             targetCtx.beginPath();
-            for (let x = skyStartX + microDotStep; x <= skyEndX; x += microDotStep * 2) {
+            for (let x = extStartX + microDotStep; x <= extEndX; x += microDotStep * 2) {
                 const topY = getOrigY(x);
                 const p = gridToScreen(x, topY);
                 const microDotR = scaleLength(0.01 + Math.abs(Math.sin(x * 6.3)) * 0.01);
@@ -4448,11 +4439,11 @@ function render() {
             targetCtx.fill();
         }
 
-        // 통나무 경계 얇은 흙/이끼 띠 (Soil Border)
+        // 통나무 경계 얇은 흙/이끼 띠 (화면 밖까지 연장)
         targetCtx.beginPath();
-        for (let x = skyStartX; x <= skyEndX; x += 0.4) {
+        for (let x = extStartX; x <= extEndX; x += 0.4) {
             const bp = gridToScreen(x, getOrigY(x) - 0.1625);
-            if (x === skyStartX) targetCtx.moveTo(bp.x, bp.y);
+            if (x === extStartX) targetCtx.moveTo(bp.x, bp.y);
             else targetCtx.lineTo(bp.x, bp.y);
         }
         targetCtx.strokeStyle = 'rgba(35, 15, 5, 0.45)';
