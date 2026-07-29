@@ -4266,7 +4266,7 @@ function render() {
             craterCanvas = cc.canvas; targetCtx = cc.ctx;
         }
 
-        // getOrigY: 지형 범위(-30~30) 밖은 경계값 클램핑 + 양끝 위로 휘어지는 2차함수 리프트
+        // getOrigY: 상단 표면 — 경계 밖에서 2차함수로 위로 올라감
         const getOrigY = (x) => {
             const clampedX = Math.max(skyStartX, Math.min(skyEndX, x));
             const key = (Math.round(clampedX * 10) / 10).toFixed(1);
@@ -4283,6 +4283,13 @@ function render() {
             return baseY + lift;
         };
 
+        // getBaseY: 하단 기준 — 리프트 없이 x축과 평행하게 유지
+        const getBaseY = (x) => {
+            const clampedX = Math.max(skyStartX, Math.min(skyEndX, x));
+            const key = (Math.round(clampedX * 10) / 10).toFixed(1);
+            return (originalTerrainHeights[key] && originalTerrainHeights[key].length > 0) ? originalTerrainHeights[key][0] : -100;
+        };
+
         // 통나무 전체 외형 패스: 화면 밖(extStartX~extEndX)까지 연장, 끝단 캡 없음
         targetCtx.beginPath();
         const startP = gridToScreen(extStartX, getOrigY(extStartX));
@@ -4292,9 +4299,9 @@ function render() {
             targetCtx.lineTo(p.x, p.y);
             if (x >= extEndX) break;
         }
-        // 하단: 오른쪽 → 왼쪽 (화면 밖까지, 캡 없이 직선)
+        // 하단: getBaseY 사용 → 리프트 없이 x축과 거의 평행
         for (let x = extEndX; x >= extStartX; x = Math.max(extStartX, x - 0.4)) {
-            const p = gridToScreen(x, getOrigY(x) - thickness);
+            const p = gridToScreen(x, getBaseY(x) - thickness);
             targetCtx.lineTo(p.x, p.y);
             if (x <= extStartX) break;
         }
