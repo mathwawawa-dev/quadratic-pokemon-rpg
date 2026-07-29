@@ -3187,18 +3187,18 @@ function render() {
         ctx.save();
         const pillarHalfW = 1.5;   // 너비 3유닛 (±1.5)
         const pillarBotY  = -15.0; // 하단 고정 y
-        // 통나무 고정 끝점 (줌/팬 무관)
-        const logLeftX  = (tData.logX0 ?? -40) + pillarHalfW;
-        const logRightX = (tData.logX1 ??  40) - pillarHalfW;
+        // 통나무 고정 끝점 자체를 기둥 중심으로 (끝점에서 ±1.5 너비)
+        const logLeftX  = (tData.logX0 ?? -40);
+        const logRightX = (tData.logX1 ??  40);
         const pillarCenters = [logLeftX, logRightX];
 
         for (const cx of pillarCenters) {
             const key = (Math.round(cx * 10) / 10).toFixed(1);
-            // 표면 y (stageHeightOffset 포함)
-            const surfY = terrainHeights[key] ?? 1.7;
-            // 통나무 하단 = 표면 - getThickness
-            const thick  = tData.getThickness ? tData.getThickness(cx) : 5.5;
-            const pillarTopY = surfY - thick;
+            // 통나무 실제 하단 y: terrainBottoms 사용 (buildTerrain에서 y-5.0으로 저장됨)
+            const botArr = terrainBottoms[key];
+            const pillarTopY = (botArr && botArr[0] !== undefined && botArr[0] !== -100)
+                ? botArr[0]
+                : ((terrainHeights[key] ?? [1.7])[0] - 5.0);
 
             // 화면 좌표 (사다리꼴: 아래로 갈수록 ±0.4 넓어짐)
             const flare = 0.4;
