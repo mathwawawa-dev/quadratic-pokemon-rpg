@@ -3203,27 +3203,16 @@ function render() {
         const logX0    = tData.logX0 ?? -31;
         const logX1    = tData.logX1 ??  31;
         const pW       = 3.0;
-        const inset    = 2.0;   // 기둥을 통나무 끝에서 안쪽으로 이동
+        const inset    = 2.0;
         const logThick = 5.0;
         const pillarZones = [
-            [logX0 + inset,           logX0 + inset + pW],
-            [logX1 - inset - pW,      logX1 - inset]
+            [logX0 + inset,      logX0 + inset + pW],
+            [logX1 - inset - pW, logX1 - inset]
         ];
 
-        // 오프스크린 캔버스 (최초 1회 할당, 크기 변경 시 재생성)
-        if (!tData._pillarCanvas ||
-            tData._pillarCanvas.width  !== canvas.width ||
-            tData._pillarCanvas.height !== canvas.height) {
-            tData._pillarCanvas = document.createElement('canvas');
-            tData._pillarCanvas.width  = canvas.width;
-            tData._pillarCanvas.height = canvas.height;
-        }
-        const pc   = tData._pillarCanvas;
-        const pctx = pc.getContext('2d');
-        pctx.clearRect(0, 0, pc.width, pc.height);
-
         for (const [pX0, pX1] of pillarZones) {
-            pctx.beginPath();
+            ctx.save();
+            ctx.beginPath();
             let pStarted = false;
             // 상단: 원래 로그 아랫면 (파괴와 무관하게 고정)
             for (let px = pX0; px <= pX1 + 0.05; px += 0.1) {
@@ -3231,42 +3220,28 @@ function render() {
                 const origTop = originalTerrainHeights[k]?.[0];
                 if (origTop === undefined || origTop < -50) continue;
                 const sc = gridToScreen(px, origTop - logThick);
-                if (!pStarted) { pctx.moveTo(sc.x, sc.y); pStarted = true; }
-                else pctx.lineTo(sc.x, sc.y);
+                if (!pStarted) { ctx.moveTo(sc.x, sc.y); pStarted = true; }
+                else ctx.lineTo(sc.x, sc.y);
             }
-            if (!pStarted) continue;
+            if (!pStarted) { ctx.restore(); continue; }
             // 하단: y=-15 고정 직선
             const botR = gridToScreen(pX1, -15.0);
             const botL = gridToScreen(pX0, -15.0);
-            pctx.lineTo(botR.x, botR.y);
-            pctx.lineTo(botL.x, botL.y);
-            pctx.closePath();
+            ctx.lineTo(botR.x, botR.y);
+            ctx.lineTo(botL.x, botL.y);
+            ctx.closePath();
 
             const midX = (pX0 + pX1) / 2;
             const scT  = gridToScreen(midX, -3.3);
             const scB  = gridToScreen(midX, -15.0);
-            const grad = pctx.createLinearGradient(scT.x, scT.y, scB.x, scB.y);
+            const grad = ctx.createLinearGradient(scT.x, scT.y, scB.x, scB.y);
             grad.addColorStop(0,    '#5c3317');
             grad.addColorStop(0.45, '#3e200e');
             grad.addColorStop(1,    '#1a0a04');
-            pctx.fillStyle = grad;
-            pctx.fill();
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.restore();
         }
-
-        // 크레이터를 오프스크린에 destination-out으로 적용 (메인 캔버스 보호)
-        if (craters.length > 0) {
-            pctx.globalCompositeOperation = 'destination-out';
-            pctx.fillStyle = 'rgba(0,0,0,1)';
-            for (const c of craters) {
-                const sc = gridToScreen(c.x, c.y);
-                pctx.beginPath();
-                pctx.arc(sc.x, sc.y, c.r * scaleX, 0, Math.PI * 2);
-                pctx.fill();
-            }
-            pctx.globalCompositeOperation = 'source-over';
-        }
-
-        ctx.drawImage(pc, 0, 0);
     }
 
     // 외나무다리('log_bridge') 지형 분위기: 초록 나뭇잎이 바람에 휘날리며 떨어지는 효과 (월드 좌표 연동)
