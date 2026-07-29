@@ -894,6 +894,14 @@ function initStage() {
                 // 통나무 위에 강제 배치 (공중 변환 금지)
                 rx = side === 'L' ? -(8 + idx * 4) : (8 + idx * 4);
                 rx = Math.max(-17, Math.min(17, rx));
+                // 겹침 방지: 이미 배치된 포켓몬과 거리가 6 미만이면 rx를 바깥으로 6씩 밀기 (최대 4회)
+                for (let lb = 0; lb < 4; lb++) {
+                    const preRy = getTerrainY(rx) + 0.75;
+                    if (placedPos.some(p => Math.hypot(rx - p.x, preRy - p.y) < 6.0)) {
+                        rx += (side === 'L' ? -6.0 : 6.0);
+                        rx = Math.max(-17, Math.min(17, rx));
+                    } else break;
+                }
                 ry = getTerrainY(rx) + 0.75;
                 valid = true;
             } else {

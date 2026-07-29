@@ -49,12 +49,14 @@ const TERRAINS = {
         name: "화산",
         bg: ["#2a0000", "#5c0000", "#a52a2a"],
         color: "#1a0505", outColor: "#0a0202",
+        deathZoneY: -15, // 지형 최저 y≈-6.5, ground 포켓몬 -7.8 → 기본 safety check(-6) 오발동 방지
         func: (x) => Math.cos((x + terrainSeed) / 2.5) * 2.5 + Math.sin((x - terrainSeed) / 1.2) * 1 - 3
     },
     ice: {
         name: "눈 덮인 산",
         bg: ["#001428", "#003d66", "#66adff", "#d9eaff"],
         color: "rgba(179, 217, 255, 0.95)", outColor: "#002b4d",
+        deathZoneY: -15, // 지형 최저 y≈-8.3, ground 포켓몬 -9.6 → safety check 오발동 방지
         func: (x) => {
             const seed = terrainSeed || 0;
             // 뾰족하고 가파른 얼음 봉우리와 깊은 크레바스(빙혈) 구덩이가 조화롭게 섞인 만년설 지형
@@ -69,6 +71,7 @@ const TERRAINS = {
         bg: ["#0d0d0d", "#262626", "#404040"],
         color: "#595959", outColor: "#0d0d0d",
         hasCaveWall: true,
+        deathZoneY: -15, // 지형 최저 y≈-5.0, ground 포켓몬 -6.3 → safety check 오발동 방지
         func: (x) => Math.sin((x + terrainSeed) / 4) * Math.cos((x - terrainSeed) / 2) * 3 - 2,
         ceilFunc: (x) => {
             const offset = (typeof window !== 'undefined' && window.caveCeilOffset !== undefined) ? window.caveCeilOffset : 7.5;
@@ -87,6 +90,7 @@ const TERRAINS = {
         name: "발전소",
         bg: ["#0f0507", "#270e12", "#451a21"], // 신비롭고 차분한 딥 버건디 카본 그라데이션 배경
         color: "#7f1d1d", outColor: "#450a0a", // 동굴/바닷속과 확연히 구분되는 고급 무광 코퍼 구리선/버건디 지형
+        deathZoneY: -15, // 지형 최저 y≈-5.4, ground 포켓몬 -6.7 → safety check 오발동 방지
         func: (x) => {
             const seed = terrainSeed || 0;
             // 완만하고 쾌적한 발전소 지형: 자폭 위험이 없도록 경사를 완화하고 부드러운 1~2개의 넓은 플랫폼만 배치
@@ -112,6 +116,7 @@ const TERRAINS = {
         name: "왜곡된 차원",
         bg: ["#3b0764", "#581c87", "#f472b6"],
         color: "#3e1b5d", outColor: "#1d0333", // 약간만 더 연하고 부드러운 딥 바이올렛 톤으로 조정
+        deathZoneY: -15, // 지형 최저 y≈-6.5, ground 포켓몬 -7.8 → safety check 오발동 방지
         func: (x) => Math.sin((x + terrainSeed) / 3) * 3 + Math.cos((x - terrainSeed) / 3) * 1.5 - 2
     },
     garden: {
