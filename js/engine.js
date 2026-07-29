@@ -783,6 +783,7 @@ function initStage() {
 
     const isSkyMap = (stage.terrain === 'sky' || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden');
     const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
+    const isUnderwater = !!(TERRAINS[stage.terrain].isUnderwater); // 해저 맵: 모든 포켓몬 지면 위 부유
     let flyingYPool = isSkyMap
         ? [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5)
         : (isFloatingMapLocal
@@ -850,11 +851,15 @@ function initStage() {
                 const spawnLimitX = 18;
                 rx = Math.max(-spawnLimitX, Math.min(spawnLimitX, rx));
                 
-                if (isFlying || isSkyMap) {
+                if (isFlying || isSkyMap || isUnderwater) {
                     const terrainYAtRx = getTerrainY(rx);
                     if (terrainYAtRx > -50) {
-                        // 모든 맵(일반, 스파이크 언덕, 공중정원): 지형/스파이크 표면(terrainYAtRx) 위로 최소 +2.5~4.0 공중 배치 (지형 파묻힘 완벽 방지)
-                        ry = Math.max(terrainYAtRx + 4.5, flyingYPool[flyingYIdx % flyingYPool.length]) + Math.random() * 1.5;
+                        if (isUnderwater && !isFlying) {
+                            // 해저 맵: 지형 위 2~5 유닛 사이에 부유 (구름 없이)
+                            ry = terrainYAtRx + 2.0 + Math.random() * 3.0;
+                        } else {
+                            ry = Math.max(terrainYAtRx + 4.5, flyingYPool[flyingYIdx % flyingYPool.length]) + Math.random() * 1.5;
+                        }
                     } else {
                         ry = flyingYPool[flyingYIdx % flyingYPool.length] + (Math.random()-0.5)*4;
                     }
@@ -866,7 +871,7 @@ function initStage() {
                 
                 // 300번 이상 실패하면 한 섬에 한 마리 규칙을 완화하여 무조건 지상에 배치되게 유도
                 const strictIsland = attempts < 300;
-                valid = checkValidPos(rx, ry, (isFlying || isSkyMap), strictIsland);
+                valid = checkValidPos(rx, ry, (isFlying || isSkyMap || isUnderwater), strictIsland);
                 
                 if (isFlying || isSkyMap) {
                     const terrainYAtRx = getTerrainY(rx);
@@ -886,7 +891,7 @@ function initStage() {
             } while (!valid && attempts < 500);
         };
 
-        tryPlacement(e.isFlying); // 1차 배치 시도
+        tryPlacement(e.isFlying || isUnderwater); // 1차 배치 시도 (해저 맵은 항상 부유 경로)
 
         // 1차 실패 시: log_bridge는 지형이 연속적이므로 공중 변환 없이 강제 지상 배치
         // 그 외 맵은 공중 몬스터로 변환하여 재시도
@@ -899,7 +904,7 @@ function initStage() {
                 valid = true;
             } else {
                 e.isFlying = true;
-                e.hasCloud = true;
+                e.hasCloud = !isUnderwater; // 해저 맵은 구름 없이 부유
                 tryPlacement(true);
                 if (valid) flyingYIdx++;
             }
@@ -922,6 +927,11 @@ function initStage() {
         
         if (e.isFlying || isSkyMap) {
             flyingYIdx++;
+            if (isUnderwater) e.hasCloud = false; // 해저: 기존 공중 포켓몬도 구름 제거
+        } else if (isUnderwater) {
+            // 해저 맵: 지상 포켓몬도 부유 처리 (구름 없이)
+            e.isFlying = true;
+            e.hasCloud = false;
         }
 
         if (isSkyMap && ry >= 19.8) {
@@ -940,7 +950,7 @@ function initStage() {
             const safeTerrainY = getTerrainY(rx);
             ry = safeTerrainY > -50 ? safeTerrainY + 2.5 : spawnDeathZoneY + 8;
             e.isFlying = true;
-            e.hasCloud = true;
+            e.hasCloud = !isUnderwater; // 해저 맵은 구름 없이
         }
         if (stage.terrain === 'garden' && (e.isFlying || isSkyMap) && ry >= 15.0) {
             ry = 14.5;
