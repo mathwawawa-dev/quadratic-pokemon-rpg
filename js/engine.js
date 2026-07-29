@@ -678,19 +678,13 @@ function initStage() {
                       terrainBottoms[key] = [-100];
                   } else {
                       terrainHeights[key] = [y];
-                      // 기둥 구역: 포물선 바닥 — 양 끝이 제일 두껍고 중심은 오목한 스킨돌 형태
-                      const pW   = 3.0;   // 기둥 너비
-                      const pBot = -15.0; // 기둥 최저 y
-                      const pRise = 5.0;  // 오목 깊이 (양끝 -15, 중심 -10)
-                      const lCx = logX0 + pW / 2;
-                      const rCx = logX1 - pW / 2;
+                      // 기둥 구역: 평탄한 바닥 (y=-15)
+                      const pW   = 3.0;
+                      const pBot = -15.0;
                       let botY = y - 5.0;
-                      if (roundedX >= logX0 && roundedX <= logX0 + pW) {
-                          const dx = (roundedX - lCx) / (pW / 2);
-                          botY = pBot + pRise * (1 - dx * dx);
-                      } else if (roundedX >= logX1 - pW && roundedX <= logX1) {
-                          const dx = (roundedX - rCx) / (pW / 2);
-                          botY = pBot + pRise * (1 - dx * dx);
+                      if ((roundedX >= logX0 && roundedX <= logX0 + pW) ||
+                          (roundedX >= logX1 - pW && roundedX <= logX1)) {
+                          botY = pBot;
                       }
                       terrainBottoms[key] = [botY];
                   }
@@ -3204,19 +3198,22 @@ function render() {
         const logX0 = tData.logX0 ?? -31;
         const logX1 = tData.logX1 ??  31;
         const pW = 3.0;
+        const logThick = 5.0; // 통나무 두께 (buildTerrain과 일치)
         const pillarZones = [[logX0, logX0 + pW], [logX1 - pW, logX1]];
         for (const [pX0, pX1] of pillarZones) {
             ctx.save();
             ctx.beginPath();
             let started = false;
+            // 상단: 통나무 아랫면 (topY - logThick) — 코너 없이 매끄럽게 연결
             for (let px = pX0; px <= pX1 + 0.05; px += 0.1) {
                 const k = (Math.round(px * 10) / 10).toFixed(1);
                 const topY = terrainHeights[k]?.[0];
                 if (!topY || topY < -50) continue;
-                const sc = gridToScreen(px, topY);
+                const sc = gridToScreen(px, topY - logThick);
                 if (!started) { ctx.moveTo(sc.x, sc.y); started = true; }
                 else           { ctx.lineTo(sc.x, sc.y); }
             }
+            // 하단: terrainBottoms (buildTerrain에서 -15로 평탄 설정)
             for (let px = pX1; px >= pX0 - 0.05; px -= 0.1) {
                 const k = (Math.round(px * 10) / 10).toFixed(1);
                 const botY = terrainBottoms[k]?.[0];
@@ -3226,7 +3223,7 @@ function render() {
             }
             ctx.closePath();
             const midX = (pX0 + pX1) / 2;
-            const scT = gridToScreen(midX,  1.7);
+            const scT = gridToScreen(midX, -3.3);
             const scB = gridToScreen(midX, -15.0);
             const grad = ctx.createLinearGradient(scT.x, scT.y, scB.x, scB.y);
             grad.addColorStop(0,   '#5c3317');
