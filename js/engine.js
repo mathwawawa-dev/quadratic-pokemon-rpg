@@ -971,7 +971,7 @@ function initStage() {
             shake: 0, vx: 0, vy: 0,
             rotation: 0, angularVelocity: 0, isKnockedBack: false, groundLayerIdx: -1,
             name: e.name, type: e.type,
-            isSurfaced: TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating ? true : false,
+            isSurfaced: !!(TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating || isSkyMap || isUnderwater || e.isFlying),
             barrierType: barrierType,
             barrierStartTime: Date.now() + (isPsychic ? 3000 : 0) + idx * 2500
         };
