@@ -3199,6 +3199,48 @@ function render() {
 
 
 
+    // 외나무다리('log_bridge') 고인돌 기둥: terrainBottoms 포물선 기반 폴리곤 렌더링 (파괴 시 자동 반영)
+    if (stage.terrain === 'log_bridge') {
+        const logX0 = tData.logX0 ?? -31;
+        const logX1 = tData.logX1 ??  31;
+        const pW = 3.0;
+        const pillarZones = [[logX0, logX0 + pW], [logX1 - pW, logX1]];
+        for (const [pX0, pX1] of pillarZones) {
+            ctx.save();
+            ctx.beginPath();
+            let started = false;
+            for (let px = pX0; px <= pX1 + 0.05; px += 0.1) {
+                const k = (Math.round(px * 10) / 10).toFixed(1);
+                const topY = terrainHeights[k]?.[0];
+                if (!topY || topY < -50) continue;
+                const sc = gridToScreen(px, topY);
+                if (!started) { ctx.moveTo(sc.x, sc.y); started = true; }
+                else           { ctx.lineTo(sc.x, sc.y); }
+            }
+            for (let px = pX1; px >= pX0 - 0.05; px -= 0.1) {
+                const k = (Math.round(px * 10) / 10).toFixed(1);
+                const botY = terrainBottoms[k]?.[0];
+                if (botY === undefined || botY < -50) continue;
+                const sc = gridToScreen(px, botY);
+                ctx.lineTo(sc.x, sc.y);
+            }
+            ctx.closePath();
+            const midX = (pX0 + pX1) / 2;
+            const scT = gridToScreen(midX,  1.7);
+            const scB = gridToScreen(midX, -15.0);
+            const grad = ctx.createLinearGradient(scT.x, scT.y, scB.x, scB.y);
+            grad.addColorStop(0,   '#5c3317');
+            grad.addColorStop(0.45,'#3e200e');
+            grad.addColorStop(1,   '#1a0a04');
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.strokeStyle = '#1a0a04';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+
     // 외나무다리('log_bridge') 지형 분위기: 초록 나뭇잎이 바람에 휘날리며 떨어지는 효과 (월드 좌표 연동)
     if (stage.terrain === 'log_bridge') {
         ctx.save();
