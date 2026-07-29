@@ -784,11 +784,17 @@ function initStage() {
     const isSkyMap = (stage.terrain === 'sky' || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden');
     const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
     const isUnderwater = !!(TERRAINS[stage.terrain].isUnderwater); // 해저 맵: 모든 포켓몬 지면 위 부유
-    let flyingYPool = isSkyMap
-        ? [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5)
-        : (isFloatingMapLocal
-            ? [8, 10, 12, 13, 14].sort(() => Math.random() - 0.5)
-            : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5));
+    let flyingYPool;
+    if (stage.terrain === 'garden') {
+        // 부유하는 섬: 섬 높이(y≈-4~+1) 기준으로 2~14 사이 3유닛 간격 분산
+        flyingYPool = [2, 5, 8, 11, 14].sort(() => Math.random() - 0.5);
+    } else if (isSkyMap) {
+        flyingYPool = [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5);
+    } else if (isFloatingMapLocal) {
+        flyingYPool = [8, 10, 12, 13, 14].sort(() => Math.random() - 0.5);
+    } else {
+        flyingYPool = [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5);
+    }
     let flyingYIdx = 0;
 
     const barrierTypes = ['reflect', 'absorb', 'absolute', 'warp'].sort(() => Math.random() - 0.5);
