@@ -784,7 +784,7 @@ function initStage() {
     const isSkyMap = (stage.terrain === 'sky' || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden');
     const isFloatingMapLocal = TERRAINS[stage.terrain].isFloating;
     let flyingYPool = isSkyMap
-        ? [8, 10, 12, 14, 16].sort(() => Math.random() - 0.5)
+        ? [12, 14, 16, 18, 20].sort(() => Math.random() - 0.5)
         : (isFloatingMapLocal
             ? [8, 10, 12, 13, 14].sort(() => Math.random() - 0.5)
             : [5, 7, 9, 11, 13].sort(() => Math.random() - 0.5));
