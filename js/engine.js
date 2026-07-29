@@ -885,6 +885,8 @@ function initStage() {
             } while (!valid && attempts < 500);
         };
 
+        tryPlacement(e.isFlying); // 1차 배치 시도
+
         // 1차 실패 시: log_bridge는 지형이 연속적이므로 공중 변환 없이 강제 지상 배치
         // 그 외 맵은 공중 몬스터로 변환하여 재시도
         if (!valid && !e.isFlying && !isSkyMap) {
@@ -951,7 +953,7 @@ function initStage() {
             shake: 0, vx: 0, vy: 0,
             rotation: 0, angularVelocity: 0, isKnockedBack: false, groundLayerIdx: -1,
             name: e.name, type: e.type,
-            isSurfaced: TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating ? true : false,
+            isSurfaced: !!(TERRAINS[LEVELS[currentStage % LEVELS.length].terrain].isFloating || isSkyMap || e.isFlying),
             barrierType: barrierType,
             barrierStartTime: Date.now() + (isPsychic ? 3000 : 0) + idx * 2500
         };
