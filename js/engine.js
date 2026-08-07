@@ -766,10 +766,10 @@ function initStage() {
     let nCount = (stage.count || 3) - fCount;
 
     let fPool = [...FLYING_POOL].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < fCount; i++) stageEnemies.push(fPool[i % fPool.length]);
+    for (let i = 0; i < fCount; i++) stageEnemies.push({ ...fPool[i % fPool.length] });
 
     let nPool = [...ENEMY_POOL].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < nCount; i++) stageEnemies.push(nPool[i % nPool.length]);
+    for (let i = 0; i < nCount; i++) stageEnemies.push({ ...nPool[i % nPool.length] });
 
     // 적들이 플레이어 양쪽에 고르게 분산되도록 사이드 배정
     // 총 적 수의 절반은 왼쪽, 절반은 오른쪽 (홀수이면 한쪽이 1개 더)
