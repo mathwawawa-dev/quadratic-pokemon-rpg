@@ -901,20 +901,21 @@ function initStage() {
 
         // 1차 실패 시: log_bridge는 지형이 연속적이므로 공중 변환 없이 강제 지상 배치
         // 그 외 맵은 공중 몬스터로 변환하여 재시도
+        // 1차 실패 시: 공중 변환 없이 지상에 강제 분산 배치
         if (!valid && !e.isFlying && !isSkyMap) {
-            if (stage.terrain === 'log_bridge') {
-                // 통나무 위에 강제 배치 (공중 변환 금지)
-                rx = side === 'L' ? -(8 + idx * 4) : (8 + idx * 4);
-                rx = Math.max(-17, Math.min(17, rx));
-                ry = getTerrainY(rx) + 0.75;
-                valid = true;
-                usedFallback = true;
-            } else {
-                e.isFlying = true;
-                e.hasCloud = true;
-                tryPlacement(true);
-                if (valid) flyingYIdx++;
+            rx = side === 'L' ? -(8 + idx * 4) : (8 + idx * 4);
+            rx = Math.max(-17, Math.min(17, rx));
+            let tY = getTerrainY(rx);
+            if (tY < -50) {
+                for(let searchX=0; searchX<=18; searchX+=0.5) {
+                    if(getTerrainY(searchX) > -50) { rx = searchX; tY = getTerrainY(rx); break; }
+                    if(getTerrainY(-searchX) > -50) { rx = -searchX; tY = getTerrainY(rx); break; }
+                }
             }
+            ry = tY > -50 ? tY + 0.75 : 13 + idx * 2;
+            if (tY < -50) { e.isFlying = true; e.hasCloud = true; } // 땅이 아예 없으면 비행
+            valid = true;
+            usedFallback = true;
         }
 
         // 2차 실패 시 (혹은 처음부터 공중이었는데 실패): 최후의 수단으로 겹치지 않게 강제 분산 배치
@@ -922,12 +923,18 @@ function initStage() {
             rx = side === 'L' ? player.x - 10 - idx*6 : player.x + 10 + idx*6;
             const spawnLimitX = 18;
             rx = Math.max(-spawnLimitX, Math.min(spawnLimitX, rx));
-            const terrainYAtRx = getTerrainY(rx);
+            let tY = getTerrainY(rx);
             if (e.isFlying) {
-                ry = terrainYAtRx > -50 ? terrainYAtRx + 2.8 : 13 + idx * 2;
+                ry = tY > -50 ? tY + 2.8 : 13 + idx * 2;
             } else {
-                ry = terrainYAtRx + 0.75;
-                if (ry < -50) { e.isFlying = true; e.hasCloud = true; ry = 13 + idx * 2; }
+                if (tY < -50) {
+                    for(let step=0; step<=18; step+=0.5) {
+                        if(getTerrainY(Math.min(18, rx+step)) > -50) { rx = Math.min(18, rx+step); tY = getTerrainY(rx); break; }
+                        if(getTerrainY(Math.max(-18, rx-step)) > -50) { rx = Math.max(-18, rx-step); tY = getTerrainY(rx); break; }
+                    }
+                }
+                ry = tY > -50 ? tY + 0.75 : 13 + idx * 2;
+                if (tY < -50) { e.isFlying = true; e.hasCloud = true; }
             }
             usedFallback = true;
         }
