@@ -397,8 +397,10 @@ function createCrater(cx, cy, radius) {
         
         for (let i = 0; i < terrainHeights[key].length; i++) {
             const y = terrainHeights[key][i];
-            // 폭발 구체 범위(craterBottomY ~ craterTopY) 내에 위치한 표면 지형만 파괴되도록 정밀 검증 (상단 천장 언덕 유지를 통해 순간이동 슬라이딩 버그 예방)
-            if (y !== -100 && y >= craterBottomY && y <= craterTopY + 0.3) {
+            const isSingleLayer = terrainHeights[key].length === 1;
+            // 폭발 구체 범위(craterBottomY ~ craterTopY) 내에 위치한 표면 지형만 파괴되도록 정밀 검증 
+            // (상단 천장 언덕 유지를 통해 순간이동 슬라이딩 버그 예방. 단, 레이어가 1개인 단순 지형은 항상 파이도록 예외 처리)
+            if (y !== -100 && y >= craterBottomY && (isSingleLayer || y <= craterTopY + 0.3)) {
                 terrainHeights[key][i] = Math.min(y, craterBottomY);
                 if (isFloating || stage.terrain === 'sky' || stage.terrain === 'log_bridge' || stage.terrain === 'cloud_garden2' || stage.terrain === 'garden') {
                     // terrainBottoms는 부유맵·log_bridge 모두 buildTerrain에서 초기화됨
