@@ -70,21 +70,23 @@ def make_orient(tmpl, p, q, p_lbl, q_lbl, h_lbl):
         )
     elif tmpl == 3:
         # AB=hyp, BC=p(수평leg,상단), CA=q(수직leg)
+        # BC 라벨 오프셋: 호 높이(≈0.28*p)에 비례해 -0.05*p 사용 → arc peak의 약 82% 위치
         return (
             {'A': (0, 0), 'B': (p, q), 'C': (0, q)},
             'C',
             {'AB': h_lbl, 'BC': p_lbl, 'CA': q_lbl},
             {'A': 12},
-            {'side_label_offsets': {'BC': (0, -0.15)}}   # 상단 수평변 라벨 하향
+            {'side_label_offsets': {'BC': (0, -0.05 * p)}}
         )
     elif tmpl == 4:
         # AB=q(수직leg), BC=p(수평leg,상단), CA=hyp
+        # BC 라벨 오프셋: 호 높이(≈0.28*p)에 비례해 -0.05*p 사용 → arc peak의 약 82% 위치
         return (
             {'A': (p, 0), 'B': (p, q), 'C': (0, q)},
             'B',
             {'AB': q_lbl, 'BC': p_lbl, 'CA': h_lbl},
             {'A': -12},
-            {'side_label_offsets': {'BC': (0, -0.15)}}   # 상단 수평변 라벨 하향
+            {'side_label_offsets': {'BC': (0, -0.05 * p)}}
         )
 
 # ── 이미지 생성 루프 ──────────────────────────────────────────────────────────
