@@ -124,7 +124,7 @@ for t in triangles:
                 side_labels=slabels,
                 filename=fname,
                 vertex_label_rotations=rot,
-                gap_factor=0.9,
+                gap_factor=1.15,
                 **extra
             )
 
