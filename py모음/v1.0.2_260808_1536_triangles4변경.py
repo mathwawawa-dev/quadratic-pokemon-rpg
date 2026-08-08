@@ -91,7 +91,7 @@ def label_char_count(latex_str):
 def draw(vertices_dict, right_v, side_labels, filename,
          gap_factor=1.35, lbl_shift=0.0,
          vertex_label_rotations=None, side_label_shifts=None,
-         side_label_offsets=None):
+         side_label_offsets=None, side_gap_factors=None):
     """
     gap_factor             : excl_r 여백 계수 (v0.0.4 기본=1.35)
     lbl_shift              : 모든 호 레이블의 기본 shift 비율 (0.0=peak 정중앙)
@@ -215,7 +215,12 @@ def draw(vertices_dict, right_v, side_labels, filename,
         # + 대시 1주기(on+off=7.5pt)의 절반을 data 단위로 추가:
         #   갭 경계가 대시 중간에 걸리면 단편 점이 생기므로 이를 흡수
         dash_cycle_data = ((4.5 + 3.0) / 72.0) * span / FIG_S
-        excl_r = max(half_w, half_h) * gap_factor + dash_cycle_data * 0.55
+        # 변별 gap factor (side_gap_factors 지정 시 해당 변에만 적용)
+        _sgf_dict = side_gap_factors or {}
+        _key_fwd  = v1 + v2
+        _key_rev  = v2 + v1
+        _side_gf  = _sgf_dict.get(_key_fwd, _sgf_dict.get(_key_rev, 1.0))
+        excl_r = max(half_w, half_h) * gap_factor * _side_gf + dash_cycle_data * 0.55
 
         # 2 레이블 중심: peak에서 v2 방향으로 cur_shift 비율만큼 이동
         #    cur_shift = side_label_shifts의 해당 변 값 또는 lbl_shift 기본값

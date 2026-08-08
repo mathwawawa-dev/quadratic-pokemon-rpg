@@ -57,7 +57,7 @@ def make_orient(tmpl, p, q, p_lbl, q_lbl, h_lbl):
             'B',
             {'AB': q_lbl, 'BC': p_lbl, 'CA': h_lbl},
             {'A': -10},
-            {}
+            {'side_gap_factors': {'CA': 1.6}}   # 빗변 라벨 gap 확대
         )
     elif tmpl == 2:
         # AB=hyp, BC=p(수평leg), CA=q(수직leg)
@@ -66,7 +66,7 @@ def make_orient(tmpl, p, q, p_lbl, q_lbl, h_lbl):
             'C',
             {'AB': h_lbl, 'BC': p_lbl, 'CA': q_lbl},
             {'A': 10},
-            {}
+            {'side_gap_factors': {'AB': 1.6}}   # 빗변 라벨 gap 확대
         )
     elif tmpl == 3:
         # AB=hyp, BC=p(수평leg,상단), CA=q(수직leg)
@@ -78,7 +78,7 @@ def make_orient(tmpl, p, q, p_lbl, q_lbl, h_lbl):
             'C',
             {'AB': h_lbl, 'BC': p_lbl, 'CA': q_lbl},
             {'A': 12},
-            {'side_label_offsets': {'BC': (0, _off3)}}
+            {'side_label_offsets': {'BC': (0, _off3)}, 'side_gap_factors': {'AB': 1.6}}
         )
     elif tmpl == 4:
         # AB=q(수직leg), BC=p(수평leg,상단), CA=hyp
@@ -89,7 +89,7 @@ def make_orient(tmpl, p, q, p_lbl, q_lbl, h_lbl):
             'B',
             {'AB': q_lbl, 'BC': p_lbl, 'CA': h_lbl},
             {'A': -12},
-            {'side_label_offsets': {'BC': (0, _off4)}}
+            {'side_label_offsets': {'BC': (0, _off4)}, 'side_gap_factors': {'CA': 1.6}}
         )
 
 # ── 이미지 생성 루프 ──────────────────────────────────────────────────────────
