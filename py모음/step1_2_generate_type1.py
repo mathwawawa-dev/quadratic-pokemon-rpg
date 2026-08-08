@@ -70,23 +70,26 @@ def make_orient(tmpl, p, q, p_lbl, q_lbl, h_lbl):
         )
     elif tmpl == 3:
         # AB=hyp, BC=p(수평leg,상단), CA=q(수직leg)
-        # BC 라벨 오프셋: 호 높이(≈0.28*p)에 비례해 -0.05*p 사용 → arc peak의 약 82% 위치
+        # BC 라벨: arc_peak ≈ 0.28*(Lmin/p)^0.3*p = 0.28*Lmin^0.3*p^0.7
+        # 오프셋 = -0.15 * arc_peak ≈ -0.042 * min(p,q)^0.3 * p^0.7  (약 85% 위치)
+        _off3 = -0.042 * min(p, q) ** 0.3 * p ** 0.7
         return (
             {'A': (0, 0), 'B': (p, q), 'C': (0, q)},
             'C',
             {'AB': h_lbl, 'BC': p_lbl, 'CA': q_lbl},
             {'A': 12},
-            {'side_label_offsets': {'BC': (0, -0.05 * p)}}
+            {'side_label_offsets': {'BC': (0, _off3)}}
         )
     elif tmpl == 4:
         # AB=q(수직leg), BC=p(수평leg,상단), CA=hyp
-        # BC 라벨 오프셋: 호 높이(≈0.28*p)에 비례해 -0.05*p 사용 → arc peak의 약 82% 위치
+        # 동일 공식 적용
+        _off4 = -0.042 * min(p, q) ** 0.3 * p ** 0.7
         return (
             {'A': (p, 0), 'B': (p, q), 'C': (0, q)},
             'B',
             {'AB': q_lbl, 'BC': p_lbl, 'CA': h_lbl},
             {'A': -12},
-            {'side_label_offsets': {'BC': (0, -0.05 * p)}}
+            {'side_label_offsets': {'BC': (0, _off4)}}
         )
 
 # ── 이미지 생성 루프 ──────────────────────────────────────────────────────────
@@ -121,6 +124,7 @@ for t in triangles:
                 side_labels=slabels,
                 filename=fname,
                 vertex_label_rotations=rot,
+                gap_factor=0.9,
                 **extra
             )
 
