@@ -84,7 +84,43 @@ def label_char_count(latex_str):
     nsqrt = latex_str.count(r'\sqrt')
     s = re.sub(r'\\[a-zA-Z]+', '', latex_str)
     s = re.sub(r'[\$\{\}]', '', s).strip()
-    return max(1, len(s) + nsqrt * 1)
+    return max(1, len(s) + nsqrt * 1.5)   # sqrt 1개 = +1.5자 (overline 포함 실폭 반영)
+
+
+# ── 레이블 케이스 분류 및 방향별 여백 테이블 ──────────────────────────────────
+# case1: 한 자리 정수 (1,2,3)
+# case2: 두 자리 정수 (12,22)
+# case3: root(한자리)  √5, √3
+# case4: root(두자리)  √10, √13
+# case5: n*root(한자리)  2√5, 3√3
+# case6: n*root(두자리)  2√10, 3√23
+# 확정 설정값 (단위: px, @100DPI 기준)
+_CLR_TABLE = {
+    1: dict(L=8,  R=8,  T=13, B=4),
+    2: dict(L=13, R=13, T=13, B=4),
+    3: dict(L=24, R=30, T=27, B=15),
+    4: dict(L=29, R=34, T=27, B=15),
+    5: dict(L=34, R=35, T=26, B=15),
+    6: dict(L=38, R=40, T=27, B=15),
+}
+
+def classify_label_case(latex_str):
+    """레이블 LaTeX 문자열 → case 번호(1~6) 반환"""
+    s = latex_str.replace('$', '').strip()
+    has_sqrt = r'\sqrt' in s
+    if not has_sqrt:
+        t = re.sub(r'\\[a-zA-Z]+', '', s)
+        t = re.sub(r'[\$\{\}]', '', t).strip()
+        return 1 if len(t) <= 1 else 2
+    m = re.search(r'\\sqrt\{([^}]+)\}', s)
+    inside_len = len(m.group(1).strip()) if m else 1
+    before = re.sub(r'\\sqrt\{[^}]+\}', '', s)
+    before = re.sub(r'[\$\{\}]', '', before).strip()
+    has_coeff = len(before) > 0
+    if inside_len <= 1:
+        return 5 if has_coeff else 3
+    else:
+        return 6 if has_coeff else 4
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -220,7 +256,15 @@ def draw(vertices_dict, right_v, side_labels, filename,
         _key_fwd  = v1 + v2
         _key_rev  = v2 + v1
         _side_gf  = _sgf_dict.get(_key_fwd, _sgf_dict.get(_key_rev, 1.0))
-        excl_r = max(half_w, half_h) * gap_factor * _side_gf + dash_cycle_data * 0.55
+
+        # ▶ 4방향 독립 제외 영역 (case1~6 테이블 기반, @100DPI 기준 px)
+        _case   = classify_label_case(label)
+        _clr    = _CLR_TABLE[_case]
+        _px2du  = span / (FIG_S * 100.0)   # 1px → data_unit (@100DPI)
+        excl_left   = half_w + _clr['L'] * _px2du
+        excl_right  = half_w + _clr['R'] * _px2du
+        excl_top    = half_h + _clr['T'] * _px2du
+        excl_bottom = half_h + _clr['B'] * _px2du
 
         # 2 레이블 중심: peak에서 v2 방향으로 cur_shift 비율만큼 이동
         #    cur_shift = side_label_shifts의 해당 변 값 또는 lbl_shift 기본값
@@ -235,13 +279,16 @@ def draw(vertices_dict, right_v, side_labels, filename,
             lbl_peak = peak
 
         # side_label_offsets: 텍스트 위치를 data 좌표로 직접 이동
-        # → 갭 계산도 text_pos 기준으로 해야 텍스트와 갭이 일치
+        # → 갑 계산도 text_pos 기준으로 해야 텍스트와 갑이 일치
         _slo = side_label_offsets or {}
         off  = _slo.get(v1 + v2, (0.0, 0.0))
         text_pos = np.array([lbl_peak[0] + off[0], lbl_peak[1] + off[1]])
 
-        dists  = np.linalg.norm(ap - text_pos, axis=1)
-        in_gap = dists < excl_r          # True = 갭 내부 (그리지 않음)
+        # 4방향 비대칭 제외: 부호 있는 dx/dy 사용
+        _dxs   = ap[:, 0] - text_pos[0]   # 양수=오른쪽, 음수=왼쪽
+        _dys   = ap[:, 1] - text_pos[1]   # 양수=위쪽, 음수=아래쪽
+        in_gap = (_dxs > -excl_left) & (_dxs < excl_right) & \
+                 (_dys > -excl_bottom) & (_dys < excl_top)
 
         # ③ 갭 바깥의 연속 구간만 점선으로 그리기
         #    갭 앞 구간(v1쪽): 순방향 → v1 꼭짓점에서 대시 시작 ✓
